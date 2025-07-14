@@ -21,16 +21,13 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
     context: ExecutionContext,
     next: CallHandler,
   ): Observable<Response<T>> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const request = context.switchToHttp().getRequest();
 
     return next.handle().pipe(
       map((data) => ({
         success: true,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data,
         timestamp: new Date().toISOString(),
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         path: request.url,
       })),
     );

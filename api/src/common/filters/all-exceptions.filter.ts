@@ -26,8 +26,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message =
         typeof exceptionResponse === 'string'
           ? exceptionResponse
-          : // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            ((exceptionResponse as any).message as string) || exception.message;
+          : ((exceptionResponse as any).message as string) || exception.message;
     } else {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       message = 'Internal server error';
