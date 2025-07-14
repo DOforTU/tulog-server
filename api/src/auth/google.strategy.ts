@@ -32,14 +32,25 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       scope: ['email', 'profile'],
     });
   }
-
   async validate(
     accessToken: string,
     refreshToken: string,
     profile: GoogleProfile,
     done: VerifyCallback,
   ): Promise<any> {
+    console.log(
+      '🔍 Google Strategy - 전체 프로필 객체:',
+      JSON.stringify(profile, null, 2),
+    );
+
     const { id, name, emails, photos } = profile;
+
+    console.log('🔍 Google Strategy - 받은 프로필:', {
+      id,
+      email: emails[0]?.value,
+      name: name?.givenName + ' ' + name?.familyName,
+    });
+
     const googleUser = {
       id,
       email: emails[0]?.value || '',
@@ -48,7 +59,12 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       picture: photos[0]?.value || '',
     };
 
+    console.log('🔍 Google Strategy - 변환된 사용자:', googleUser);
+
     const result = await this.authService.validateGoogleUser(googleUser);
+
+    console.log('🔍 Google Strategy - 최종 결과:', result.user);
+
     done(null, result);
   }
 }

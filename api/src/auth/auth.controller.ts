@@ -1,11 +1,11 @@
 import { Controller, Get, Post, UseGuards, Req, Res } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { AuthService } from './auth.service';
+import { AuthService, AuthResult } from './auth.service';
 import { Response, Request } from 'express';
 
 /** Google OAuth 인증된 요청 인터페이스 */
 interface AuthenticatedRequest extends Request {
-  user: any;
+  user: AuthResult; // GoogleUser가 아니라 AuthResult를 받음
 }
 
 /**
@@ -28,15 +28,16 @@ export class AuthController {
   /** Google OAuth 콜백 처리 */
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
-  async googleAuthRedirect(
-    @Req() req: AuthenticatedRequest,
-    @Res() res: Response,
-  ) {
-    const { accessToken } = await this.authService.validateGoogleUser(req.user);
+  googleAuthRedirect(@Req() req: AuthenticatedRequest, @Res() res: Response) {
+    // Google Strategy에서 이미 검증된 AuthResult를 그대로 사용
+    const { accessToken, user } = req.user;
 
-    // 개발 환경에서는 같은 서버의 루트로 리다이렉트
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8000';
-    res.redirect(`${frontendUrl}/?token=${accessToken}`);
+    console.log('🔍 AuthController - 콜백에서 받은 사용자:', user.email);
+
+    // 프론트엔드 URL로 리다이렉트 (사용자 정보와 토큰 포함)
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const userInfo = encodeURIComponent(JSON.stringify(user));
+    res.redirect(`${frontendUrl}/login?token=${accessToken}&user=${userInfo}`);
   }
 
   /** 토큰 갱신 */
@@ -49,8 +50,11 @@ export class AuthController {
   /** 로그아웃 */
   @Post('logout')
   logout() {
-    // TODO: 로그아웃 로직 구현 (토큰 무효화)
-    return { message: 'Logged out successfully' };
+    // 프론트엔드에서 토큰을 제거하므로 성공 응답만 반환
+    return {
+      success: true,
+      message: 'Logged out successfully',
+    };
   }
 }
 
