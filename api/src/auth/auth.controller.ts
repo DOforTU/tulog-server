@@ -2,6 +2,7 @@ import { Controller, Get, Post, UseGuards, Req, Res } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService, AuthResult } from './auth.service';
 import { Response, Request } from 'express';
+import { RateLimitGuard } from '../common/guards/rate-limit.guard';
 
 /** 쿠키 타입 정의 */
 interface AuthCookies {
@@ -32,7 +33,7 @@ export class AuthController {
 
   /** Google OAuth 로그인 시작 */
   @Get('google')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(AuthGuard('google'), RateLimitGuard)
   async googleAuth() {
     // Google OAuth 플로우를 시작하는 라우트
   }
@@ -55,6 +56,7 @@ export class AuthController {
 
   /** 토큰 갱신 */
   @Post('refresh')
+  @UseGuards(RateLimitGuard)
   async refreshToken(@Req() req: RequestWithCookies, @Res() res: Response) {
     const refreshToken = req.cookies?.refreshToken;
 
