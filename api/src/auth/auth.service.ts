@@ -35,17 +35,8 @@ export class AuthService {
   async validateGoogleUser(googleUser: GoogleUser): Promise<AuthResult> {
     const { id, email, firstName, lastName, picture } = googleUser;
 
-    console.log('🔍 AuthService - validateGoogleUser 호출됨:', {
-      id,
-      email,
-      firstName,
-      lastName,
-    });
-
     // 이 Google ID로 사용자가 존재하는지 확인 (활성 사용자만)
     let user = await this.userService.findByGoogleId(id);
-
-    console.log('🔍 AuthService - findByGoogleId 결과:', user?.email || '없음');
 
     if (!user) {
       // 이 이메일로 활성 사용자가 존재하는지 확인 (다른 방법으로 가입했을 수 있음)

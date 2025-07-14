@@ -32,8 +32,6 @@ export class AuthController {
     // Google Strategy에서 이미 검증된 AuthResult를 그대로 사용
     const { accessToken, user } = req.user;
 
-    console.log('🔍 AuthController - 콜백에서 받은 사용자:', user.email);
-
     // 프론트엔드 URL로 리다이렉트 (사용자 정보와 토큰 포함)
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const userInfo = encodeURIComponent(JSON.stringify(user));
