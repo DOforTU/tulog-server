@@ -2,7 +2,7 @@
 
 > TULOG API 서버의 상세한 엔드포인트 명세서입니다.
 
-## 📋 목차
+## 목차
 
 -   [기본 정보](#기본-정보)
 -   [인증](#인증)
@@ -11,7 +11,7 @@
 -   [에러 코드](#에러-코드)
 -   [데이터 모델](#데이터-모델)
 
-## 🔧 기본 정보
+## 기본 정보
 
 ### Base URL
 
@@ -25,19 +25,22 @@ http://localhost:8000
 
 ### 인증 방식
 
--   **Google OAuth 2.0**: 로그인용
--   **JWT Bearer Token**: API 접근용
+-   **Google OAuth 2.0**: 소셜 로그인 전용
+-   **JWT + Refresh Token**: HttpOnly 쿠키 기반 인증
+-   **자동 토큰 갱신**: 14분마다 자동 리프레시
 
 ### 헤더
 
 ```http
 Content-Type: application/json
-Authorization: Bearer <jwt_token>
+Cookie: accessToken=<jwt_token>; refreshToken=<refresh_token>; userInfo=<user_info>
 ```
+
+> **보안**: 모든 토큰은 HttpOnly 쿠키로 전송되어 XSS 공격을 방어합니다.
 
 ---
 
-## 🔐 인증 (Authentication)
+## 인증 (Authentication)
 
 ### Google OAuth 로그인 시작
 
@@ -63,37 +66,81 @@ GET /auth/google/callback
 
 -   `code`: Google에서 제공하는 인증 코드
 
-**응답**: JWT 토큰과 함께 프론트엔드로 리다이렉트
+**응답**:
+
+1. **쿠키 설정**:
+
+    - `accessToken`: JWT 액세스 토큰 (HttpOnly, 15분 만료)
+    - `refreshToken`: JWT 리프레시 토큰 (HttpOnly, 30일 만료)
+    - `userInfo`: 사용자 정보 (30일 만료)
+
+2. **리다이렉트**:
 
 ```
-http://localhost:8000/?token=<jwt_token>
+http://localhost:3000/login?success=true
+```
+
+**쿠키 예시**:
+
+```http
+Set-Cookie: accessToken=eyJhbGciOiJIUzI1NiIs...; HttpOnly; SameSite=Strict; Max-Age=900
+Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIs...; HttpOnly; SameSite=Strict; Max-Age=2592000
+Set-Cookie: userInfo={"id":1,"email":"user@example.com",...}; SameSite=Strict; Max-Age=2592000
 ```
 
 ---
 
 ### 토큰 갱신
 
-JWT 토큰을 갱신합니다.
+리프레시 토큰을 사용하여 새 액세스 토큰을 발급받습니다.
 
 ```http
 POST /auth/refresh
 ```
 
-**응답**:
+**요청 헤더**:
+
+```http
+Cookie: refreshToken=<refresh_token>
+```
+
+**응답 (성공)**:
 
 ```json
 {
-    "message": "Refresh token endpoint"
+    "success": true,
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+        "id": 1,
+        "email": "user@example.com",
+        "username": "홍길동",
+        "nickname": "user",
+        "profilePicture": "https://lh3.googleusercontent.com/...",
+        "provider": "google"
+    }
 }
 ```
 
-> **참고**: 현재 구현 예정
+**응답 (실패)**:
+
+```json
+{
+    "success": false,
+    "message": "리프레시 토큰이 없습니다."
+}
+```
+
+**에러 코드**:
+
+-   `401`: 리프레시 토큰이 없거나 유효하지 않음
+
+> **자동 갱신**: 프론트엔드에서 14분마다 자동으로 호출됩니다.
 
 ---
 
 ### 로그아웃
 
-사용자 세션을 종료합니다.
+사용자 세션을 종료하고 모든 인증 쿠키를 삭제합니다.
 
 ```http
 POST /auth/logout
@@ -103,15 +150,69 @@ POST /auth/logout
 
 ```json
 {
+    "success": true,
     "message": "Logged out successfully"
 }
 ```
 
-> **참고**: 현재 구현 예정
+**쿠키 삭제**:
+
+-   `accessToken`: 삭제됨
+-   `refreshToken`: 삭제됨
+-   `userInfo`: 삭제됨
+
+**응답 헤더**:
+
+```http
+Set-Cookie: accessToken=; Max-Age=0
+Set-Cookie: refreshToken=; Max-Age=0
+Set-Cookie: userInfo=; Max-Age=0
+```
 
 ---
 
-## 👥 사용자 관리 (Users)
+## 사용자 관리 (Users)
+
+> **참고**: 별도 회원가입 없이 Google OAuth로만 계정이 생성됩니다.
+
+### 현재 로그인한 사용자 정보 조회
+
+현재 로그인한 사용자의 정보를 조회합니다.
+
+```http
+GET /users/me
+```
+
+**요청 헤더**:
+
+```http
+Cookie: accessToken=<access_token>
+```
+
+**응답**:
+
+```json
+{
+    "id": 1,
+    "email": "user@example.com",
+    "username": "홍길동",
+    "nickname": "user",
+    "googleId": "108729663647433890790",
+    "profilePicture": "https://lh3.googleusercontent.com/a/ACg8ocI...",
+    "provider": "google",
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2025-07-14T14:30:00.000Z",
+    "updatedAt": "2025-07-14T14:30:00.000Z",
+    "deletedAt": null
+}
+```
+
+**에러**:
+
+-   `401`: 인증되지 않음 (JWT 토큰 필요)
+
+---
 
 ### 전체 사용자 조회
 
@@ -130,13 +231,13 @@ GET /users
         "email": "user@example.com",
         "username": "홍길동",
         "nickname": "user",
-        "googleId": "123456789",
-        "profilePicture": "https://example.com/avatar.jpg",
+        "googleId": "108729663647433890790",
+        "profilePicture": "https://lh3.googleusercontent.com/a/ACg8ocI...",
         "provider": "google",
         "isActive": true,
         "isDeleted": false,
-        "createdAt": "2024-01-01T00:00:00.000Z",
-        "updatedAt": "2024-01-01T00:00:00.000Z",
+        "createdAt": "2025-07-14T14:30:00.000Z",
+        "updatedAt": "2025-07-14T14:30:00.000Z",
         "deletedAt": null
     }
 ]
@@ -162,16 +263,15 @@ GET /users/{id}
 {
     "id": 1,
     "email": "user@example.com",
-    "username": "user123",
-    "name": "홍길동",
-    "nickname": "길동이",
-    "googleId": "123456789",
-    "profilePicture": "https://example.com/avatar.jpg",
+    "username": "홍길동",
+    "nickname": "user",
+    "googleId": "108729663647433890790",
+    "profilePicture": "https://lh3.googleusercontent.com/a/ACg8ocI...",
     "provider": "google",
     "isActive": true,
     "isDeleted": false,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z",
+    "createdAt": "2025-07-14T14:30:00.000Z",
+    "updatedAt": "2025-07-14T14:30:00.000Z",
     "deletedAt": null
 }
 ```
@@ -182,52 +282,7 @@ GET /users/{id}
 
 ---
 
-### 사용자 생성
-
-새 사용자를 생성합니다.
-
-```http
-POST /users
-```
-
-**요청 본문**:
-
-```json
-{
-    "email": "newuser@example.com",
-    "username": "newuser",
-    "password": "password123",
-    "name": "새사용자",
-    "nickname": "새사용자",
-    "isActive": true
-}
-```
-
-**응답**:
-
-```json
-{
-    "id": 2,
-    "email": "newuser@example.com",
-    "username": "newuser",
-    "name": "새사용자",
-    "nickname": "새사용자",
-    "isActive": true,
-    "isDeleted": false,
-    "createdAt": "2024-01-01T01:00:00.000Z",
-    "updatedAt": "2024-01-01T01:00:00.000Z",
-    "deletedAt": null
-}
-```
-
-**에러**:
-
--   `409`: 이메일 또는 사용자명 중복
--   `400`: 잘못된 요청 데이터
-
----
-
-### 사용자 수정
+### 사용자 정보 업데이트
 
 기존 사용자 정보를 수정합니다.
 
@@ -243,7 +298,7 @@ PUT /users/{id}
 
 ```json
 {
-    "name": "수정된이름",
+    "username": "수정된이름",
     "nickname": "수정된닉네임",
     "isActive": false
 }
@@ -255,17 +310,17 @@ PUT /users/{id}
 {
     "id": 1,
     "email": "user@example.com",
-    "username": "user123",
-    "name": "수정된이름",
+    "username": "수정된이름",
     "nickname": "수정된닉네임",
     "isActive": false,
-    "updatedAt": "2024-01-01T02:00:00.000Z"
+    "updatedAt": "2025-07-14T15:00:00.000Z"
 }
 ```
 
 **에러**:
 
 -   `404`: 사용자를 찾을 수 없음
+-   `409`: 사용자명 또는 닉네임 중복
 
 ---
 
@@ -281,17 +336,23 @@ DELETE /users/{id}
 
 -   `id` (number): 사용자 ID
 
+**요청 헤더**:
+
+```http
+Cookie: accessToken=<access_token>
+```
+
 **응답**:
 
 ```json
 {
-    "message": "User deleted successfully",
-    "deleted": true
+    "message": "User deleted successfully"
 }
 ```
 
 **에러**:
 
+-   `401`: 인증되지 않음 (JWT 토큰 필요)
 -   `404`: 사용자를 찾을 수 없음
 
 ---
@@ -308,17 +369,23 @@ DELETE /users/{id}/hard
 
 -   `id` (number): 사용자 ID
 
+**요청 헤더**:
+
+```http
+Cookie: accessToken=<access_token>
+```
+
 **응답**:
 
 ```json
 {
-    "message": "User permanently deleted",
-    "deleted": true
+    "message": "User permanently deleted"
 }
 ```
 
 **에러**:
 
+-   `401`: 인증되지 않음 (JWT 토큰 필요)
 -   `404`: 사용자를 찾을 수 없음
 
 ---
@@ -339,14 +406,19 @@ PATCH /users/{id}/restore
 
 ```json
 {
-    "message": "User restored successfully",
-    "restored": true
+    "id": 1,
+    "email": "restored@example.com",
+    "username": "복구된사용자",
+    "nickname": "restored",
+    "isDeleted": false,
+    "deletedAt": null,
+    "updatedAt": "2025-07-14T16:00:00.000Z"
 }
 ```
 
 **에러**:
 
--   `404`: 사용자를 찾을 수 없음
+-   `404`: 삭제된 사용자를 찾을 수 없음
 
 ---
 
@@ -365,9 +437,10 @@ GET /users/deleted
     {
         "id": 3,
         "email": "deleted@example.com",
-        "username": "deleted_user",
+        "username": "삭제된사용자",
+        "nickname": "deleted",
         "isDeleted": true,
-        "deletedAt": "2024-01-01T03:00:00.000Z"
+        "deletedAt": "2025-07-14T15:30:00.000Z"
     }
 ]
 ```
@@ -392,7 +465,7 @@ GET /users/count
 
 ---
 
-## 🔧 시스템 (System)
+## 시스템 (System)
 
 ### 헬스 체크
 
@@ -441,7 +514,7 @@ GET /
 
 ---
 
-## ❌ 에러 코드
+## 에러 코드
 
 ### HTTP 상태 코드
 
@@ -468,21 +541,19 @@ GET /
 
 ---
 
-## 📊 데이터 모델
+## 데이터 모델
 
 ### User 엔티티
 
 ```typescript
 interface User {
     id: number; // 기본 키 (자동 증가)
-    email: string; // 이메일 (유일)
-    username: string; // 사용자명 (유일)
-    password?: string; // 비밀번호 (Google 사용자는 null)
-    name?: string; // 실명
-    nickname?: string; // 닉네임 (유일)
-    googleId?: string; // Google OAuth ID
-    profilePicture?: string; // 프로필 이미지 URL
-    provider?: string; // 인증 제공자 ('google' 등)
+    email: string; // 이메일 (유일, Google에서 가져옴)
+    username: string; // 사용자명 (Google 실명)
+    nickname: string; // 닉네임 (이메일 앞부분)
+    googleId: string; // Google OAuth ID (유일)
+    profilePicture?: string; // Google 프로필 이미지 URL
+    provider: string; // 인증 제공자 ('google')
     isActive: boolean; // 활성 상태 (기본값: true)
     isDeleted: boolean; // 삭제 상태 (기본값: false)
     createdAt: Date; // 생성 일시
@@ -491,41 +562,46 @@ interface User {
 }
 ```
 
-### CreateUserDto
-
-```typescript
-interface CreateUserDto {
-    email: string; // 필수
-    username: string; // 필수
-    password?: string; // 선택 (Google 사용자)
-    name?: string; // 선택
-    nickname?: string; // 선택
-    googleId?: string; // 선택
-    profilePicture?: string; // 선택
-    provider?: string; // 선택
-    isActive?: boolean; // 선택 (기본값: true)
-}
-```
-
 ### UpdateUserDto
 
 ```typescript
 interface UpdateUserDto {
-    email?: string; // 선택
+    email?: string; // 선택 (변경 불가)
     username?: string; // 선택
-    password?: string; // 선택
-    name?: string; // 선택
     nickname?: string; // 선택
-    googleId?: string; // 선택
     profilePicture?: string; // 선택
-    provider?: string; // 선택
     isActive?: boolean; // 선택
+}
+```
+
+### JWT 토큰 페이로드
+
+#### 액세스 토큰 (15분 만료)
+
+```typescript
+interface AccessTokenPayload {
+    sub: number; // 사용자 ID
+    email: string; // 사용자 이메일
+    type: "access"; // 토큰 타입
+    iat: number; // 발급 시간
+    exp: number; // 만료 시간
+}
+```
+
+#### 리프레시 토큰 (30일 만료)
+
+```typescript
+interface RefreshTokenPayload {
+    sub: number; // 사용자 ID
+    type: "refresh"; // 토큰 타입
+    iat: number; // 발급 시간
+    exp: number; // 만료 시간
 }
 ```
 
 ---
 
-## 📝 추가 정보
+## 추가 정보
 
 ### 개발 환경에서의 테스트
 
@@ -546,17 +622,42 @@ interface UpdateUserDto {
 
 ### 주의사항
 
--   개발 환경에서는 `synchronize: true`로 설정되어 있어 스키마가 자동 동기화됩니다
--   프로덕션 환경에서는 마이그레이션을 사용하세요
--   Google OAuth 설정이 필요합니다 (.env 파일 참조)
--   모든 날짜는 ISO 8601 형식 (UTC)입니다
+-   **소셜 로그인 전용**: 별도 회원가입 없이 Google OAuth로만 계정 생성
+-   **HttpOnly 쿠키**: 모든 토큰은 HttpOnly 쿠키로 전송되어 XSS 공격 방어
+-   **자동 토큰 갱신**: 프론트엔드에서 14분마다 자동으로 토큰 갱신
+-   **개발 환경**: `synchronize: true`로 설정되어 스키마 자동 동기화
+-   **프로덕션 환경**: 마이그레이션 사용 필요
+-   **Google OAuth 설정**: `.env` 파일에서 Google OAuth 클라이언트 설정 필수
+-   **날짜 형식**: 모든 날짜는 ISO 8601 형식 (UTC)
+
+### 쿠키 보안 설정
+
+```typescript
+// 개발 환경
+sameSite: 'strict'
+secure: false
+httpOnly: true (토큰의 경우)
+
+// 프로덕션 환경
+sameSite: 'strict'
+secure: true
+httpOnly: true (토큰의 경우)
+```
 
 ---
 
-## 🔄 업데이트 로그
+## 업데이트 로그
+
+-   **v1.0.0** (2025-07-15): JWT + 리프레시 토큰 인증 시스템 구현
+
+    -   HttpOnly 쿠키 기반 보안 토큰 관리
+    -   자동 토큰 갱신 (14분 간격)
+    -   Google OAuth 전용 소셜 로그인
+    -   XSS/CSRF 방어 보안 강화
+    -   사용자 CRUD 작업 (소셜 로그인 기반)
+    -   소프트 삭제 및 복구 기능
 
 -   **v0.0.1** (2024-01-01): 초기 API 구현
-    -   사용자 CRUD 작업
-    -   Google OAuth 인증
-    -   소프트 삭제 기능
-    -   JWT 토큰 인증
+    -   기본 사용자 CRUD 작업
+    -   Google OAuth 인증 기초
+    -   Basic JWT 토큰 인증
