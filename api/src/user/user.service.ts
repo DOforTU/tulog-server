@@ -7,6 +7,7 @@ import { UserRepository } from './user.repository';
 import { User } from './user.entity';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
 
+/** Google OAuth 사용자 데이터 인터페이스 */
 interface GoogleUserData {
   googleId: string;
   email: string;
@@ -15,14 +16,23 @@ interface GoogleUserData {
   profilePicture?: string;
 }
 
+/**
+ * 사용자 비즈니스 로직 서비스
+ * - 사용자 CRUD 작업
+ * - Google OAuth 사용자 관리
+ * - Soft Delete 기능
+ * - 데이터 유효성 검증
+ */
 @Injectable()
 export class UserService {
   constructor(private readonly userRepository: UserRepository) {}
 
+  /** 모든 활성 사용자 조회 */
   async getAllUsers(): Promise<User[]> {
     return this.userRepository.findAll();
   }
 
+  /** ID로 사용자 조회 (예외 발생) */
   async getUserById(id: number): Promise<User> {
     const user = await this.userRepository.findById(id);
     if (!user) {
@@ -31,6 +41,7 @@ export class UserService {
     return user;
   }
 
+  /** 이메일로 사용자 조회 (예외 발생) */
   async getUserByEmail(email: string): Promise<User> {
     const user = await this.userRepository.findByEmail(email);
     if (!user) {
@@ -39,14 +50,17 @@ export class UserService {
     return user;
   }
 
+  /** 이메일로 활성 사용자 조회 (nullable) */
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findByEmail(email);
   }
 
+  /** 이메일로 사용자 조회 (삭제된 사용자 포함) */
   async findByEmailIncludingDeleted(email: string): Promise<User | null> {
     return this.userRepository.findByEmailIncludingDeleted(email);
   }
 
+  /** 새 사용자 생성 */
   async createUser(createUserDto: CreateUserDto): Promise<User> {
     // 비즈니스 로직: 이메일 중복 검사
     const existingUserByEmail = await this.userRepository.findByEmail(
@@ -70,6 +84,7 @@ export class UserService {
     return this.userRepository.create(createUserDto);
   }
 
+  /** 사용자 정보 업데이트 */
   async updateUser(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     // 비즈니스 로직: 사용자 존재 확인
     const existingUser = await this.userRepository.findById(id);
@@ -108,6 +123,7 @@ export class UserService {
     return updatedUser;
   }
 
+  /** 사용자 소프트 삭제 */
   async deleteUser(id: number): Promise<void> {
     // 비즈니스 로직: 사용자 존재 확인
     const userExists = await this.userRepository.exists(id);
@@ -121,6 +137,7 @@ export class UserService {
     }
   }
 
+  /** 사용자 영구 삭제 */
   async hardDeleteUser(id: number): Promise<void> {
     // 비즈니스 로직: 사용자 존재 확인 (삭제된 사용자 포함)
     const user = await this.userRepository.findDeletedById(id);
@@ -134,6 +151,7 @@ export class UserService {
     }
   }
 
+  /** 삭제된 사용자 복구 */
   async restoreUser(id: number): Promise<User> {
     // 비즈니스 로직: 삭제된 사용자 존재 확인
     const deletedUser = await this.userRepository.findDeletedById(id);
@@ -154,29 +172,36 @@ export class UserService {
     return restoredUser;
   }
 
+  /** 삭제된 사용자 목록 조회 */
   async getDeletedUsers(): Promise<User[]> {
     return this.userRepository.findDeleted();
   }
 
+  /** 활성 사용자 수 조회 */
   async getUserCount(): Promise<number> {
     return this.userRepository.count();
   }
 
+  /** 이메일 사용 가능 여부 확인 */
   async isEmailAvailable(email: string): Promise<boolean> {
     const user = await this.userRepository.findByEmail(email);
     return !user;
   }
 
+  /** 사용자명 사용 가능 여부 확인 */
   async isUsernameAvailable(username: string): Promise<boolean> {
     const user = await this.userRepository.findByUsername(username);
     return !user;
   }
 
-  // Google OAuth 관련 메서드들
+  // === Google OAuth 관련 메서드들 ===
+
+  /** Google ID로 사용자 조회 */
   async findByGoogleId(googleId: string): Promise<User | null> {
     return this.userRepository.findByGoogleId(googleId);
   }
 
+  /** Google OAuth 사용자 생성 */
   async createGoogleUser(googleUserData: GoogleUserData): Promise<User> {
     // 삭제되지 않은 사용자의 이메일 중복 체크만 수행
     // 삭제된 사용자는 새로운 계정을 생성할 수 있음
@@ -191,6 +216,7 @@ export class UserService {
     return this.userRepository.createGoogleUser(googleUserData);
   }
 
+  /** 기존 계정에 Google 계정 연동 */
   async linkGoogleAccount(
     userId: number,
     linkData: { googleId: string; profilePicture?: string },
@@ -211,3 +237,12 @@ export class UserService {
     return updatedUser;
   }
 }
+
+// TODO: 비밀번호 재설정 기능 추가
+// TODO: 이메일 인증 기능 구현
+// TODO: 사용자 프로필 이미지 업로드 처리
+// TODO: 사용자 권한 관리 시스템 구현
+// TODO: 계정 잠금/해제 기능 추가
+// TODO: 사용자 활동 로그 기록 기능
+// TODO: 회원가입 시 이메일 중복 확인 최적화
+// TODO: 사용자 검색 및 필터링 기능 추가
