@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Post,
   Put,
   Delete,
   Patch,
@@ -13,8 +12,8 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './user.entity';
-import { CreateUserDto, UpdateUserDto } from './user.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { UpdateUserDto } from './user.dto';
+import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
 
 /**
  * 사용자 관리 컨트롤러
@@ -58,12 +57,6 @@ export class UserController {
     return this.userService.getUserById(id);
   }
 
-  /** 새 사용자 생성 */
-  @Post()
-  async create(@Body() createUserDto: CreateUserDto): Promise<User> {
-    return this.userService.createUser(createUserDto);
-  }
-
   /** 사용자 정보 업데이트 */
   @Put(':id')
   async update(
@@ -97,6 +90,7 @@ export class UserController {
 // TODO: 사용자 검색 API 추가 (이름, 이메일, 닉네임으로 검색)
 // TODO: 페이지네이션 API 추가
 // TODO: 사용자 프로필 이미지 업로드 API 추가
-// TODO: 비밀번호 변경 API 추가
+// TODO: 소셜 계정 연동/해제 API 추가
 // TODO: 계정 활성화/비활성화 API 추가
 // TODO: 관리자 권한 확인 미들웨어 추가
+// TODO: 사용자 통계 대시보드 API 추가

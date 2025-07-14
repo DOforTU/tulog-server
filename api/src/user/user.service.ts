@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import { User } from './user.entity';
-import { CreateUserDto, UpdateUserDto } from './user.dto';
+import { UpdateUserDto } from './user.dto';
 
 /** Google OAuth 사용자 데이터 인터페이스 */
 interface GoogleUserData {
@@ -55,33 +55,14 @@ export class UserService {
     return this.userRepository.findByEmail(email);
   }
 
+  /** ID로 활성 사용자 조회 (nullable) */
+  async findById(id: number): Promise<User | null> {
+    return this.userRepository.findById(id);
+  }
+
   /** 이메일로 사용자 조회 (삭제된 사용자 포함) */
   async findByEmailIncludingDeleted(email: string): Promise<User | null> {
     return this.userRepository.findByEmailIncludingDeleted(email);
-  }
-
-  /** 새 사용자 생성 */
-  async createUser(createUserDto: CreateUserDto): Promise<User> {
-    // 비즈니스 로직: 이메일 중복 검사
-    const existingUserByEmail = await this.userRepository.findByEmail(
-      createUserDto.email,
-    );
-    if (existingUserByEmail) {
-      throw new ConflictException('Email already exists');
-    }
-
-    // 비즈니스 로직: 사용자명 중복 검사
-    const existingUserByUsername = await this.userRepository.findByUsername(
-      createUserDto.username,
-    );
-    if (existingUserByUsername) {
-      throw new ConflictException('Username already exists');
-    }
-
-    // 비즈니스 로직: 비밀번호 암호화 (여기서는 간단히 처리, 실제로는 bcrypt 사용)
-    // TODO: 비밀번호 해싱 로직 추가
-
-    return this.userRepository.create(createUserDto);
   }
 
   /** 사용자 정보 업데이트 */
@@ -182,18 +163,6 @@ export class UserService {
     return this.userRepository.count();
   }
 
-  /** 이메일 사용 가능 여부 확인 */
-  async isEmailAvailable(email: string): Promise<boolean> {
-    const user = await this.userRepository.findByEmail(email);
-    return !user;
-  }
-
-  /** 사용자명 사용 가능 여부 확인 */
-  async isUsernameAvailable(username: string): Promise<boolean> {
-    const user = await this.userRepository.findByUsername(username);
-    return !user;
-  }
-
   // === Google OAuth 관련 메서드들 ===
 
   /** Google ID로 사용자 조회 */
@@ -238,11 +207,10 @@ export class UserService {
   }
 }
 
-// TODO: 비밀번호 재설정 기능 추가
-// TODO: 이메일 인증 기능 구현
+// TODO: 소셜 로그인 제공자 확장 (카카오, 네이버 등)
 // TODO: 사용자 프로필 이미지 업로드 처리
 // TODO: 사용자 권한 관리 시스템 구현
 // TODO: 계정 잠금/해제 기능 추가
 // TODO: 사용자 활동 로그 기록 기능
-// TODO: 회원가입 시 이메일 중복 확인 최적화
 // TODO: 사용자 검색 및 필터링 기능 추가
+// TODO: 다중 소셜 계정 연동 기능 (구글 + 카카오 등)
