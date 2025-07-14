@@ -6,7 +6,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
-import { UserService } from '../user/user.service';
+import { UserService } from '../../user/user.service';
 
 // passport-jwt의 타입 문제를 우회하기 위해 require 사용
 const passportJWT = require('passport-jwt');

@@ -3,6 +3,18 @@ import { AuthGuard } from '@nestjs/passport';
 import { AuthService, AuthResult } from './auth.service';
 import { Response, Request } from 'express';
 
+/** 쿠키 타입 정의 */
+interface AuthCookies {
+  accessToken?: string;
+  refreshToken?: string;
+  userInfo?: string;
+}
+
+/** 쿠키가 포함된 요청 인터페이스 */
+interface RequestWithCookies extends Request {
+  cookies: AuthCookies;
+}
+
 /** Google OAuth 인증된 요청 인터페이스 */
 interface AuthenticatedRequest extends Request {
   user: AuthResult; // GoogleUser가 아니라 AuthResult를 받음
@@ -30,34 +42,60 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   googleAuthRedirect(@Req() req: AuthenticatedRequest, @Res() res: Response) {
     // Google Strategy에서 이미 검증된 AuthResult를 그대로 사용
-    const { accessToken, user } = req.user;
+    const { user } = req.user;
 
-    // 프론트엔드 URL로 리다이렉트 (사용자 정보와 토큰 포함)
+    // 토큰 생성 및 쿠키 설정
+    const tokens = this.authService.generateTokenPair(user);
+    this.authService.setAuthCookies(res, user, tokens);
+
+    // 프론트엔드로 리다이렉트 (토큰 없이, 성공 플래그만)
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const userInfo = encodeURIComponent(JSON.stringify(user));
-    res.redirect(`${frontendUrl}/login?token=${accessToken}&user=${userInfo}`);
+    res.redirect(`${frontendUrl}/login?success=true`);
   }
 
   /** 토큰 갱신 */
   @Post('refresh')
-  refreshToken() {
-    // TODO: 리프레시 토큰 로직 구현
-    return { message: 'Refresh token endpoint' };
+  async refreshToken(@Req() req: RequestWithCookies, @Res() res: Response) {
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: '리프레시 토큰이 없습니다.',
+      });
+    }
+
+    const result = await this.authService.refreshAccessToken(refreshToken);
+
+    if (!result.success) {
+      return res.status(401).json({
+        success: false,
+        message: result.message,
+      });
+    }
+
+    return res.json({
+      success: true,
+      accessToken: result.accessToken,
+      user: result.user,
+    });
   }
 
   /** 로그아웃 */
   @Post('logout')
-  logout() {
-    // 프론트엔드에서 토큰을 제거하므로 성공 응답만 반환
-    return {
+  logout(@Res() res: Response) {
+    // 모든 인증 관련 쿠키 삭제
+    this.authService.clearAuthCookies(res);
+
+    return res.json({
       success: true,
       message: 'Logged out successfully',
-    };
+    });
   }
 }
 
-// TODO: 리프레시 토큰 기능 구현
-// TODO: 토큰 블랙리스트 관리 기능 추가
-// TODO: 다중 기기 로그인 관리 기능
-// TODO: 소셜 로그인 제공자 확장 (네이버, 카카오 등)
-// TODO: 이메일 인증 로그인 기능 추가
+// TODO: 카카오, 네이버 등 추가 소셜 로그인 제공자 구현
+// TODO: 2FA (이중 인증) 기능 추가
+// TODO: 세션 관리 및 다중 기기 로그인 제어
+// TODO: API Rate Limiting 적용
+// TODO: 로그인 시도 제한 및 보안 강화
