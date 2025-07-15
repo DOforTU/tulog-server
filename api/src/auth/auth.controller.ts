@@ -76,6 +76,9 @@ export class AuthController {
       });
     }
 
+    // TODO: 새로운 액세스 토큰을 HttpOnly 쿠키에 다시 설정
+    // TODO: 리프레시 토큰도 새로 발급하여 쿠키에 저장 (토큰 로테이션)
+
     return res.json({
       success: true,
       accessToken: result.accessToken,
@@ -86,6 +89,7 @@ export class AuthController {
   /** 로그아웃 */
   @Post('logout')
   logout(@Res() res: Response) {
+    // TODO: 토큰 블랙리스트 관리 - 로그아웃 시 토큰 무효화
     // 모든 인증 관련 쿠키 삭제
     this.authService.clearAuthCookies(res);
 

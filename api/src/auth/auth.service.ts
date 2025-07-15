@@ -169,7 +169,7 @@ export class AuthService {
         type: 'access',
       },
       {
-        secret: process.env.JWT_SECRET || 'your-secret-key',
+        secret: process.env.JWT_SECRET || 'jwt-secret-key',
         expiresIn: '15m',
       },
     );
@@ -214,7 +214,7 @@ export class AuthService {
     try {
       // 리프레시 토큰 검증
       const decodedToken: unknown = this.jwtService.verify(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
+        secret: process.env.JWT_REFRESH_SECRET || 'refresh-secret-key',
       });
 
       // 토큰 구조 검증
