@@ -59,6 +59,7 @@ npm run start:dev
 | `[SECURITY]` | 보안 관련 개선, 취약점 수정                | `[SECURITY] SQL 인젝션 방어 코드 추가`  |
 | `[PERF]`     | 성능 개선                                  | `[PERF] 데이터베이스 쿼리 최적화`       |
 | `[DEPLOY]`   | 배포 관련 작업                             | `[DEPLOY] Docker 설정 추가`             |
+| `[DELETE]`   | 삭제 관련 작업                             | `[DELETE] 중복 코드 삭제`               |
 
 ### 작성 가이드라인
 
@@ -101,6 +102,9 @@ npm run start:dev
 # 설정 변경
 [CONFIG] NestJS 10 업그레이드
 [CONFIG] TypeORM 마이그레이션 설정
+
+# 코드 및 파일 삭제
+[DELETE] 중복 코드 삭제
 ```
 
 ## 라이선스
