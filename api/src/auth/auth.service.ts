@@ -63,6 +63,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
+  // ===== 인증 및 검증 메서드 =====
+
   /** Google OAuth 사용자 검증 및 로그인 처리 */
   async validateGoogleUser(googleUser: GoogleUser): Promise<AuthResult> {
     const { id, email, firstName, lastName, picture } = googleUser;
@@ -125,10 +127,60 @@ export class AuthService {
     };
   }
 
+  /** 리프레시 토큰 검증 및 새 액세스 토큰 생성 */
+  async refreshAccessToken(refreshToken: string): Promise<{
+    success: boolean;
+    accessToken?: string;
+    user?: User;
+    message?: string;
+  }> {
+    try {
+      // 리프레시 토큰 검증
+      const decodedToken: unknown = this.jwtService.verify(refreshToken, {
+        secret: process.env.JWT_REFRESH_SECRET || 'refresh-secret-key',
+      });
+
+      // 토큰 구조 검증
+      if (!isValidJwtPayload(decodedToken) || decodedToken.type !== 'refresh') {
+        return {
+          success: false,
+          message: '유효하지 않은 리프레시 토큰입니다.',
+        };
+      }
+
+      // 사용자 정보 조회
+      const user = await this.userService.findById(decodedToken.sub);
+      if (!user) {
+        return {
+          success: false,
+          message: '사용자를 찾을 수 없습니다.',
+        };
+      }
+
+      // 새 액세스 토큰 생성
+      const newAccessToken = this.generateAccessToken(user);
+
+      return {
+        success: true,
+        accessToken: newAccessToken,
+        user,
+      };
+    } catch {
+      return {
+        success: false,
+        message: '유효하지 않은 리프레시 토큰입니다.',
+      };
+    }
+  }
+
+  // ===== 사용자 관리 메서드 =====
+
   /** ID로 사용자 조회 */
   async findUserById(userId: number): Promise<User | null> {
     return await this.userService.findById(userId);
   }
+
+  // ===== 토큰 관리 메서드 =====
 
   /** JWT 토큰 쌍 생성 (액세스 + 리프레시) */
   generateTokenPair(user: User): TokenPair {
@@ -175,6 +227,8 @@ export class AuthService {
     );
   }
 
+  // ===== 쿠키 관리 메서드 =====
+
   /** 쿠키 설정 */
   setAuthCookies(res: Response, user: User, tokens: TokenPair): void {
     const { accessToken, refreshToken } = tokens;
@@ -202,52 +256,6 @@ export class AuthService {
       sameSite: 'strict',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30일
     });
-  }
-
-  /** 리프레시 토큰 검증 및 새 액세스 토큰 생성 */
-  async refreshAccessToken(refreshToken: string): Promise<{
-    success: boolean;
-    accessToken?: string;
-    user?: User;
-    message?: string;
-  }> {
-    try {
-      // 리프레시 토큰 검증
-      const decodedToken: unknown = this.jwtService.verify(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET || 'refresh-secret-key',
-      });
-
-      // 토큰 구조 검증
-      if (!isValidJwtPayload(decodedToken) || decodedToken.type !== 'refresh') {
-        return {
-          success: false,
-          message: '유효하지 않은 리프레시 토큰입니다.',
-        };
-      }
-
-      // 사용자 정보 조회
-      const user = await this.userService.findById(decodedToken.sub);
-      if (!user) {
-        return {
-          success: false,
-          message: '사용자를 찾을 수 없습니다.',
-        };
-      }
-
-      // 새 액세스 토큰 생성
-      const newAccessToken = this.generateAccessToken(user);
-
-      return {
-        success: true,
-        accessToken: newAccessToken,
-        user,
-      };
-    } catch {
-      return {
-        success: false,
-        message: '유효하지 않은 리프레시 토큰입니다.',
-      };
-    }
   }
 
   /** 인증 쿠키 삭제 */

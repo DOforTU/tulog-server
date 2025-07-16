@@ -17,12 +17,7 @@ export class UserRepository {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  /** 활성 사용자 전체 조회 */
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find({
-      where: { isDeleted: false },
-    });
-  }
+  // ===== 기본 CRUD - 데이터 접근 =====
 
   /** ID로 활성 사용자 조회 */
   async findById(id: number): Promise<User | null> {
@@ -31,52 +26,9 @@ export class UserRepository {
     });
   }
 
-  /** 이메일로 활성 사용자 조회 */
-  async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({
-      where: { email, isDeleted: false },
-    });
-  }
-
-  /** 이메일로 사용자 조회 (삭제된 사용자 포함) */
-  async findByEmailIncludingDeleted(email: string): Promise<User | null> {
-    return this.userRepository.findOne({
-      where: { email },
-    });
-  }
-
-  /** 사용자명으로 활성 사용자 조회 */
-  async findByUsername(username: string): Promise<User | null> {
-    return this.userRepository.findOne({
-      where: { username, isDeleted: false },
-    });
-  }
-
-  /** Google ID로 활성 사용자 조회 */
-  async findByGoogleId(googleId: string): Promise<User | null> {
-    return this.userRepository.findOne({
-      where: { googleId, isDeleted: false },
-    });
-  }
-
   /** 새 사용자 생성 */
   async create(createUserDto: CreateUserDto): Promise<User> {
     const user = this.userRepository.create(createUserDto);
-    return this.userRepository.save(user);
-  }
-
-  /** Google OAuth 사용자 생성 */
-  async createGoogleUser(userData: {
-    email: string;
-    nickname: string;
-    username: string;
-    googleId: string;
-    profilePicture?: string;
-  }): Promise<User> {
-    const user = this.userRepository.create({
-      ...userData,
-      provider: 'google',
-    });
     return this.userRepository.save(user);
   }
 
@@ -95,19 +47,42 @@ export class UserRepository {
     return (result.affected ?? 0) > 0;
   }
 
-  /** 사용자 영구 삭제 */
-  async hardDelete(id: number): Promise<boolean> {
-    const result = await this.userRepository.delete(id);
-    return (result.affected ?? 0) > 0;
+  // ===== 조건별 조회 - 데이터 접근 =====
+
+  /** 모든 활성 사용자 조회 (관리자 전용) */
+  async findAll(): Promise<User[]> {
+    return this.userRepository.find({
+      where: { isDeleted: false },
+      order: { createdAt: 'DESC' },
+    });
   }
 
-  /** 삭제된 사용자 복구 */
-  async restore(id: number): Promise<boolean> {
-    const result = await this.userRepository.update(id, {
-      isDeleted: false,
-      deletedAt: undefined,
+  /** 이메일로 활성 사용자 조회 */
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { email, isDeleted: false },
     });
-    return (result.affected ?? 0) > 0;
+  }
+
+  /** 사용자명으로 활성 사용자 조회 */
+  async findByUsername(username: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { username, isDeleted: false },
+    });
+  }
+
+  /** Google ID로 활성 사용자 조회 */
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { googleId, isDeleted: false },
+    });
+  }
+
+  /** 이메일로 사용자 조회 (삭제된 사용자 포함) */
+  async findByEmailIncludingDeleted(email: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { email },
+    });
   }
 
   /** 삭제된 사용자 전체 조회 */
@@ -123,6 +98,40 @@ export class UserRepository {
       where: { id, isDeleted: true },
     });
   }
+
+  // ===== 특수 작업 - 데이터 접근 =====
+
+  /** Google OAuth 사용자 생성 */
+  async createGoogleUser(userData: {
+    email: string;
+    nickname: string;
+    username: string;
+    googleId: string;
+    profilePicture?: string;
+  }): Promise<User> {
+    const user = this.userRepository.create({
+      ...userData,
+      provider: 'google',
+    });
+    return this.userRepository.save(user);
+  }
+
+  /** 사용자 영구 삭제 */
+  async hardDelete(id: number): Promise<boolean> {
+    const result = await this.userRepository.delete(id);
+    return (result.affected ?? 0) > 0;
+  }
+
+  /** 삭제된 사용자 복구 */
+  async restore(id: number): Promise<boolean> {
+    const result = await this.userRepository.update(id, {
+      isDeleted: false,
+      deletedAt: undefined,
+    });
+    return (result.affected ?? 0) > 0;
+  }
+
+  // ===== 유틸리티 메서드 =====
 
   /** 사용자 존재 여부 확인 (활성 사용자만) */
   async exists(id: number): Promise<boolean> {

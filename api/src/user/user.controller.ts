@@ -25,11 +25,32 @@ import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  /** 모든 활성 사용자 조회 */
-  @Get()
-  async findAll(): Promise<User[]> {
-    return this.userService.getAllUsers();
+  // ===== 기본 CRUD - REST API =====
+
+  /** ID로 사용자 조회 */
+  @Get(':id')
+  async findOne(@Param('id', ParseIntPipe) id: number): Promise<User> {
+    return this.userService.getUserById(id);
   }
+
+  /** 사용자 정보 업데이트 */
+  @Put(':id')
+  @UseGuards(JwtAuthGuard)
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<User> {
+    return this.userService.updateUser(id, updateUserDto);
+  }
+
+  /** 사용자 소프트 삭제 */
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    return this.userService.deleteUser(id);
+  }
+
+  // ===== 특수 조회 API =====
 
   /** 현재 로그인한 사용자 정보 조회 */
   @Get('me')
@@ -51,32 +72,18 @@ export class UserController {
     return { count };
   }
 
-  /** ID로 사용자 조회 */
-  @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<User> {
-    return this.userService.getUserById(id);
+  // ===== 관리자 전용 API =====
+
+  /** 모든 활성 사용자 조회 */
+  @Get()
+  async findAll(): Promise<User[]> {
+    return this.userService.getAllUsers();
   }
 
-  /** 사용자 정보 업데이트 */
-  @Put(':id')
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateUserDto: UpdateUserDto,
-  ): Promise<User> {
-    return this.userService.updateUser(id, updateUserDto);
-  }
-
-  /** 사용자 소프트 삭제 (JWT 인증 필요) */
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.userService.deleteUser(id);
-  }
-
-  /** 사용자 영구 삭제 (JWT 인증 필요) */
+  /** 사용자 영구 삭제 */
   @Delete(':id/hard')
   @UseGuards(JwtAuthGuard)
-  async hardRemove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+  async hardDelete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.userService.hardDeleteUser(id);
   }
 

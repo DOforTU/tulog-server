@@ -31,6 +31,8 @@ interface AuthenticatedRequest extends Request {
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  // ===== 인증 관련 API =====
+
   /** Google OAuth 로그인 시작 */
   @Get('google')
   @UseGuards(AuthGuard('google'), RateLimitGuard)
@@ -54,10 +56,12 @@ export class AuthController {
     res.redirect(`${frontendUrl}/login?success=true`);
   }
 
+  // ===== 토큰 관리 API =====
+
   /** 토큰 갱신 */
   @Post('refresh')
   @UseGuards(RateLimitGuard)
-  async refreshToken(@Req() req: RequestWithCookies, @Res() res: Response) {
+  async refresh(@Req() req: RequestWithCookies, @Res() res: Response) {
     const refreshToken = req.cookies?.refreshToken;
 
     if (!refreshToken) {

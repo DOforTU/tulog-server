@@ -27,6 +27,8 @@ interface GoogleUserData {
 export class UserService {
   constructor(private readonly userRepository: UserRepository) {}
 
+  // ===== 기본 CRUD - 도메인 명시 =====
+
   /** 모든 활성 사용자 조회 */
   async getAllUsers(): Promise<User[]> {
     return this.userRepository.findAll();
@@ -41,28 +43,17 @@ export class UserService {
     return user;
   }
 
-  /** 이메일로 사용자 조회 (예외 발생) */
-  async getUserByEmail(email: string): Promise<User> {
-    const user = await this.userRepository.findByEmail(email);
-    if (!user) {
-      throw new NotFoundException(`User with email ${email} not found`);
+  /** 사용자 생성 */
+  async createUser(userData: GoogleUserData): Promise<User> {
+    // 삭제되지 않은 사용자의 이메일 중복 체크만 수행
+    const existingActiveUser = await this.userRepository.findByEmail(
+      userData.email,
+    );
+    if (existingActiveUser) {
+      throw new ConflictException('Email already exists');
     }
-    return user;
-  }
 
-  /** 이메일로 활성 사용자 조회 (nullable) */
-  async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findByEmail(email);
-  }
-
-  /** ID로 활성 사용자 조회 (nullable) */
-  async findById(id: number): Promise<User | null> {
-    return this.userRepository.findById(id);
-  }
-
-  /** 이메일로 사용자 조회 (삭제된 사용자 포함) */
-  async findByEmailIncludingDeleted(email: string): Promise<User | null> {
-    return this.userRepository.findByEmailIncludingDeleted(email);
+    return this.userRepository.createGoogleUser(userData);
   }
 
   /** 사용자 정보 업데이트 */
@@ -118,6 +109,34 @@ export class UserService {
     }
   }
 
+  // ===== 조회 메서드 - 도메인 명시 =====
+
+  /** 이메일로 사용자 조회 (예외 발생) */
+  async getUserByEmail(email: string): Promise<User> {
+    const user = await this.userRepository.findByEmail(email);
+    if (!user) {
+      throw new NotFoundException(`User with email ${email} not found`);
+    }
+    return user;
+  }
+
+  /** Google ID로 사용자 조회 */
+  async getUserByGoogleId(googleId: string): Promise<User | null> {
+    return this.userRepository.findByGoogleId(googleId);
+  }
+
+  /** 삭제된 사용자 목록 조회 */
+  async getDeletedUsers(): Promise<User[]> {
+    return this.userRepository.findDeleted();
+  }
+
+  /** 활성 사용자 수 조회 */
+  async getUserCount(): Promise<number> {
+    return this.userRepository.count();
+  }
+
+  // ===== 비즈니스 로직 - 동사 중심 =====
+
   /** 사용자 영구 삭제 */
   async hardDeleteUser(id: number): Promise<void> {
     // 비즈니스 로직: 사용자 존재 확인 (삭제된 사용자 포함)
@@ -151,23 +170,6 @@ export class UserService {
     }
 
     return restoredUser;
-  }
-
-  /** 삭제된 사용자 목록 조회 */
-  async getDeletedUsers(): Promise<User[]> {
-    return this.userRepository.findDeleted();
-  }
-
-  /** 활성 사용자 수 조회 */
-  async getUserCount(): Promise<number> {
-    return this.userRepository.count();
-  }
-
-  // === Google OAuth 관련 메서드들 ===
-
-  /** Google ID로 사용자 조회 */
-  async findByGoogleId(googleId: string): Promise<User | null> {
-    return this.userRepository.findByGoogleId(googleId);
   }
 
   /** Google OAuth 사용자 생성 */
@@ -204,6 +206,28 @@ export class UserService {
     }
 
     return updatedUser;
+  }
+
+  // ===== 내부 헬퍼 메서드 - 간단한 형태 =====
+
+  /** 이메일로 활성 사용자 조회 (nullable) */
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findByEmail(email);
+  }
+
+  /** ID로 활성 사용자 조회 (nullable) */
+  async findById(id: number): Promise<User | null> {
+    return this.userRepository.findById(id);
+  }
+
+  /** 이메일로 사용자 조회 (삭제된 사용자 포함) */
+  async findByEmailIncludingDeleted(email: string): Promise<User | null> {
+    return this.userRepository.findByEmailIncludingDeleted(email);
+  }
+
+  /** Google ID로 사용자 조회 */
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    return this.userRepository.findByGoogleId(googleId);
   }
 }
 
