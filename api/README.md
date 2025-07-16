@@ -147,14 +147,14 @@ npm run test:e2e
 - **Health Check**: `/api/health`
 - **Test Page**: `/` (Google 로그인 테스트 페이지)
 
-## 🤝 기여하기
+## 개발 문서
 
-1. 이 저장소를 포크합니다
-2. 새 기능 브랜치를 생성합니다 (`git checkout -b feature/AmazingFeature`)
-3. 변경사항을 커밋합니다 (`git commit -m 'Add some AmazingFeature'`)
-4. 브랜치에 푸시합니다 (`git push origin feature/AmazingFeature`)
-5. Pull Request를 생성합니다
+자세한 개발 가이드는 아래 문서를 참조하세요:
 
-## 📝 라이선스
+- [코딩 표준](./docs/CODING_STANDARDS.md) - 함수명, 변수명, 파일명 규칙
+- [커밋 규칙](./docs/COMMIT_RULES.md) - 커밋 메시지 작성 규칙
+- [보안 가이드](./docs/SECURITY.md) - 보안 설정 및 관리 방법
+
+## 라이선스
 
 이 프로젝트는 UNLICENSED 하에 배포됩니다.
