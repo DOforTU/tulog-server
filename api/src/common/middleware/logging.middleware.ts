@@ -10,18 +10,18 @@ export class LoggingMiddleware implements NestMiddleware {
     const userAgent = req.get('User-Agent') || '';
     const startTime = Date.now();
 
-    // 요청 로깅 (민감한 정보 제외)
+    // Request logging (excluding sensitive information)
     this.logger.log(
       `${method} ${originalUrl} - ${ip} - ${userAgent.substring(0, 100)}`,
     );
 
-    // 응답 완료 시점에 로깅
+    // Log at response completion
     res.on('finish', () => {
       const { statusCode } = res;
       const contentLength = res.get('content-length');
       const responseTime = Date.now() - startTime;
 
-      // 응답 로깅
+      // Response logging
       this.logger.log(
         `${method} ${originalUrl} ${statusCode} ${contentLength || 0}b - ${responseTime}ms`,
       );

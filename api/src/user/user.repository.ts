@@ -5,10 +5,10 @@ import { User, AuthProvider } from './user.entity';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
 
 /**
- * 사용자 데이터 접근 계층 (Repository Pattern)
- * - TypeORM을 사용한 데이터베이스 CRUD 작업
- * - Soft Delete 지원
- * - Google OAuth 사용자 생성 지원
+ * User Data Access Layer (Repository Pattern)
+ * - Database CRUD operations using TypeORM
+ * - Soft Delete support
+ * - Google OAuth user creation support
  */
 @Injectable()
 export class UserRepository {
@@ -17,28 +17,28 @@ export class UserRepository {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  // ===== 기본 CRUD - 데이터 접근 =====
+  // ===== Basic CRUD - Data Access =====
 
-  /** ID로 활성 사용자 조회 */
+  /** Find active user by ID */
   async findById(id: number): Promise<User | null> {
     return this.userRepository.findOne({
       where: { id, isDeleted: false },
     });
   }
 
-  /** 새 사용자 생성 */
+  /** Create new user */
   async create(createUserDto: CreateUserDto): Promise<User> {
     const user = this.userRepository.create(createUserDto);
     return this.userRepository.save(user);
   }
 
-  /** 사용자 정보 업데이트 */
+  /** Update user information */
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User | null> {
     await this.userRepository.update(id, updateUserDto);
     return this.findById(id);
   }
 
-  /** 사용자 소프트 삭제 */
+  /** Soft delete user */
   async delete(id: number): Promise<boolean> {
     const result = await this.userRepository.update(id, {
       isDeleted: true,
@@ -47,9 +47,9 @@ export class UserRepository {
     return (result.affected ?? 0) > 0;
   }
 
-  // ===== 조건별 조회 - 데이터 접근 =====
+  // ===== Conditional Queries - Data Access =====
 
-  /** 모든 활성 사용자 조회 (관리자 전용) */
+  /** Find all active users (admin only) */
   async findAll(): Promise<User[]> {
     return this.userRepository.find({
       where: { isDeleted: false },
@@ -57,51 +57,51 @@ export class UserRepository {
     });
   }
 
-  /** 이메일로 활성 사용자 조회 */
+  /** Find active user by email */
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { email, isDeleted: false },
     });
   }
 
-  /** 사용자명으로 활성 사용자 조회 */
+  /** Find active user by username */
   async findByUsername(username: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { username, isDeleted: false },
     });
   }
 
-  /** Google ID로 활성 사용자 조회 */
+  /** Find active user by Google ID */
   async findByGoogleId(googleId: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { googleId, isDeleted: false },
     });
   }
 
-  /** 이메일로 사용자 조회 (삭제된 사용자 포함) */
+  /** Find user by email (including deleted users) */
   async findByEmailIncludingDeleted(email: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { email },
     });
   }
 
-  /** 삭제된 사용자 전체 조회 */
+  /** Find all deleted users */
   async findDeleted(): Promise<User[]> {
     return this.userRepository.find({
       where: { isDeleted: true },
     });
   }
 
-  /** ID로 삭제된 사용자 조회 */
+  /** Find deleted user by ID */
   async findDeletedById(id: number): Promise<User | null> {
     return this.userRepository.findOne({
       where: { id, isDeleted: true },
     });
   }
 
-  // ===== 특수 작업 - 데이터 접근 =====
+  // ===== Special Operations - Data Access =====
 
-  /** Google OAuth 사용자 생성 */
+  /** Create Google OAuth user */
   async createGoogleUser(userData: {
     email: string;
     nickname: string;
@@ -116,13 +116,13 @@ export class UserRepository {
     return this.userRepository.save(user);
   }
 
-  /** 사용자 영구 삭제 */
+  /** Permanently delete user */
   async hardDelete(id: number): Promise<boolean> {
     const result = await this.userRepository.delete(id);
     return (result.affected ?? 0) > 0;
   }
 
-  /** 삭제된 사용자 복구 */
+  /** Restore deleted user */
   async restore(id: number): Promise<boolean> {
     const result = await this.userRepository.update(id, {
       isDeleted: false,
@@ -131,9 +131,9 @@ export class UserRepository {
     return (result.affected ?? 0) > 0;
   }
 
-  // ===== 유틸리티 메서드 =====
+  // ===== Utility Methods =====
 
-  /** 사용자 존재 여부 확인 (활성 사용자만) */
+  /** Check if user exists (active users only) */
   async exists(id: number): Promise<boolean> {
     const count = await this.userRepository.count({
       where: { id, isDeleted: false },
@@ -141,7 +141,7 @@ export class UserRepository {
     return count > 0;
   }
 
-  /** 활성 사용자 수 조회 */
+  /** Count active users */
   async count(): Promise<number> {
     return this.userRepository.count({
       where: { isDeleted: false },
@@ -149,8 +149,8 @@ export class UserRepository {
   }
 }
 
-// TODO: 사용자 검색 기능 추가 (이름, 이메일, 닉네임으로 검색)
-// TODO: 페이지네이션 지원 추가
-// TODO: 사용자 역할별 조회 기능 추가
-// TODO: 최근 로그인 시간 업데이트 기능 추가
-// TODO: 사용자 활동 로그 기능 추가
+// TODO: Add user search functionality (search by name, email, nickname)
+// TODO: Add pagination support
+// TODO: Add user role-based query functionality
+// TODO: Add recent login time update functionality
+// TODO: Add user activity log functionality

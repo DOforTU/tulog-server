@@ -16,24 +16,24 @@ import { UpdateUserDto } from './user.dto';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
 
 /**
- * 사용자 관리 컨트롤러
- * - 사용자 CRUD API 제공
- * - JWT 인증 보호
- * - Soft Delete 지원
+ * User Management Controller
+ * - Provides user CRUD APIs
+ * - JWT authentication protection
+ * - Soft Delete support
  */
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  // ===== 기본 CRUD - REST API =====
+  // ===== Basic CRUD - REST API =====
 
-  /** ID로 사용자 조회 */
+  /** Get user by ID */
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number): Promise<User> {
     return this.userService.getUserById(id);
   }
 
-  /** 사용자 정보 업데이트 */
+  /** Update user information */
   @Put(':id')
   @UseGuards(JwtAuthGuard)
   async update(
@@ -43,61 +43,61 @@ export class UserController {
     return this.userService.updateUser(id, updateUserDto);
   }
 
-  /** 사용자 소프트 삭제 */
+  /** Soft delete user */
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.userService.deleteUser(id);
   }
 
-  // ===== 특수 조회 API =====
+  // ===== Special Query APIs =====
 
-  /** 현재 로그인한 사용자 정보 조회 */
+  /** Get current logged-in user information */
   @Get('me')
   @UseGuards(JwtAuthGuard)
   getCurrentUser(@Request() req: { user: User }): User {
     return req.user;
   }
 
-  /** 삭제된 사용자 목록 조회 */
+  /** Get deleted users list */
   @Get('deleted')
   async findDeleted(): Promise<User[]> {
     return this.userService.getDeletedUsers();
   }
 
-  /** 활성 사용자 수 조회 */
+  /** Get active user count */
   @Get('count')
   async getCount(): Promise<{ count: number }> {
     const count = await this.userService.getUserCount();
     return { count };
   }
 
-  // ===== 관리자 전용 API =====
+  // ===== Admin Only APIs =====
 
-  /** 모든 활성 사용자 조회 */
+  /** Get all active users */
   @Get()
   async findAll(): Promise<User[]> {
     return this.userService.getAllUsers();
   }
 
-  /** 사용자 영구 삭제 */
+  /** Permanently delete user */
   @Delete(':id/hard')
   @UseGuards(JwtAuthGuard)
   async hardDelete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.userService.hardDeleteUser(id);
   }
 
-  /** 삭제된 사용자 복구 */
+  /** Restore deleted user */
   @Patch(':id/restore')
   async restore(@Param('id', ParseIntPipe) id: number): Promise<User> {
     return this.userService.restoreUser(id);
   }
 }
 
-// TODO: 사용자 검색 API 추가 (이름, 이메일, 닉네임으로 검색)
-// TODO: 페이지네이션 API 추가
-// TODO: 사용자 프로필 이미지 업로드 API 추가
-// TODO: 소셜 계정 연동/해제 API 추가
-// TODO: 계정 활성화/비활성화 API 추가
-// TODO: 관리자 권한 확인 미들웨어 추가
-// TODO: 사용자 통계 대시보드 API 추가
+// TODO: Add user search API (search by name, email, nickname)
+// TODO: Add pagination API
+// TODO: Add user profile image upload API
+// TODO: Add social account linking/unlinking API
+// TODO: Add account activation/deactivation API
+// TODO: Add admin permission check middleware
+// TODO: Add user statistics dashboard API

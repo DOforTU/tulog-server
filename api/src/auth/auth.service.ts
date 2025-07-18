@@ -4,7 +4,7 @@ import { UserService } from '../user/user.service';
 import { AuthProvider, User } from '../user/user.entity';
 import { Response } from 'express';
 
-/** Google OAuth 사용자 정보 인터페이스 */
+/** Google OAuth user information interface */
 export interface GoogleUser {
   id: string;
   email: string;
@@ -13,13 +13,13 @@ export interface GoogleUser {
   picture: string;
 }
 
-/** 인증 결과 인터페이스 */
+/** Authentication result interface */
 export interface AuthResult {
   accessToken: string;
   user: User;
 }
 
-/** JWT 페이로드 타입 정의 */
+/** JWT payload type definition */
 export interface JwtPayload {
   sub: number;
   email?: string;
@@ -28,13 +28,13 @@ export interface JwtPayload {
   exp?: number;
 }
 
-/** 토큰 생성 결과 인터페이스 */
+/** Token generation result interface */
 export interface TokenPair {
   accessToken: string;
   refreshToken: string;
 }
 
-/** JWT 페이로드 타입 가드 */
+/** JWT payload type guard */
 function isValidJwtPayload(token: unknown): token is JwtPayload {
   if (typeof token !== 'object' || token === null) {
     return false;
@@ -51,10 +51,10 @@ function isValidJwtPayload(token: unknown): token is JwtPayload {
 }
 
 /**
- * 인증 서비스
- * - Google OAuth 사용자 검증 및 처리
- * - JWT 토큰 생성
- * - 사용자 계정 연동 및 생성
+ * Authentication Service
+ * - Google OAuth user validation and processing
+ * - JWT token generation
+ * - User account linking and creation
  */
 @Injectable()
 export class AuthService {
@@ -63,27 +63,27 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  // ===== 인증 및 검증 메서드 =====
+  // ===== Authentication and Validation Methods =====
 
-  /** Google OAuth 사용자 검증 및 로그인 처리 */
+  /** Google OAuth user validation and login processing */
   async validateGoogleUser(googleUser: GoogleUser): Promise<AuthResult> {
     const { id, email, firstName, lastName, picture } = googleUser;
 
-    // 이 Google ID로 사용자가 존재하는지 확인 (활성 사용자만)
+    // Check if user exists with this Google ID (active users only)
     let user = await this.userService.findByGoogleId(id);
 
     if (!user) {
-      // 이 이메일로 활성 사용자가 존재하는지 확인 (다른 방법으로 가입했을 수 있음)
+      // Check if active user exists with this email (might have signed up differently)
       const existingActiveUser = await this.userService.findByEmail(email);
 
       if (existingActiveUser) {
-        // 기존 활성 사용자에 Google 계정 연동
+        // Link Google account to existing active user
         user = await this.userService.linkGoogleAccount(existingActiveUser.id, {
           googleId: id,
           profilePicture: picture,
         });
       } else {
-        // 삭제된 사용자를 포함하여 이메일로 사용자 확인
+        // Check for user by email including deleted users
         const existingUserIncludingDeleted =
           await this.userService.findByEmailIncludingDeleted(email);
 
@@ -91,7 +91,7 @@ export class AuthService {
           existingUserIncludingDeleted &&
           existingUserIncludingDeleted.isDeleted
         ) {
-          // 삭제된 사용자가 있으면 복구하고 새 Google 정보로 업데이트
+          // If deleted user exists, restore and update with new Google information
           user = await this.userService.restoreUser(
             existingUserIncludingDeleted.id,
           );
@@ -99,25 +99,25 @@ export class AuthService {
             googleId: id,
             profilePicture: picture,
           });
-          // 현재 Google 정보로 사용자명 업데이트
+          // Update username with current Google information
           user = await this.userService.updateUser(user.id, {
             username: `${firstName} ${lastName}`.trim(),
             nickname: email.split('@')[0],
           });
         } else {
-          // Google 계정으로 새 사용자 생성
+          // Create new user with Google account
           user = await this.userService.createGoogleUser({
             googleId: id,
             email,
-            username: `${firstName} ${lastName}`.trim(), // 실제 이름을 username에
-            nickname: email.split('@')[0], // 이메일 앞부분을 nickname에
+            username: `${firstName} ${lastName}`.trim(), // Real name as username
+            nickname: email.split('@')[0], // Email prefix as nickname
             profilePicture: picture,
           });
         }
       }
     }
 
-    // JWT 토큰 생성
+    // Generate JWT token
     const payload = { sub: user.id, email: user.email };
     const accessToken = this.jwtService.sign(payload);
 
@@ -127,7 +127,7 @@ export class AuthService {
     };
   }
 
-  /** 리프레시 토큰 검증 및 새 액세스 토큰 생성 */
+  /** Validate refresh token and generate new access token */
   async refreshAccessToken(refreshToken: string): Promise<{
     success: boolean;
     accessToken?: string;
@@ -135,29 +135,29 @@ export class AuthService {
     message?: string;
   }> {
     try {
-      // 리프레시 토큰 검증
+      // Validate refresh token
       const decodedToken: unknown = this.jwtService.verify(refreshToken, {
         secret: process.env.JWT_REFRESH_SECRET || 'refresh-secret-key',
       });
 
-      // 토큰 구조 검증
+      // Validate token structure
       if (!isValidJwtPayload(decodedToken) || decodedToken.type !== 'refresh') {
         return {
           success: false,
-          message: '유효하지 않은 리프레시 토큰입니다.',
+          message: 'Invalid refresh token.',
         };
       }
 
-      // 사용자 정보 조회
+      // Retrieve user information
       const user = await this.userService.findById(decodedToken.sub);
       if (!user) {
         return {
           success: false,
-          message: '사용자를 찾을 수 없습니다.',
+          message: 'User not found.',
         };
       }
 
-      // 새 액세스 토큰 생성
+      // Generate new access token
       const newAccessToken = this.generateAccessToken(user);
 
       return {
@@ -168,12 +168,12 @@ export class AuthService {
     } catch {
       return {
         success: false,
-        message: '유효하지 않은 리프레시 토큰입니다.',
+        message: 'Invalid refresh token.',
       };
     }
   }
 
-  // AuthService에서 provider별 처리
+  // Handle provider-specific processing in AuthService
   async validateUser(provider: AuthProvider, userData: GoogleUser) {
     switch (provider) {
       case AuthProvider.GOOGLE:
@@ -183,22 +183,22 @@ export class AuthService {
       // case AuthProvider.LOCAL:
       //   return this.validateLocalUser(userData);
       default:
-        throw new BadRequestException('지원하지 않는 로그인 방식입니다.');
+        throw new BadRequestException('Unsupported login method.');
     }
   }
 
-  // ===== 사용자 관리 메서드 =====
+  // ===== User Management Methods =====
 
-  /** ID로 사용자 조회 */
+  /** Retrieve user by ID */
   async findUserById(userId: number): Promise<User | null> {
     return await this.userService.findById(userId);
   }
 
-  // ===== 토큰 관리 메서드 =====
+  // ===== Token Management Methods =====
 
-  /** JWT 토큰 쌍 생성 (액세스 + 리프레시) */
+  /** Generate JWT token pair (access + refresh) */
   generateTokenPair(user: User): TokenPair {
-    // 액세스 토큰 생성 (15분)
+    // Generate access token (15 minutes)
     const accessToken = this.jwtService.sign(
       {
         sub: user.id,
@@ -211,7 +211,7 @@ export class AuthService {
       },
     );
 
-    // 리프레시 토큰 생성 (30일)
+    // Generate refresh token (30 days)
     const refreshToken = this.jwtService.sign(
       {
         sub: user.id,
@@ -226,7 +226,7 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  /** 액세스 토큰 생성 */
+  /** Generate access token */
   generateAccessToken(user: User): string {
     return this.jwtService.sign(
       {
@@ -241,38 +241,38 @@ export class AuthService {
     );
   }
 
-  // ===== 쿠키 관리 메서드 =====
+  // ===== Cookie Management Methods =====
 
-  /** 쿠키 설정 */
+  /** Set cookies */
   setAuthCookies(res: Response, user: User, tokens: TokenPair): void {
     const { accessToken, refreshToken } = tokens;
 
-    // HttpOnly 쿠키로 액세스 토큰 전달 (보안 강화)
+    // Send access token via HttpOnly cookie (enhanced security)
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 15 * 60 * 1000, // 15분
+      maxAge: 15 * 60 * 1000, // 15 minutes
     });
 
-    // HttpOnly 쿠키로 리프레시 토큰 전달 (보안 강화)
+    // Send refresh token via HttpOnly cookie (enhanced security)
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30일
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
 
-    // 사용자 정보만 쿠키로 전달 (토큰 없이)
+    // Send only user information via cookie (without tokens)
     res.cookie('userInfo', JSON.stringify(user), {
-      httpOnly: false, // 프론트엔드에서 읽을 수 있도록
+      httpOnly: false, // Allow frontend to read
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30일
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
   }
 
-  /** 인증 쿠키 삭제 */
+  /** Clear authentication cookies */
   clearAuthCookies(res: Response): void {
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
@@ -280,9 +280,9 @@ export class AuthService {
   }
 }
 
-// TODO: 토큰 블랙리스트 관리 기능 추가
-// TODO: 다중 기기 로그인 세션 관리
-// TODO: 소셜 로그인 제공자 확장 (카카오, 네이버 등)
-// TODO: 계정 연동 해제 기능 추가
-// TODO: 토큰 갱신 시 리프레시 토큰 로테이션
-// TODO: 비정상적인 로그인 시도 감지 및 알림
+// TODO: Add token blacklist management feature
+// TODO: Multi-device login session management
+// TODO: Expand social login providers (Kakao, Naver, etc.)
+// TODO: Add account unlinking feature
+// TODO: Refresh token rotation on token renewal
+// TODO: Detect and notify abnormal login attempts

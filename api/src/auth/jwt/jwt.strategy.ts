@@ -5,7 +5,7 @@ import { UserService } from '../../user/user.service';
 import { Request } from 'express';
 import { Strategy as JwtStrategy } from 'passport-jwt';
 
-// 쿠키에서 JWT 토큰 추출하는 함수
+// Function to extract JWT token from cookies
 const cookieExtractor = (req: Request): string | null => {
   let token = null;
   if (req && req.cookies) {
@@ -26,7 +26,7 @@ export class JwtAuthStrategy extends PassportStrategy(JwtStrategy) {
     }
 
     super({
-      jwtFromRequest: cookieExtractor, // 쿠키에서 토큰 추출
+      jwtFromRequest: cookieExtractor, // Extract token from cookies
       ignoreExpiration: false,
       secretOrKey: secret,
     });
@@ -39,7 +39,7 @@ export class JwtAuthStrategy extends PassportStrategy(JwtStrategy) {
     iat: number;
     exp: number;
   }) {
-    // 액세스 토큰만 허용
+    // Allow access tokens only
     if (payload.type !== 'access') {
       throw new UnauthorizedException('Invalid token type');
     }

@@ -4,7 +4,7 @@ import { Request, Response, NextFunction } from 'express';
 @Injectable()
 export class SecurityMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction): void {
-    // Security Headers 설정
+    // Set Security Headers
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-XSS-Protection', '1; mode=block');
@@ -14,7 +14,7 @@ export class SecurityMiddleware implements NestMiddleware {
       'camera=(), microphone=(), geolocation=()',
     );
 
-    // 개발 환경에서만 HTTPS 강제 해제
+    // Disable HTTPS enforcement only in development environment
     if (process.env.NODE_ENV === 'production') {
       res.setHeader(
         'Strict-Transport-Security',

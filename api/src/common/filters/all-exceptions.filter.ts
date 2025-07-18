@@ -31,7 +31,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       message = 'Internal server error';
 
-      // 예상치 못한 에러 로깅
+      // Log unexpected errors
       this.logger.error(
         `Unhandled exception: ${String(exception)}`,
         exception instanceof Error ? exception.stack : undefined,
@@ -47,7 +47,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       path: request.url,
     };
 
-    // 에러 로깅 (4xx는 WARN, 5xx는 ERROR)
+    // Error logging (4xx as WARN, 5xx as ERROR)
     if (status >= 500) {
       this.logger.error(
         `${request.method} ${request.url} ${status} - ${message}`,
