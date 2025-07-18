@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { UserRepository } from './user.repository';
-import { User } from './user.entity';
+import { User, AuthProvider } from './user.entity';
 import { UpdateUserDto } from './user.dto';
 
 /** Google OAuth 사용자 데이터 인터페이스 */
@@ -195,7 +195,7 @@ export class UserService {
     const updateData = {
       googleId: linkData.googleId,
       profilePicture: linkData.profilePicture,
-      provider: 'google',
+      provider: AuthProvider.GOOGLE,
     };
 
     const updatedUser = await this.userRepository.update(userId, updateData);

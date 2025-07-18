@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
-import { User } from '../user/user.entity';
+import { AuthProvider, User } from '../user/user.entity';
 import { Response } from 'express';
 
 /** Google OAuth 사용자 정보 인터페이스 */
@@ -170,6 +170,20 @@ export class AuthService {
         success: false,
         message: '유효하지 않은 리프레시 토큰입니다.',
       };
+    }
+  }
+
+  // AuthService에서 provider별 처리
+  async validateUser(provider: AuthProvider, userData: GoogleUser) {
+    switch (provider) {
+      case AuthProvider.GOOGLE:
+        return this.validateGoogleUser(userData);
+      // case AuthProvider.KAKAO:
+      //   return this.validateKakaoUser(userData);
+      // case AuthProvider.LOCAL:
+      //   return this.validateLocalUser(userData);
+      default:
+        throw new BadRequestException('지원하지 않는 로그인 방식입니다.');
     }
   }
 

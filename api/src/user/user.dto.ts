@@ -1,5 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-import { IsEmail, IsString, IsOptional, IsBoolean } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsEnum,
+} from 'class-validator';
+import { AuthProvider } from './user.entity';
 
 /**
  * 사용자 생성 DTO
@@ -37,8 +43,8 @@ export class CreateUserDto {
 
   /** 로그인 제공자 (선택, 기본값: 'google') */
   @IsOptional()
-  @IsString()
-  provider?: string;
+  @IsEnum(AuthProvider)
+  provider?: AuthProvider;
 
   /** 계정 활성화 상태 (선택, 기본값: true) */
   @IsOptional()
@@ -84,8 +90,8 @@ export class UpdateUserDto {
 
   /** 로그인 제공자 (선택) */
   @IsOptional()
-  @IsString()
-  provider?: string;
+  @IsEnum(AuthProvider)
+  provider?: AuthProvider;
 
   /** 계정 활성화 상태 (선택) */
   @IsOptional()

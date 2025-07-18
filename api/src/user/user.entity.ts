@@ -8,6 +8,17 @@ import {
   Index,
 } from 'typeorm';
 
+export enum AuthProvider {
+  GOOGLE = 'google',
+  LOCAL = 'local',
+}
+
+export enum UserRole {
+  USER = 'user',
+  ADMIN = 'admin',
+  SUPER_ADMIN = 'super_admin',
+}
+
 /**
  * 사용자 엔티티
  * - Google OAuth 로그인 지원
@@ -33,9 +44,17 @@ export class User {
   @Column()
   nickname: string;
 
-  /** 비밀번호 (현재는 Google OAuth만 지원하므로 nullable) */
+  /** 비밀번호 (LOCAL 로그인 시 사용) */
   @Column({ select: false, nullable: true })
   password: string;
+
+  /** 사용자 권한 (기본값: 일반 사용자) */
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.USER,
+  })
+  role: UserRole;
 
   /** Google OAuth ID */
   @Column({ nullable: true })
@@ -46,8 +65,12 @@ export class User {
   profilePicture: string;
 
   /** 로그인 제공자 (현재는 'google'만 지원) */
-  @Column({ default: 'google' })
-  provider: string;
+
+  @Column({
+    type: 'enum',
+    enum: AuthProvider,
+  })
+  provider: AuthProvider;
 
   /** 계정 활성화 상태 */
   @Column({ default: true })

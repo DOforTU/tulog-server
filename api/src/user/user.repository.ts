@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from './user.entity';
+import { User, AuthProvider } from './user.entity';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
 
 /**
@@ -111,7 +111,7 @@ export class UserRepository {
   }): Promise<User> {
     const user = this.userRepository.create({
       ...userData,
-      provider: 'google',
+      provider: AuthProvider.GOOGLE,
     });
     return this.userRepository.save(user);
   }
