@@ -1,10 +1,10 @@
 # TULOG Server
 
-> Backend server for university log management system
+> Backend server for personal or team blog platform
 
 ## Project Overview
 
-Backend API server that provides a platform for recording and sharing knowledge and experiences through personal and team blog services.
+Backend API server that provides a platform for recording and sharing knowledge and experiences through personal or team blog services.
 
 ## Key Features
 
@@ -24,7 +24,7 @@ tulog-server/
 ## Tech Stack
 
 -   **Backend**: NestJS, TypeScript
--   **Database**: TypeORM
+-   **Database**: PostgreSQL
 -   **Validation**: class-validator, class-transformer
 -   **Documentation**: Swagger (OpenAPI)
 -   **Development**: ESLint, Jest
