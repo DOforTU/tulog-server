@@ -53,7 +53,7 @@ export class UserController {
   // ===== Special Query APIs =====
 
   /** Get current logged-in user information */
-  @Get('me')
+  @Get('me/info')
   @UseGuards(JwtAuthGuard)
   getCurrentUser(@Request() req: { user: User }): User {
     return req.user;
