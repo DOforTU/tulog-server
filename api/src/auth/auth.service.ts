@@ -137,7 +137,7 @@ export class AuthService {
     try {
       // Validate refresh token
       const decodedToken: unknown = this.jwtService.verify(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET || 'refresh-secret-key',
+        secret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
       });
 
       // Validate token structure
@@ -207,7 +207,7 @@ export class AuthService {
       },
       {
         secret: process.env.JWT_SECRET || 'your-secret-key',
-        expiresIn: '15m',
+        expiresIn: '1m',
       },
     );
 
@@ -236,7 +236,7 @@ export class AuthService {
       },
       {
         secret: process.env.JWT_SECRET || 'jwt-secret-key',
-        expiresIn: '15m',
+        expiresIn: '1m', // 테스트용 1분
       },
     );
   }
@@ -252,20 +252,12 @@ export class AuthService {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 15 * 60 * 1000, // 15 minutes
+      maxAge: 1 * 60 * 1000, // 1 minute (테스트용)
     });
 
     // Send refresh token via HttpOnly cookie (enhanced security)
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    });
-
-    // Send only user information via cookie (without tokens)
-    res.cookie('userInfo', JSON.stringify(user), {
-      httpOnly: false, // Allow frontend to read
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
@@ -276,7 +268,6 @@ export class AuthService {
   clearAuthCookies(res: Response): void {
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
-    res.clearCookie('userInfo');
   }
 }
 
