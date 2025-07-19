@@ -1,45 +1,45 @@
 # TULOG API Guards Documentation
 
-> TULOG API 서버의 가드 시스템에 대한 상세한 설명서입니다.
+> Detailed documentation for the guard system of TULOG API server.
 
-## 목차
+## Table of Contents
 
--   [개요](#개요)
--   [JWT 인증 가드](#jwt-인증-가드)
--   [Rate Limit 가드](#rate-limit-가드)
--   [가드 실행 흐름](#가드-실행-흐름)
--   [설정 및 적용](#설정-및-적용)
--   [확장 및 커스터마이징](#확장-및-커스터마이징)
--   [보안 고려사항](#보안-고려사항)
-
----
-
-## 개요
-
-가드(Guards)는 NestJS의 인증 및 권한 부여를 담당하는 컴포넌트입니다. 요청이 라우트 핸들러에 도달하기 전에 실행되어 접근 권한을 검증합니다. TULOG API에서는 JWT 인증과 Rate Limiting을 위한 가드를 구현했습니다.
-
-### 가드의 특징
-
-1. **실행 시점**: 미들웨어 다음, 인터셉터 이전에 실행
-2. **boolean 반환**: true면 허용, false면 차단
-3. **예외 처리**: 차단 시 적절한 HTTP 예외 발생
-4. **메타데이터 활용**: 데코레이터와 연동하여 동적 권한 검사
+-   [Overview](#overview)
+-   [JWT Authentication Guard](#jwt-authentication-guard)
+-   [Rate Limit Guard](#rate-limit-guard)
+-   [Guard Execution Flow](#guard-execution-flow)
+-   [Configuration and Application](#configuration-and-application)
+-   [Extension and Customization](#extension-and-customization)
+-   [Security Considerations](#security-considerations)
 
 ---
 
-## JWT 인증 가드
+## Overview
 
-### 위치
+Guards are NestJS components responsible for authentication and authorization. They execute before requests reach route handlers to verify access permissions. TULOG API implements guards for JWT authentication and rate limiting.
+
+### Guard Characteristics
+
+1. **Execution Point**: Executed after middleware, before interceptors
+2. **Boolean Return**: Returns true for allow, false for block
+3. **Exception Handling**: Throws appropriate HTTP exceptions when blocking
+4. **Metadata Utilization**: Works with decorators for dynamic permission checks
+
+---
+
+## JWT Authentication Guard
+
+### Location
 
 `src/auth/guards/jwt-auth.guard.ts`
 
-### 역할
+### Role
 
--   JWT 토큰 검증
--   사용자 인증 상태 확인
--   보호된 라우트 접근 제어
+-   JWT token verification
+-   User authentication status check
+-   Protected route access control
 
-### 구현 세부사항
+### Implementation Details
 
 ```typescript
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from "@nestjs/common";
@@ -594,6 +594,7 @@ export class TimeBasedGuard implements CanActivate {
     ```
 
 3. **리프레시 토큰 구현**
+
     ```typescript
     @Injectable()
     export class RefreshTokenGuard implements CanActivate {
@@ -641,6 +642,7 @@ export class TimeBasedGuard implements CanActivate {
     ```
 
 2. **다단계 Rate Limiting**
+
     ```typescript
     @Injectable()
     export class MultiTierRateLimitGuard implements CanActivate {
@@ -689,6 +691,7 @@ export class TimeBasedGuard implements CanActivate {
     ```
 
 2. **로그인 시도 제한**
+
     ```typescript
     @Injectable()
     export class LoginAttemptGuard implements CanActivate {

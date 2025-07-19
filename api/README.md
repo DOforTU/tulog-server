@@ -86,25 +86,25 @@ npm run build
 npm run start:prod
 ```
 
-Once the server starts, you can access it at `http://localhost:8000`.
+Once the server starts, you can access it at `http://localhost:8000` in the development environment.
 
 ## Environment Configuration
 
 ### Required Environment Variables
 
-| Variable Name          | Description                    |
-| ---------------------- | ------------------------------ |
-| `DB_HOST`              | Database host                  |
-| `DB_PORT`              | Database port                  |
-| `DB_USERNAME`          | Database username              |
-| `DB_PASSWORD`          | Database password              |
-| `DB_DATABASE`          | Database name                  |
-| `DB_SCHEMA`            | Database schema                |
-| `JWT_SECRET`           | JWT secret key                 |
-| `GOOGLE_CLIENT_ID`     | Google OAuth client ID         |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret     |
-| `GOOGLE_CALLBACK_URL`  | Google OAuth callback URL      |
-| `FRONTEND_URL`         | Frontend URL                   |
+| Variable Name          | Description                |
+| ---------------------- | -------------------------- |
+| `DB_HOST`              | Database host              |
+| `DB_PORT`              | Database port              |
+| `DB_USERNAME`          | Database username          |
+| `DB_PASSWORD`          | Database password          |
+| `DB_DATABASE`          | Database name              |
+| `DB_SCHEMA`            | Database schema            |
+| `JWT_SECRET`           | JWT secret key             |
+| `GOOGLE_CLIENT_ID`     | Google OAuth client ID     |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
+| `GOOGLE_CALLBACK_URL`  | Google OAuth callback URL  |
+| `FRONTEND_URL`         | Frontend URL               |
 
 ## Development
 

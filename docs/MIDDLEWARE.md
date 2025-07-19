@@ -1,23 +1,23 @@
 # TULOG API Middleware Documentation
 
-> TULOG API 서버의 미들웨어 시스템에 대한 상세한 설명서입니다.
+> Detailed documentation for the middleware system of TULOG API server.
 
-## 목차
+## Table of Contents
 
--   [개요](#개요)
--   [로깅 미들웨어](#로깅-미들웨어)
--   [보안 미들웨어](#보안-미들웨어)
--   [쿠키 파서 미들웨어](#쿠키-파서-미들웨어)
--   [미들웨어 실행 순서](#미들웨어-실행-순서)
--   [설정 및 적용](#설정-및-적용)
+-   [Overview](#overview)
+-   [Logging Middleware](#logging-middleware)
+-   [Security Middleware](#security-middleware)
+-   [Cookie Parser Middleware](#cookie-parser-middleware)
+-   [Middleware Execution Order](#middleware-execution-order)
+-   [Configuration and Application](#configuration-and-application)
 
 ---
 
-## 개요
+## Overview
 
-미들웨어는 HTTP 요청이 라우트 핸들러에 도달하기 전에 실행되는 함수들입니다. TULOG API에서는 로깅, 보안, 쿠키 처리를 담당하는 미들웨어들을 구현하여 시스템의 안정성과 모니터링을 강화했습니다.
+Middleware are functions that execute before HTTP requests reach route handlers. TULOG API implements middleware for logging, security, and cookie processing to enhance system stability and monitoring.
 
-### 미들웨어 실행 흐름
+### Middleware Execution Flow
 
 ```
 HTTP Request → Security Middleware → Logging Middleware → Cookie Parser → Route Handler
@@ -25,19 +25,19 @@ HTTP Request → Security Middleware → Logging Middleware → Cookie Parser �
 
 ---
 
-## 로깅 미들웨어
+## Logging Middleware
 
-### 위치
+### Location
 
 `src/common/middleware/logging.middleware.ts`
 
-### 역할
+### Role
 
--   HTTP 요청/응답 로깅
--   요청 처리 시간 측정
--   클라이언트 정보 기록
+-   HTTP request/response logging
+-   Request processing time measurement
+-   Client information recording
 
-### 구현 세부사항
+### Implementation Details
 
 ```typescript
 @Injectable()
@@ -49,10 +49,10 @@ export class LoggingMiddleware implements NestMiddleware {
         const userAgent = req.get("User-Agent") || "";
         const startTime = Date.now();
 
-        // 요청 로깅
+        // Request logging
         this.logger.log(`${method} ${originalUrl} - ${ip} - ${userAgent.substring(0, 100)}`);
 
-        // 응답 완료 시점에 로깅
+        // Log at response completion
         res.on("finish", () => {
             const { statusCode } = res;
             const contentLength = res.get("content-length");
@@ -66,54 +66,54 @@ export class LoggingMiddleware implements NestMiddleware {
 }
 ```
 
-### 로그 형식
+### Log Format
 
-#### 요청 로그
+#### Request Log
 
 ```
 [HTTP] GET /users/me - ::1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
 ```
 
-#### 응답 로그
+#### Response Log
 
 ```
 [HTTP] GET /users/me 200 156b - 25ms
 ```
 
-### 기능
+### Features
 
-1. **요청 정보 기록**
+1. **Request Information Recording**
 
-    - HTTP 메서드 (GET, POST, PUT, DELETE 등)
-    - 요청 URL
-    - 클라이언트 IP 주소
-    - User-Agent (처음 100자만)
+    - HTTP method (GET, POST, PUT, DELETE, etc.)
+    - Request URL
+    - Client IP address
+    - User-Agent (first 100 characters only)
 
-2. **응답 정보 기록**
+2. **Response Information Recording**
 
-    - HTTP 상태 코드
-    - 응답 크기 (바이트)
-    - 처리 시간 (밀리초)
+    - HTTP status code
+    - Response size (bytes)
+    - Processing time (milliseconds)
 
-3. **성능 모니터링**
-    - 각 요청의 처리 시간 측정
-    - 느린 요청 식별 가능
+3. **Performance Monitoring**
+    - Measure processing time for each request
+    - Identify slow requests
 
 ---
 
-## 보안 미들웨어
+## Security Middleware
 
-### 위치
+### Location
 
 `src/common/middleware/security.middleware.ts`
 
-### 역할
+### Role
 
--   보안 헤더 설정
--   XSS, Clickjacking 등 웹 취약점 방어
--   HTTPS 강제 (프로덕션 환경)
+-   Set security headers
+-   Defend against web vulnerabilities like XSS, Clickjacking
+-   Enforce HTTPS (production environment)
 
-### 구현 세부사항
+### Implementation Details
 
 ```typescript
 @Injectable()

@@ -1,44 +1,44 @@
 # TULOG API Interceptors Documentation
 
-> TULOG API 서버의 인터셉터 시스템에 대한 상세한 설명서입니다.
+> Detailed documentation for the interceptor system of TULOG API server.
 
-## 목차
+## Table of Contents
 
--   [개요](#개요)
--   [응답 인터셉터](#응답-인터셉터)
--   [인터셉터 실행 흐름](#인터셉터-실행-흐름)
--   [응답 형식 표준화](#응답-형식-표준화)
--   [설정 및 적용](#설정-및-적용)
--   [확장 및 커스터마이징](#확장-및-커스터마이징)
-
----
-
-## 개요
-
-인터셉터(Interceptors)는 NestJS의 AOP(Aspect-Oriented Programming) 기능으로, 메서드 실행 전후에 추가 로직을 실행할 수 있게 해줍니다. TULOG API에서는 모든 API 응답의 형식을 표준화하고 일관성을 유지하기 위해 응답 인터셉터를 구현했습니다.
-
-### 인터셉터의 특징
-
-1. **AOP 패턴**: 횡단 관심사를 분리하여 코드 중복 제거
-2. **Observable 기반**: RxJS Observable을 사용한 반응형 프로그래밍
-3. **전역/지역 적용**: 전역 또는 특정 컨트롤러/메서드에만 적용 가능
-4. **변환 및 확장**: 요청/응답 데이터를 변환하고 확장 가능
+-   [Overview](#overview)
+-   [Response Interceptor](#response-interceptor)
+-   [Interceptor Execution Flow](#interceptor-execution-flow)
+-   [Response Format Standardization](#response-format-standardization)
+-   [Configuration and Application](#configuration-and-application)
+-   [Extension and Customization](#extension-and-customization)
 
 ---
 
-## 응답 인터셉터
+## Overview
 
-### 위치
+Interceptors are NestJS's AOP (Aspect-Oriented Programming) feature that allows executing additional logic before and after method execution. TULOG API implements response interceptors to standardize all API response formats and maintain consistency.
+
+### Interceptor Characteristics
+
+1. **AOP Pattern**: Separates cross-cutting concerns to eliminate code duplication
+2. **Observable-based**: Uses RxJS Observable for reactive programming
+3. **Global/Local Application**: Can be applied globally or to specific controllers/methods
+4. **Transformation and Extension**: Can transform and extend request/response data
+
+---
+
+## Response Interceptor
+
+### Location
 
 `src/common/interceptors/response.interceptor.ts`
 
-### 역할
+### Role
 
--   모든 API 응답 형식 표준화
--   성공 응답에 메타데이터 추가
--   일관된 JSON 구조 제공
+-   Standardize all API response formats
+-   Add metadata to success responses
+-   Provide consistent JSON structure
 
-### 구현 세부사항
+### Implementation Details
 
 ```typescript
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from "@nestjs/common";

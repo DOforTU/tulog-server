@@ -1,46 +1,46 @@
 # TULOG API Filters Documentation
 
-> TULOG API 서버의 예외 필터 시스템에 대한 상세한 설명서입니다.
+> Detailed documentation for the exception filter system of TULOG API server.
 
-## 목차
+## Table of Contents
 
--   [개요](#개요)
--   [전역 예외 필터](#전역-예외-필터)
--   [예외 처리 흐름](#예외-처리-흐름)
--   [에러 응답 형식](#에러-응답-형식)
--   [로깅 및 모니터링](#로깅-및-모니터링)
--   [커스텀 예외 처리](#커스텀-예외-처리)
--   [보안 고려사항](#보안-고려사항)
-
----
-
-## 개요
-
-예외 필터(Exception Filters)는 애플리케이션에서 발생하는 모든 예외를 처리하는 NestJS의 마지막 방어선입니다. 예외 필터는 처리되지 않은 예외를 잡아 적절한 응답으로 변환하여 클라이언트에게 전송합니다. TULOG API에서는 일관된 에러 응답 형식과 체계적인 로깅을 위해 전역 예외 필터를 구현했습니다.
-
-### 예외 필터의 특징
-
-1. **마지막 실행**: 모든 다른 컴포넌트 이후에 실행
-2. **예외 변환**: 예외를 HTTP 응답으로 변환
-3. **에러 로깅**: 시스템 에러 추적 및 디버깅
-4. **보안 강화**: 민감한 정보 노출 방지
+-   [Overview](#overview)
+-   [Global Exception Filter](#global-exception-filter)
+-   [Exception Handling Flow](#exception-handling-flow)
+-   [Error Response Format](#error-response-format)
+-   [Logging and Monitoring](#logging-and-monitoring)
+-   [Custom Exception Handling](#custom-exception-handling)
+-   [Security Considerations](#security-considerations)
 
 ---
 
-## 전역 예외 필터
+## Overview
 
-### 위치
+Exception Filters are NestJS's last line of defense that handle all exceptions occurring in the application. Exception filters catch unhandled exceptions and transform them into appropriate responses to send to clients. TULOG API implements a global exception filter for consistent error response format and systematic logging.
+
+### Exception Filter Characteristics
+
+1. **Last Execution**: Executed after all other components
+2. **Exception Transformation**: Convert exceptions to HTTP responses
+3. **Error Logging**: System error tracking and debugging
+4. **Security Enhancement**: Prevent sensitive information exposure
+
+---
+
+## Global Exception Filter
+
+### Location
 
 `src/common/filters/all-exceptions.filter.ts`
 
-### 역할
+### Role
 
--   모든 예외 통합 처리
--   일관된 에러 응답 형식 제공
--   체계적인 에러 로깅
--   민감한 정보 보호
+-   Unified handling of all exceptions
+-   Provide consistent error response format
+-   Systematic error logging
+-   Protect sensitive information
 
-### 구현 세부사항
+### Implementation Details
 
 ```typescript
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from "@nestjs/common";
