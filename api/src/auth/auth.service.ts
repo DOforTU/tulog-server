@@ -207,11 +207,11 @@ export class AuthService {
       },
       {
         secret: process.env.JWT_SECRET || 'your-secret-key',
-        expiresIn: '1m',
+        expiresIn: '15m',
       },
     );
 
-    // Generate refresh token (30 days)
+    // Generate refresh token (7 days)
     const refreshToken = this.jwtService.sign(
       {
         sub: user.id,
@@ -219,7 +219,7 @@ export class AuthService {
       },
       {
         secret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
-        expiresIn: '30d',
+        expiresIn: '7d',
       },
     );
 
@@ -236,7 +236,7 @@ export class AuthService {
       },
       {
         secret: process.env.JWT_SECRET || 'jwt-secret-key',
-        expiresIn: '1m', // 테스트용 1분
+        expiresIn: '15m', // 15분
       },
     );
   }
@@ -252,7 +252,7 @@ export class AuthService {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 1 * 60 * 1000, // 1 minute (테스트용)
+      maxAge: 15 * 60 * 1000, // 15 minutes
     });
 
     // Send refresh token via HttpOnly cookie (enhanced security)
@@ -260,7 +260,7 @@ export class AuthService {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
   }
 

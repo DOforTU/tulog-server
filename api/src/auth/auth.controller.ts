@@ -80,13 +80,19 @@ export class AuthController {
       });
     }
 
-    // TODO: Set new access token to HttpOnly cookie again
-    // TODO: Issue new refresh token and store in cookie (token rotation)
+    // Set new access token to HttpOnly cookie
+    if (result.accessToken) {
+      res.cookie('accessToken', result.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 15 * 60 * 1000, // 15 minutes
+      });
+    }
 
     return res.json({
       success: true,
-      accessToken: result.accessToken,
-      user: result.user,
+      message: 'Token refreshed successfully',
     });
   }
 
