@@ -244,7 +244,7 @@ export class AuthService {
   // ===== Cookie Management Methods =====
 
   /** Set cookies */
-  setAuthCookies(res: Response, user: User, tokens: TokenPair): void {
+  setAuthCookies(res: Response, tokens: TokenPair): void {
     const { accessToken, refreshToken } = tokens;
 
     // Send access token via HttpOnly cookie (enhanced security)

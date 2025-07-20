@@ -14,6 +14,11 @@ interface RateLimitStore {
   };
 }
 
+/**
+ * Rate Limit Guard
+ * Limits the number of requests from a single IP address.
+ * Maximum 100 requests per 15 minutes.
+ */
 @Injectable()
 export class RateLimitGuard implements CanActivate {
   private readonly store: RateLimitStore = {};
@@ -57,7 +62,7 @@ export class RateLimitGuard implements CanActivate {
 
   private getKey(request: Request): string {
     // Generate key based on IP address
-    return request.ip || request.connection.remoteAddress || 'unknown';
+    return request.ip || request.socket.remoteAddress || 'unknown';
   }
 
   // Periodic cleanup for memory management (Redis recommended for production)

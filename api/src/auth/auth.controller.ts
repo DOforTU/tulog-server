@@ -8,7 +8,6 @@ import { RateLimitGuard } from '../common/guards/rate-limit.guard';
 interface AuthCookies {
   accessToken?: string;
   refreshToken?: string;
-  userInfo?: string;
 }
 
 /** Request interface with cookies */
@@ -49,10 +48,14 @@ export class AuthController {
 
     // Generate tokens and set cookies
     const tokens = this.authService.generateTokenPair(user);
-    this.authService.setAuthCookies(res, user, tokens);
+    this.authService.setAuthCookies(res, tokens);
 
     // Redirect to frontend (without tokens, only success flag)
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    if (!process.env.FRONTEND_URL) {
+      throw new Error('FRONTEND_URL is not defined');
+    }
+    const frontendUrl = process.env.FRONTEND_URL;
+
     res.redirect(`${frontendUrl}/login?success=true`);
   }
 
