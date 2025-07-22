@@ -4,9 +4,10 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { UserRepository } from './user.repository';
-import { User } from './user.entity';
-import { CreateUserDto, UpdateUserDto } from './user.dto';
+import { User, AuthProvider } from './user.entity';
+import { UpdateUserDto } from './user.dto';
 
+/** Google OAuth user data interface */
 interface GoogleUserData {
   googleId: string;
   email: string;
@@ -15,14 +16,25 @@ interface GoogleUserData {
   profilePicture?: string;
 }
 
+/**
+ * User Business Logic Service
+ * - User CRUD operations
+ * - Google OAuth user management
+ * - Soft Delete functionality
+ * - Data validation
+ */
 @Injectable()
 export class UserService {
   constructor(private readonly userRepository: UserRepository) {}
 
+  // ===== Basic CRUD - Domain Specific =====
+
+  /** Get all active users */
   async getAllUsers(): Promise<User[]> {
     return this.userRepository.findAll();
   }
 
+  /** Get user by ID (throws exception) */
   async getUserById(id: number): Promise<User> {
     const user = await this.userRepository.findById(id);
     if (!user) {
@@ -31,53 +43,28 @@ export class UserService {
     return user;
   }
 
-  async getUserByEmail(email: string): Promise<User> {
-    const user = await this.userRepository.findByEmail(email);
-    if (!user) {
-      throw new NotFoundException(`User with email ${email} not found`);
-    }
-    return user;
-  }
-
-  async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findByEmail(email);
-  }
-
-  async findByEmailIncludingDeleted(email: string): Promise<User | null> {
-    return this.userRepository.findByEmailIncludingDeleted(email);
-  }
-
-  async createUser(createUserDto: CreateUserDto): Promise<User> {
-    // 비즈니스 로직: 이메일 중복 검사
-    const existingUserByEmail = await this.userRepository.findByEmail(
-      createUserDto.email,
+  /** Create user */
+  async createUser(userData: GoogleUserData): Promise<User> {
+    // Check for email duplication only among non-deleted users
+    const existingActiveUser = await this.userRepository.findByEmail(
+      userData.email,
     );
-    if (existingUserByEmail) {
+    if (existingActiveUser) {
       throw new ConflictException('Email already exists');
     }
 
-    // 비즈니스 로직: 사용자명 중복 검사
-    const existingUserByUsername = await this.userRepository.findByUsername(
-      createUserDto.username,
-    );
-    if (existingUserByUsername) {
-      throw new ConflictException('Username already exists');
-    }
-
-    // 비즈니스 로직: 비밀번호 암호화 (여기서는 간단히 처리, 실제로는 bcrypt 사용)
-    // TODO: 비밀번호 해싱 로직 추가
-
-    return this.userRepository.create(createUserDto);
+    return this.userRepository.createGoogleUser(userData);
   }
 
+  /** Update user information */
   async updateUser(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-    // 비즈니스 로직: 사용자 존재 확인
+    // Business logic: Check user existence
     const existingUser = await this.userRepository.findById(id);
     if (!existingUser) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    // 비즈니스 로직: 이메일 중복 검사 (다른 사용자와)
+    // Business logic: Email duplication check (with other users)
     if (updateUserDto.email && updateUserDto.email !== existingUser.email) {
       const userWithEmail = await this.userRepository.findByEmail(
         updateUserDto.email,
@@ -87,7 +74,7 @@ export class UserService {
       }
     }
 
-    // 비즈니스 로직: 사용자명 중복 검사 (다른 사용자와)
+    // Business logic: Username duplication check (with other users)
     if (
       updateUserDto.username &&
       updateUserDto.username !== existingUser.username
@@ -108,8 +95,9 @@ export class UserService {
     return updatedUser;
   }
 
+  /** Soft delete user */
   async deleteUser(id: number): Promise<void> {
-    // 비즈니스 로직: 사용자 존재 확인
+    // Business logic: Check user existence
     const userExists = await this.userRepository.exists(id);
     if (!userExists) {
       throw new NotFoundException(`User with ID ${id} not found`);
@@ -121,8 +109,37 @@ export class UserService {
     }
   }
 
+  // ===== Query Methods - Domain Specific =====
+
+  /** Get user by email (throws exception) */
+  async getUserByEmail(email: string): Promise<User> {
+    const user = await this.userRepository.findByEmail(email);
+    if (!user) {
+      throw new NotFoundException(`User with email ${email} not found`);
+    }
+    return user;
+  }
+
+  /** Get user by Google ID */
+  async getUserByGoogleId(googleId: string): Promise<User | null> {
+    return this.userRepository.findByGoogleId(googleId);
+  }
+
+  /** Get deleted users list */
+  async getDeletedUsers(): Promise<User[]> {
+    return this.userRepository.findDeleted();
+  }
+
+  /** Get active user count */
+  async getUserCount(): Promise<number> {
+    return this.userRepository.count();
+  }
+
+  // ===== Business Logic - Verb-Centric =====
+
+  /** Permanently delete user */
   async hardDeleteUser(id: number): Promise<void> {
-    // 비즈니스 로직: 사용자 존재 확인 (삭제된 사용자 포함)
+    // Business logic: Check user existence (including deleted users)
     const user = await this.userRepository.findDeletedById(id);
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
@@ -134,8 +151,9 @@ export class UserService {
     }
   }
 
+  /** Restore deleted user */
   async restoreUser(id: number): Promise<User> {
-    // 비즈니스 로직: 삭제된 사용자 존재 확인
+    // Business logic: Check deleted user existence
     const deletedUser = await this.userRepository.findDeletedById(id);
     if (!deletedUser) {
       throw new NotFoundException(`Deleted user with ID ${id} not found`);
@@ -154,32 +172,10 @@ export class UserService {
     return restoredUser;
   }
 
-  async getDeletedUsers(): Promise<User[]> {
-    return this.userRepository.findDeleted();
-  }
-
-  async getUserCount(): Promise<number> {
-    return this.userRepository.count();
-  }
-
-  async isEmailAvailable(email: string): Promise<boolean> {
-    const user = await this.userRepository.findByEmail(email);
-    return !user;
-  }
-
-  async isUsernameAvailable(username: string): Promise<boolean> {
-    const user = await this.userRepository.findByUsername(username);
-    return !user;
-  }
-
-  // Google OAuth 관련 메서드들
-  async findByGoogleId(googleId: string): Promise<User | null> {
-    return this.userRepository.findByGoogleId(googleId);
-  }
-
+  /** Create Google OAuth user */
   async createGoogleUser(googleUserData: GoogleUserData): Promise<User> {
-    // 삭제되지 않은 사용자의 이메일 중복 체크만 수행
-    // 삭제된 사용자는 새로운 계정을 생성할 수 있음
+    // Check for email duplication only among non-deleted users
+    // Deleted users can create new accounts
     const existingActiveUser = await this.userRepository.findByEmail(
       googleUserData.email,
     );
@@ -187,10 +183,11 @@ export class UserService {
       throw new ConflictException('Email already exists');
     }
 
-    // 삭제된 사용자가 있더라도 새로운 계정을 생성
+    // Create new account even if deleted users exist
     return this.userRepository.createGoogleUser(googleUserData);
   }
 
+  /** Link Google account to existing account */
   async linkGoogleAccount(
     userId: number,
     linkData: { googleId: string; profilePicture?: string },
@@ -198,7 +195,7 @@ export class UserService {
     const updateData = {
       googleId: linkData.googleId,
       profilePicture: linkData.profilePicture,
-      provider: 'google',
+      provider: AuthProvider.GOOGLE,
     };
 
     const updatedUser = await this.userRepository.update(userId, updateData);
@@ -210,4 +207,34 @@ export class UserService {
 
     return updatedUser;
   }
+
+  // ===== Internal Helper Methods - Simple Form =====
+
+  /** Find active user by email (nullable) */
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findByEmail(email);
+  }
+
+  /** Find active user by ID (nullable) */
+  async findById(id: number): Promise<User | null> {
+    return this.userRepository.findById(id);
+  }
+
+  /** Find user by email (including deleted users) */
+  async findByEmailIncludingDeleted(email: string): Promise<User | null> {
+    return this.userRepository.findByEmailIncludingDeleted(email);
+  }
+
+  /** Find user by Google ID */
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    return this.userRepository.findByGoogleId(googleId);
+  }
 }
+
+// TODO: Expand social login providers (Kakao, Naver, etc.)
+// TODO: Handle user profile image upload
+// TODO: Implement user permission management system
+// TODO: Add account lock/unlock functionality
+// TODO: Add user activity log recording functionality
+// TODO: Add user search and filtering functionality
+// TODO: Add multi-social account linking functionality (Google + Kakao, etc.)

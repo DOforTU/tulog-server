@@ -32,7 +32,6 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       scope: ['email', 'profile'],
     });
   }
-
   async validate(
     accessToken: string,
     refreshToken: string,
@@ -40,6 +39,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     done: VerifyCallback,
   ): Promise<any> {
     const { id, name, emails, photos } = profile;
+
     const googleUser = {
       id,
       email: emails[0]?.value || '',
@@ -49,6 +49,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     };
 
     const result = await this.authService.validateGoogleUser(googleUser);
+
     done(null, result);
   }
 }

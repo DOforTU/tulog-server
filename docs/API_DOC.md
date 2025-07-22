@@ -1,17 +1,17 @@
 # TULOG API Documentation
 
-> TULOG API 서버의 상세한 엔드포인트 명세서입니다.
+> Detailed endpoint specification for TULOG API server.
 
-## 📋 목차
+## Table of Contents
 
--   [기본 정보](#기본-정보)
--   [인증](#인증)
--   [사용자 관리](#사용자-관리)
--   [시스템](#시스템)
--   [에러 코드](#에러-코드)
--   [데이터 모델](#데이터-모델)
+-   [Basic Information](#basic-information)
+-   [Authentication](#authentication)
+-   [User Management](#user-management)
+-   [System](#system)
+-   [Error Codes](#error-codes)
+-   [Data Models](#data-models)
 
-## 🔧 기본 정보
+## Basic Information
 
 ### Base URL
 
@@ -19,124 +19,225 @@
 http://localhost:8000
 ```
 
-### 응답 형식
+### Response Format
 
-모든 API 응답은 JSON 형식입니다.
+All API responses are in JSON format.
 
-### 인증 방식
+### Authentication Methods
 
--   **Google OAuth 2.0**: 로그인용
--   **JWT Bearer Token**: API 접근용
+-   **Google OAuth 2.0**: Social login only
+-   **JWT + Refresh Token**: HttpOnly cookie-based authentication
+-   **Automatic Token Refresh**: Auto-refresh every 14 minutes
 
-### 헤더
+### Headers
 
 ```http
 Content-Type: application/json
-Authorization: Bearer <jwt_token>
+Cookie: accessToken=<jwt_token>; refreshToken=<refresh_token>; userInfo=<user_info>
 ```
+
+> **Security**: All tokens are transmitted via HttpOnly cookies to defend against XSS attacks.
 
 ---
 
-## 🔐 인증 (Authentication)
+## Authentication
 
-### Google OAuth 로그인 시작
+### Start Google OAuth Login
 
-Google OAuth 인증 플로우를 시작합니다.
+Initiates the Google OAuth authentication flow.
 
 ```http
 GET /auth/google
 ```
 
-**응답**: Google 로그인 페이지로 리다이렉트
+**Response**: Redirects to Google login page
 
 ---
 
-### Google OAuth 콜백
+### Google OAuth Callback
 
-Google 인증 완료 후 콜백을 처리합니다.
+Handles the callback after Google authentication is completed.
 
 ```http
 GET /auth/google/callback
 ```
 
-**쿼리 파라미터**:
+**Query Parameters**:
 
--   `code`: Google에서 제공하는 인증 코드
+-   `code`: Authentication code provided by Google
 
-**응답**: JWT 토큰과 함께 프론트엔드로 리다이렉트
+**Response**:
+
+1. **Cookie Settings**:
+
+    - `accessToken`: JWT access token (HttpOnly, expires in 15 minutes)
+    - `refreshToken`: JWT refresh token (HttpOnly, expires in 30 days)
+    - `userInfo`: User information (expires in 30 days)
+
+2. **Redirect**:
 
 ```
-http://localhost:8000/?token=<jwt_token>
+http://localhost:3000/login?success=true
+```
+
+**Cookie Example**:
+
+```http
+Set-Cookie: accessToken=eyJhbGciOiJIUzI1NiIs...; HttpOnly; SameSite=Strict; Max-Age=900
+Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIs...; HttpOnly; SameSite=Strict; Max-Age=2592000
+Set-Cookie: userInfo={"id":1,"email":"user@example.com",...}; SameSite=Strict; Max-Age=2592000
 ```
 
 ---
 
-### 토큰 갱신
+### Token Refresh
 
-JWT 토큰을 갱신합니다.
+Issues a new access token using the refresh token.
 
 ```http
 POST /auth/refresh
 ```
 
-**응답**:
+**Request Headers**:
+
+```http
+Cookie: refreshToken=<refresh_token>
+```
+
+**Response (Success)**:
 
 ```json
 {
-    "message": "Refresh token endpoint"
+    "success": true,
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+        "id": 1,
+        "email": "user@example.com",
+        "username": "John Doe",
+        "nickname": "user",
+        "profilePicture": "https://lh3.googleusercontent.com/...",
+        "provider": "google"
+    }
 }
 ```
 
-> **참고**: 현재 구현 예정
+**Response (Failure)**:
+
+```json
+{
+    "success": false,
+    "message": "No refresh token provided."
+}
+```
+
+**Error Codes**:
+
+-   `401`: Refresh token is missing or invalid
+
+> **Auto Refresh**: Automatically called every 14 minutes by the frontend.
 
 ---
 
-### 로그아웃
+### Logout
 
-사용자 세션을 종료합니다.
+Terminates the user session and deletes all authentication cookies.
 
 ```http
 POST /auth/logout
 ```
 
-**응답**:
+**Response**:
 
 ```json
 {
+    "success": true,
     "message": "Logged out successfully"
 }
 ```
 
-> **참고**: 현재 구현 예정
+**Cookie Deletion**:
+
+-   `accessToken`: Deleted
+-   `refreshToken`: Deleted
+-   `userInfo`: Deleted
+
+**Response Headers**:
+
+```http
+Set-Cookie: accessToken=; Max-Age=0
+Set-Cookie: refreshToken=; Max-Age=0
+Set-Cookie: userInfo=; Max-Age=0
+```
 
 ---
 
-## 👥 사용자 관리 (Users)
+## User Management
 
-### 전체 사용자 조회
+> **Note**: Accounts are created only through Google OAuth without separate user registration.
 
-모든 활성 사용자를 조회합니다.
+### Get Current Logged-in User Information
+
+Retrieves information about the currently logged-in user.
+
+```http
+GET /users/me
+```
+
+**Request Headers**:
+
+```http
+Cookie: accessToken=<access_token>
+```
+
+**Response**:
+
+```json
+{
+    "id": 1,
+    "email": "user@example.com",
+    "username": "John Doe",
+    "nickname": "user",
+    "googleId": "108729663647433890790",
+    "profilePicture": "https://lh3.googleusercontent.com/a/ACg8ocI...",
+    "provider": "google",
+    "isActive": true,
+    "isDeleted": false,
+    "createdAt": "2025-07-14T14:30:00.000Z",
+    "updatedAt": "2025-07-14T14:30:00.000Z",
+    "deletedAt": null
+}
+```
+
+**Errors**:
+
+-   `401`: Not authenticated (JWT token required)
+
+---
+
+### Get All Users
+
+Retrieves all active users.
 
 ```http
 GET /users
 ```
 
-**응답**:
+**Response**:
 
 ```json
 [
     {
         "id": 1,
         "email": "user@example.com",
-        "username": "홍길동",
+        "username": "John Doe",
         "nickname": "user",
-        "googleId": "123456789",
-        "profilePicture": "https://example.com/avatar.jpg",
+        "googleId": "108729663647433890790",
+        "profilePicture": "https://lh3.googleusercontent.com/a/ACg8ocI...",
         "provider": "google",
         "isActive": true,
         "isDeleted": false,
-        "createdAt": "2024-01-01T00:00:00.000Z",
-        "updatedAt": "2024-01-01T00:00:00.000Z",
+        "createdAt": "2025-07-14T14:30:00.000Z",
+        "updatedAt": "2025-07-14T14:30:00.000Z",
         "deletedAt": null
     }
 ]
@@ -144,245 +245,217 @@ GET /users
 
 ---
 
-### 사용자 상세 조회
+### Get User Details
 
-특정 사용자의 상세 정보를 조회합니다.
+Retrieves detailed information about a specific user.
 
 ```http
 GET /users/{id}
 ```
 
-**경로 파라미터**:
+**Path Parameters**:
 
--   `id` (number): 사용자 ID
+-   `id` (number): User ID
 
-**응답**:
+**Response**:
 
 ```json
 {
     "id": 1,
     "email": "user@example.com",
-    "username": "user123",
-    "name": "홍길동",
-    "nickname": "길동이",
-    "googleId": "123456789",
-    "profilePicture": "https://example.com/avatar.jpg",
+    "username": "John Doe",
+    "nickname": "user",
+    "googleId": "108729663647433890790",
+    "profilePicture": "https://lh3.googleusercontent.com/a/ACg8ocI...",
     "provider": "google",
     "isActive": true,
     "isDeleted": false,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z",
+    "createdAt": "2025-07-14T14:30:00.000Z",
+    "updatedAt": "2025-07-14T14:30:00.000Z",
     "deletedAt": null
 }
 ```
 
-**에러**:
+**Errors**:
 
--   `404`: 사용자를 찾을 수 없음
-
----
-
-### 사용자 생성
-
-새 사용자를 생성합니다.
-
-```http
-POST /users
-```
-
-**요청 본문**:
-
-```json
-{
-    "email": "newuser@example.com",
-    "username": "newuser",
-    "password": "password123",
-    "name": "새사용자",
-    "nickname": "새사용자",
-    "isActive": true
-}
-```
-
-**응답**:
-
-```json
-{
-    "id": 2,
-    "email": "newuser@example.com",
-    "username": "newuser",
-    "name": "새사용자",
-    "nickname": "새사용자",
-    "isActive": true,
-    "isDeleted": false,
-    "createdAt": "2024-01-01T01:00:00.000Z",
-    "updatedAt": "2024-01-01T01:00:00.000Z",
-    "deletedAt": null
-}
-```
-
-**에러**:
-
--   `409`: 이메일 또는 사용자명 중복
--   `400`: 잘못된 요청 데이터
+-   `404`: User not found
 
 ---
 
-### 사용자 수정
+### Update User Information
 
-기존 사용자 정보를 수정합니다.
+Updates existing user information.
 
 ```http
 PUT /users/{id}
 ```
 
-**경로 파라미터**:
+**Path Parameters**:
 
--   `id` (number): 사용자 ID
+-   `id` (number): User ID
 
-**요청 본문**:
+**Request Body**:
 
 ```json
 {
-    "name": "수정된이름",
-    "nickname": "수정된닉네임",
+    "username": "Updated Name",
+    "nickname": "updated_nickname",
     "isActive": false
 }
 ```
 
-**응답**:
+**Response**:
 
 ```json
 {
     "id": 1,
     "email": "user@example.com",
-    "username": "user123",
-    "name": "수정된이름",
-    "nickname": "수정된닉네임",
+    "username": "Updated Name",
+    "nickname": "updated_nickname",
     "isActive": false,
-    "updatedAt": "2024-01-01T02:00:00.000Z"
+    "updatedAt": "2025-07-14T15:00:00.000Z"
 }
 ```
 
-**에러**:
+**Errors**:
 
--   `404`: 사용자를 찾을 수 없음
+-   `404`: User not found
+-   `409`: Username or nickname conflict
 
 ---
 
-### 사용자 소프트 삭제
+### Soft Delete User
 
-사용자를 소프트 삭제합니다 (복구 가능).
+Soft deletes a user (recoverable).
 
 ```http
 DELETE /users/{id}
 ```
 
-**경로 파라미터**:
+**Path Parameters**:
 
--   `id` (number): 사용자 ID
+-   `id` (number): User ID
 
-**응답**:
+**Request Headers**:
+
+```http
+Cookie: accessToken=<access_token>
+```
+
+**Response**:
 
 ```json
 {
-    "message": "User deleted successfully",
-    "deleted": true
+    "message": "User deleted successfully"
 }
 ```
 
-**에러**:
+**Errors**:
 
--   `404`: 사용자를 찾을 수 없음
+-   `401`: Not authenticated (JWT token required)
+-   `404`: User not found
 
 ---
 
-### 사용자 하드 삭제
+### Hard Delete User
 
-사용자를 완전히 삭제합니다 (복구 불가능).
+Permanently deletes a user (non-recoverable).
 
 ```http
 DELETE /users/{id}/hard
 ```
 
-**경로 파라미터**:
+**Path Parameters**:
 
--   `id` (number): 사용자 ID
+-   `id` (number): User ID
 
-**응답**:
+**Request Headers**:
+
+```http
+Cookie: accessToken=<access_token>
+```
+
+**Response**:
 
 ```json
 {
-    "message": "User permanently deleted",
-    "deleted": true
+    "message": "User permanently deleted"
 }
 ```
 
-**에러**:
+**Errors**:
 
--   `404`: 사용자를 찾을 수 없음
+-   `401`: Not authenticated (JWT token required)
+-   `404`: User not found
 
 ---
 
-### 사용자 복구
+### Restore User
 
-소프트 삭제된 사용자를 복구합니다.
+Restores a soft-deleted user.
 
 ```http
 PATCH /users/{id}/restore
 ```
 
-**경로 파라미터**:
+**Path Parameters**:
 
--   `id` (number): 사용자 ID
+-   `id` (number): User ID
 
-**응답**:
+**Response**:
 
 ```json
 {
-    "message": "User restored successfully",
-    "restored": true
+    "id": 1,
+    "email": "restored@example.com",
+    "username": "Restored User",
+    "nickname": "restored",
+    "isDeleted": false,
+    "deletedAt": null,
+    "updatedAt": "2025-07-14T16:00:00.000Z"
 }
 ```
 
-**에러**:
+**Errors**:
 
--   `404`: 사용자를 찾을 수 없음
+-   `404`: Deleted user not found
 
 ---
 
-### 삭제된 사용자 조회
+### Get Deleted Users
 
-소프트 삭제된 사용자 목록을 조회합니다.
+Retrieves the list of soft-deleted users.
 
 ```http
 GET /users/deleted
 ```
 
-**응답**:
+**Response**:
 
 ```json
 [
     {
         "id": 3,
         "email": "deleted@example.com",
-        "username": "deleted_user",
+        "username": "Deleted User",
+        "nickname": "deleted",
         "isDeleted": true,
-        "deletedAt": "2024-01-01T03:00:00.000Z"
+        "deletedAt": "2025-07-14T15:30:00.000Z"
     }
 ]
 ```
 
 ---
 
-### 사용자 수 조회
+### Get User Count
 
-전체 활성 사용자 수를 조회합니다.
+Retrieves the total number of active users.
 
 ```http
 GET /users/count
 ```
 
-**응답**:
+**Response**:
 
 ```json
 {
@@ -392,17 +465,17 @@ GET /users/count
 
 ---
 
-## 🔧 시스템 (System)
+## System
 
-### 헬스 체크
+### Health Check
 
-기본 시스템 상태를 확인합니다.
+Checks basic system status.
 
 ```http
 GET /api
 ```
 
-**응답**:
+**Response**:
 
 ```text
 Hello World!
@@ -410,15 +483,15 @@ Hello World!
 
 ---
 
-### 상세 헬스 체크
+### Detailed Health Check
 
-시스템의 상세한 상태 정보를 확인합니다.
+Checks detailed system status information.
 
 ```http
 GET /api/health
 ```
 
-**응답**:
+**Response**:
 
 ```json
 {
@@ -429,34 +502,34 @@ GET /api/health
 
 ---
 
-### 테스트 페이지
+### Test Page
 
-Google 로그인 테스트 페이지를 표시합니다.
+Displays Google login test page.
 
 ```http
 GET /
 ```
 
-**응답**: HTML 페이지 (Google 로그인 테스트 UI)
+**Response**: HTML page (Google login test UI)
 
 ---
 
-## ❌ 에러 코드
+## Error Codes
 
-### HTTP 상태 코드
+### HTTP Status Codes
 
-| 코드  | 설명          | 예시                             |
-| ----- | ------------- | -------------------------------- |
-| `200` | 성공          | 요청이 성공적으로 처리됨         |
-| `201` | 생성됨        | 새 리소스가 생성됨               |
-| `400` | 잘못된 요청   | 유효하지 않은 데이터             |
-| `401` | 인증되지 않음 | JWT 토큰이 없거나 유효하지 않음  |
-| `403` | 권한 없음     | 접근 권한이 없음                 |
-| `404` | 찾을 수 없음  | 요청한 리소스가 존재하지 않음    |
-| `409` | 충돌          | 중복된 데이터 (이메일, 사용자명) |
-| `500` | 서버 오류     | 내부 서버 오류                   |
+| Code  | Description    | Example                              |
+| ----- | -------------- | ------------------------------------ |
+| `200` | Success        | Request processed successfully       |
+| `201` | Created        | New resource created                 |
+| `400` | Bad Request    | Invalid data                         |
+| `401` | Unauthorized   | JWT token missing or invalid         |
+| `403` | Forbidden      | Access denied                        |
+| `404` | Not Found      | Requested resource does not exist    |
+| `409` | Conflict       | Duplicate data (email, username)     |
+| `500` | Server Error   | Internal server error                |
 
-### 에러 응답 형식
+### Error Response Format
 
 ```json
 {
@@ -468,42 +541,24 @@ GET /
 
 ---
 
-## 📊 데이터 모델
+## Data Models
 
-### User 엔티티
+### User Entity
 
 ```typescript
 interface User {
-    id: number; // 기본 키 (자동 증가)
-    email: string; // 이메일 (유일)
-    username: string; // 사용자명 (유일)
-    password?: string; // 비밀번호 (Google 사용자는 null)
-    name?: string; // 실명
-    nickname?: string; // 닉네임 (유일)
-    googleId?: string; // Google OAuth ID
-    profilePicture?: string; // 프로필 이미지 URL
-    provider?: string; // 인증 제공자 ('google' 등)
-    isActive: boolean; // 활성 상태 (기본값: true)
-    isDeleted: boolean; // 삭제 상태 (기본값: false)
-    createdAt: Date; // 생성 일시
-    updatedAt: Date; // 수정 일시
-    deletedAt?: Date; // 삭제 일시 (소프트 삭제 시)
-}
-```
-
-### CreateUserDto
-
-```typescript
-interface CreateUserDto {
-    email: string; // 필수
-    username: string; // 필수
-    password?: string; // 선택 (Google 사용자)
-    name?: string; // 선택
-    nickname?: string; // 선택
-    googleId?: string; // 선택
-    profilePicture?: string; // 선택
-    provider?: string; // 선택
-    isActive?: boolean; // 선택 (기본값: true)
+    id: number; // Primary key (auto increment)
+    email: string; // Email (unique, from Google)
+    username: string; // Username (Google real name)
+    nickname: string; // Nickname (email prefix)
+    googleId: string; // Google OAuth ID (unique)
+    profilePicture?: string; // Google profile image URL
+    provider: string; // Authentication provider ('google')
+    isActive: boolean; // Active status (default: true)
+    isDeleted: boolean; // Deletion status (default: false)
+    createdAt: Date; // Creation timestamp
+    updatedAt: Date; // Update timestamp
+    deletedAt?: Date; // Deletion timestamp (for soft delete)
 }
 ```
 
@@ -511,52 +566,98 @@ interface CreateUserDto {
 
 ```typescript
 interface UpdateUserDto {
-    email?: string; // 선택
-    username?: string; // 선택
-    password?: string; // 선택
-    name?: string; // 선택
-    nickname?: string; // 선택
-    googleId?: string; // 선택
-    profilePicture?: string; // 선택
-    provider?: string; // 선택
-    isActive?: boolean; // 선택
+    email?: string; // Optional (not changeable)
+    username?: string; // Optional
+    nickname?: string; // Optional
+    profilePicture?: string; // Optional
+    isActive?: boolean; // Optional
+}
+```
+
+### JWT Token Payload
+
+#### Access Token (15 minutes expiry)
+
+```typescript
+interface AccessTokenPayload {
+    sub: number; // User ID
+    email: string; // User email
+    type: "access"; // Token type
+    iat: number; // Issued at
+    exp: number; // Expiry time
+}
+```
+
+#### Refresh Token (30 days expiry)
+
+```typescript
+interface RefreshTokenPayload {
+    sub: number; // User ID
+    type: "refresh"; // Token type
+    iat: number; // Issued at
+    exp: number; // Expiry time
 }
 ```
 
 ---
 
-## 📝 추가 정보
+## Additional Information
 
-### 개발 환경에서의 테스트
+### Testing in Development Environment
 
-1. **Google 로그인 테스트**:
+1. **Google Login Test**:
 
-    - `http://localhost:8000`에 접속
-    - "Google로 로그인" 버튼 클릭
-    - Google 계정으로 인증
-    - JWT 토큰 확인
+    - Visit `http://localhost:8000`
+    - Click "Login with Google" button
+    - Authenticate with Google account
+    - Verify JWT tokens
 
-2. **API 테스트 도구**:
+2. **API Testing Tools**:
 
-    - Postman, Thunder Client, 또는 curl 사용
-    - JWT 토큰을 Authorization 헤더에 포함
+    - Use Postman, Thunder Client, or curl
+    - Include JWT token in Authorization header
 
-3. **데이터베이스 확인**:
-    - PostgreSQL 클라이언트로 `tulog.server_api.user` 테이블 확인
+3. **Database Verification**:
+    - Check `tulog.server_api.user` table with PostgreSQL client
 
-### 주의사항
+### Important Notes
 
--   개발 환경에서는 `synchronize: true`로 설정되어 있어 스키마가 자동 동기화됩니다
--   프로덕션 환경에서는 마이그레이션을 사용하세요
--   Google OAuth 설정이 필요합니다 (.env 파일 참조)
--   모든 날짜는 ISO 8601 형식 (UTC)입니다
+-   **Social Login Only**: Accounts created only through Google OAuth without separate registration
+-   **HttpOnly Cookies**: All tokens transmitted via HttpOnly cookies to defend against XSS attacks
+-   **Automatic Token Refresh**: Frontend automatically refreshes tokens every 14 minutes
+-   **Development Environment**: Set `synchronize: true` for automatic schema synchronization
+-   **Production Environment**: Migration required
+-   **Google OAuth Setup**: Google OAuth client configuration required in `.env` file
+-   **Date Format**: All dates in ISO 8601 format (UTC)
+
+### Cookie Security Settings
+
+```typescript
+// Development Environment
+sameSite: 'strict'
+secure: false
+httpOnly: true (for tokens)
+
+// Production Environment
+sameSite: 'strict'
+secure: true
+httpOnly: true (for tokens)
+```
 
 ---
 
-## 🔄 업데이트 로그
+## Update Log
 
--   **v0.0.1** (2024-01-01): 초기 API 구현
-    -   사용자 CRUD 작업
-    -   Google OAuth 인증
-    -   소프트 삭제 기능
-    -   JWT 토큰 인증
+-   **v1.0.0** (2025-07-15): JWT + Refresh Token authentication system implementation
+
+    -   HttpOnly cookie-based secure token management
+    -   Automatic token refresh (14-minute intervals)
+    -   Google OAuth-only social login
+    -   Enhanced security against XSS/CSRF attacks
+    -   User CRUD operations (social login-based)
+    -   Soft delete and restore functionality
+
+-   **v0.0.1** (2024-01-01): Initial API implementation
+    -   Basic user CRUD operations
+    -   Google OAuth authentication foundation
+    -   Basic JWT token authentication

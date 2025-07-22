@@ -1,44 +1,120 @@
 import { Controller, Get, Post, UseGuards, Req, Res } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { AuthService } from './auth.service';
+import { AuthService, AuthResult } from './auth.service';
 import { Response, Request } from 'express';
+import { RateLimitGuard } from '../common/guards/rate-limit.guard';
 
-interface AuthenticatedRequest extends Request {
-  user: any;
+/** Cookie type definition */
+interface AuthCookies {
+  accessToken?: string;
+  refreshToken?: string;
 }
 
+/** Request interface with cookies */
+interface RequestWithCookies extends Request {
+  cookies: AuthCookies;
+}
+
+/** Google OAuth authenticated request interface */
+interface AuthenticatedRequest extends Request {
+  user: AuthResult; // Receives AuthResult instead of GoogleUser
+}
+
+/**
+ * Authentication Management Controller
+ * - Handle Google OAuth login
+ * - JWT token management
+ * - Logout handling
+ */
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  // ===== Authentication APIs =====
+
+  /** Start Google OAuth login */
   @Get('google')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(AuthGuard('google'), RateLimitGuard)
   async googleAuth() {
-    // This route initiates the Google OAuth flow
+    // Route to start Google OAuth flow
   }
 
+  /** Handle Google OAuth callback */
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
-  async googleAuthRedirect(
-    @Req() req: AuthenticatedRequest,
-    @Res() res: Response,
-  ) {
-    const { accessToken } = await this.authService.validateGoogleUser(req.user);
+  googleAuthRedirect(@Req() req: AuthenticatedRequest, @Res() res: Response) {
+    // Use AuthResult already validated by Google Strategy
+    const { user } = req.user;
 
-    // 개발 환경에서는 같은 서버의 루트로 리다이렉트
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8000';
-    res.redirect(`${frontendUrl}/?token=${accessToken}`);
+    // Generate tokens and set cookies
+    const tokens = this.authService.generateTokenPair(user);
+    this.authService.setAuthCookies(res, tokens);
+
+    // Redirect to frontend (without tokens, only success flag)
+    if (!process.env.FRONTEND_URL) {
+      throw new Error('FRONTEND_URL is not defined');
+    }
+    const frontendUrl = process.env.FRONTEND_URL;
+
+    res.redirect(`${frontendUrl}/login?success=true`);
   }
 
+  // ===== Token Management APIs =====
+
+  /** Refresh token */
   @Post('refresh')
-  refreshToken() {
-    // TODO: Implement refresh token logic
-    return { message: 'Refresh token endpoint' };
+  @UseGuards(RateLimitGuard)
+  async refresh(@Req() req: RequestWithCookies, @Res() res: Response) {
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: 'No refresh token provided.',
+      });
+    }
+
+    const result = await this.authService.refreshAccessToken(refreshToken);
+
+    if (!result.success) {
+      return res.status(401).json({
+        success: false,
+        message: result.message,
+      });
+    }
+
+    // Set new access token to HttpOnly cookie
+    if (result.accessToken) {
+      res.cookie('accessToken', result.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 15 * 60 * 1000, // 15 minutes
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Token refreshed successfully',
+    });
   }
 
+  /** Logout */
   @Post('logout')
-  logout() {
-    // TODO: Implement logout logic (invalidate tokens)
-    return { message: 'Logged out successfully' };
+  logout(@Res() res: Response) {
+    // TODO: Token blacklist management - invalidate tokens on logout
+    // Clear all authentication-related cookies
+    this.authService.clearAuthCookies(res);
+
+    return res.json({
+      success: true,
+      message: 'Logged out successfully',
+    });
   }
 }
+
+// TODO: Implement additional social login providers (Kakao, Naver, etc.)
+// TODO: Add 2FA (Two-Factor Authentication) feature
+// TODO: Session management and multi-device login control
+// TODO: Apply API Rate Limiting
+// TODO: Login attempt limiting and security enhancement
