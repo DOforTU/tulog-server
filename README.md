@@ -1,6 +1,7 @@
 # TULOG Server
 
-> Backend server for personal or team blog platform
+> Backend server for personal or team blog platform.
+> You can see the detail of the project [here](https://github.com/DOforTU/tulog).
 
 ## Project Overview
 
