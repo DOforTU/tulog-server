@@ -1,8 +1,8 @@
 # TULOG API Server
 
-> TULOG 프로젝트의 백엔드 API 서버입니다. NestJS 프레임워크를 기반으로 구축되었으며, PostgreSQL 데이터베이스와 Google OAuth 인증을 지원합니다.
+> Backend API server for the TULOG project. Built on the NestJS framework with PostgreSQL database and Google OAuth authentication support.
 
-## 기술 스택
+## Tech Stack
 
 - **Framework**: NestJS 11.0.1
 - **Runtime**: Node.js
@@ -16,145 +16,145 @@
 - **Testing**: Jest
 - **Code Quality**: ESLint, Prettier
 
-## 주요 기능
+## Key Features
 
-- **사용자 관리**
-  - 사용자 CRUD 작업
-  - Soft Delete 지원 (isDeleted, deletedAt)
-  - 사용자 복구 기능
+- **User Management**
+  - User CRUD operations
+  - Soft Delete support (isDeleted, deletedAt)
+  - User recovery functionality
 
-- **인증 및 인가**
-  - Google OAuth 2.0 로그인
-  - JWT 토큰 기반 인증
-  - 사용자 세션 관리
+- **Authentication & Authorization**
+  - Google OAuth 2.0 login
+  - JWT token-based authentication
+  - User session management
 
-- **데이터베이스**
-  - PostgreSQL 연동
-  - TypeORM을 통한 엔티티 관리
-  - 개발 환경에서 자동 동기화
+- **Database**
+  - PostgreSQL integration
+  - Entity management through TypeORM
+  - Auto-synchronization in development environment
 
-- **정적 파일 서빙**
-  - Google 로그인 테스트 페이지 제공
-  - 개발용 UI 인터페이스
+- **Static File Serving**
+  - Google login test page
+  - Development UI interface
 
-## 프로젝트 구조
+## Project Structure
 
 ```
 src/
-├── auth/                   # 인증 관련 모듈
-│   ├── auth.controller.ts  # 인증 컨트롤러 (Google OAuth)
-│   ├── auth.service.ts     # 인증 서비스 로직
-│   ├── auth.module.ts      # 인증 모듈 설정
-│   └── google.strategy.ts  # Google OAuth 전략
-├── user/                   # 사용자 관리 모듈
-│   ├── user.controller.ts  # 사용자 컨트롤러
-│   ├── user.service.ts     # 사용자 비즈니스 로직
-│   ├── user.repository.ts  # 사용자 데이터 액세스
-│   ├── user.entity.ts      # 사용자 엔티티 정의
-│   ├── user.dto.ts         # 데이터 전송 객체
-│   └── user.module.ts      # 사용자 모듈 설정
-├── app.controller.ts       # 애플리케이션 기본 컨트롤러
-├── app.service.ts          # 애플리케이션 기본 서비스
-├── app.module.ts           # 루트 모듈
-└── main.ts                 # 애플리케이션 진입점
+├── auth/                   # Authentication module
+│   ├── auth.controller.ts  # Authentication controller (Google OAuth)
+│   ├── auth.service.ts     # Authentication service logic
+│   ├── auth.module.ts      # Authentication module configuration
+│   └── google.strategy.ts  # Google OAuth strategy
+├── user/                   # User management module
+│   ├── user.controller.ts  # User controller
+│   ├── user.service.ts     # User business logic
+│   ├── user.repository.ts  # User data access
+│   ├── user.entity.ts      # User entity definition
+│   ├── user.dto.ts         # Data transfer objects
+│   └── user.module.ts      # User module configuration
+├── app.controller.ts       # Application base controller
+├── app.service.ts          # Application base service
+├── app.module.ts           # Root module
+└── main.ts                 # Application entry point
 ```
 
-## 설치 및 실행
+## Installation and Execution
 
-### 1. 의존성 설치
+### 1. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 2. 환경 설정
+### 2. Environment Configuration
 
-`.env` 파일을 생성하고 필요한 환경 변수를 설정합니다:
+Create a `.env` file and set the required environment variables:
 
 ```bash
 cp .env.example .env
 ```
 
-### 3. 애플리케이션 실행
+### 3. Run Application
 
 ```bash
-# 개발 모드
+# Development mode
 npm run start:dev
 
-# 프로덕션 빌드
+# Production build
 npm run build
 npm run start:prod
 ```
 
-서버가 시작되면 `http://localhost:8000`에서 접근할 수 있습니다.
+Once the server starts, you can access it at `http://localhost:8000` in the development environment.
 
-## 환경 설정
+## Environment Configuration
 
-### 필수 환경 변수
+### Required Environment Variables
 
-| 변수명                 | 설명                           |
-| ---------------------- | ------------------------------ |
-| `DB_HOST`              | 데이터베이스 호스트            |
-| `DB_PORT`              | 데이터베이스 포트              |
-| `DB_USERNAME`          | 데이터베이스 사용자명          |
-| `DB_PASSWORD`          | 데이터베이스 비밀번호          |
-| `DB_DATABASE`          | 데이터베이스 이름              |
-| `DB_SCHEMA`            | 데이터베이스 스키마            |
-| `JWT_SECRET`           | JWT 시크릿 키                  |
-| `GOOGLE_CLIENT_ID`     | Google OAuth 클라이언트 ID     |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth 클라이언트 시크릿 |
-| `GOOGLE_CALLBACK_URL`  | Google OAuth 콜백 URL          |
-| `FRONTEND_URL`         | 프론트엔드 URL                 |
+| Variable Name          | Description                |
+| ---------------------- | -------------------------- |
+| `DB_HOST`              | Database host              |
+| `DB_PORT`              | Database port              |
+| `DB_USERNAME`          | Database username          |
+| `DB_PASSWORD`          | Database password          |
+| `DB_DATABASE`          | Database name              |
+| `DB_SCHEMA`            | Database schema            |
+| `JWT_SECRET`           | JWT secret key             |
+| `GOOGLE_CLIENT_ID`     | Google OAuth client ID     |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
+| `GOOGLE_CALLBACK_URL`  | Google OAuth callback URL  |
+| `FRONTEND_URL`         | Frontend URL               |
 
-## 개발
+## Development
 
-### 코드 품질
+### Code Quality
 
 ```bash
-# 린팅
+# Linting
 npm run lint
 
-# 포맷팅
+# Formatting
 npm run format
 ```
 
-### 테스트
+### Testing
 
 ```bash
-# 단위 테스트
+# Unit tests
 npm run test
 
-# 테스트 커버리지
+# Test coverage
 npm run test:cov
 
-# E2E 테스트
+# E2E tests
 npm run test:e2e
 ```
 
-### 데이터베이스 마이그레이션
+### Database Migration
 
-개발 환경에서는 `synchronize: true` 설정으로 자동 동기화됩니다.
-프로덕션 환경에서는 마이그레이션을 사용하는 것을 권장합니다.
+In development environment, auto-synchronization is enabled with `synchronize: true`.
+For production environment, using migrations is recommended.
 
-## API 문서
+## API Documentation
 
-자세한 API 명세는 [API_DOC.md](./API_DOC.md)를 참조하세요.
+For detailed API specifications, please refer to [API_DOC.md](./API_DOC.md).
 
-### 주요 엔드포인트
+### Main Endpoints
 
 - **Authentication**: `/auth/*`
 - **Users**: `/users/*`
 - **Health Check**: `/api/health`
-- **Test Page**: `/` (Google 로그인 테스트 페이지)
+- **Test Page**: `/` (Google login test page)
 
-## 🤝 기여하기
+## Development Documentation
 
-1. 이 저장소를 포크합니다
-2. 새 기능 브랜치를 생성합니다 (`git checkout -b feature/AmazingFeature`)
-3. 변경사항을 커밋합니다 (`git commit -m 'Add some AmazingFeature'`)
-4. 브랜치에 푸시합니다 (`git push origin feature/AmazingFeature`)
-5. Pull Request를 생성합니다
+For detailed development guide, please refer to the following documents:
 
-## 📝 라이선스
+- [Coding Standards](./docs/CODING_STANDARDS.md) - Function names, variable names, file name rules
+- [Commit Rules](./docs/COMMIT_RULES.md) - Commit message writing rules
+- [Security Guide](./docs/SECURITY.md) - Security configuration and management methods
 
-이 프로젝트는 UNLICENSED 하에 배포됩니다.
+## License
+
+This project is distributed under UNLICENSED.

@@ -1,47 +1,58 @@
 # TULOG Server
 
-> 대학교 로그 관리 시스템의 백엔드 서버
+> Backend server for personal or team blog platform.
+> You can see the detail of the project [here](https://github.com/DOforTU/tulog).
 
-## 프로젝트 소개
+## Project Overview
 
-개인 및 팀 블로그 서비스를 통해 지식과 경험을 기록하고 공유할 수 있는 플랫폼을 제공하기 위한 백엔드 API 서버입니다.
+Backend API server that provides a platform for recording and sharing knowledge and experiences through personal or team blog services.
 
-## 주요 기능
+## Key Features
 
-## 프로젝트 구조
+## Project Structure
 
 ```
 tulog-server/
-├── api/               # NestJS 애플리케이션
-│   ├── src/           # 소스 코드
-│   ├── test/          # 테스트 파일
-│   └── README.md      # 기술 문서 및 개발 가이드
-├── docs/              # 문서
-└── README.md          # 프로젝트 개요 (현재 파일)
+├── api/               # NestJS Application
+│   ├── docs/          # Development documentation (coding standards, commit rules, security guide)
+│   ├── src/           # Source code
+│   ├── test/          # Test files
+│   └── README.md      # Technical documentation and development guide
+├── docs/              # Project design documents (architecture, requirements, specifications)
+└── README.md          # Project overview (current file)
 ```
 
-## 기술 스택
+## Tech Stack
 
 -   **Backend**: NestJS, TypeScript
--   **Database**: TypeORM
+-   **Database**: PostgreSQL
 -   **Validation**: class-validator, class-transformer
 -   **Documentation**: Swagger (OpenAPI)
 -   **Development**: ESLint, Jest
 
-## 시작하기
+## Getting Started
 
-자세한 설치 및 개발 가이드는 [api/README.md](./api/README.md)를 참조하세요.
+For detailed installation and development guide, please refer to [api/README.md](./api/README.md).
 
 ```bash
-# 프로젝트 클론
+# Clone the project
 git clone https://github.com/DOforTU/tulog-server.git
 
-# 의존성 설치 및 개발 서버 실행
+# Install dependencies and run development server
 cd tulog-server/api
 npm install
 npm run start:dev
 ```
 
-## 라이선스
+## Development Documentation
 
-이 프로젝트는 MIT 라이선스 하에 배포됩니다.
+For detailed development guide, please refer to the following documents:
+
+-   [API Server Development Guide](./api/README.md) - Tech stack, installation and execution methods
+-   [Coding Standards](./api/docs/CODING_STANDARDS.md) - Function names, variable names, file name rules
+-   [Commit Rules](./api/docs/COMMIT_RULES.md) - Commit message writing rules
+-   [Security Guide](./api/docs/SECURITY.md) - Security configuration and management methods
+
+## License
+
+This project is distributed under the MIT License.
