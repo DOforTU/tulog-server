@@ -56,7 +56,7 @@ export class AuthController {
     }
     const frontendUrl = process.env.FRONTEND_URL;
 
-    res.redirect(`${frontendUrl}/login?success=true`);
+    res.redirect(`${frontendUrl}/`);
   }
 
   // ===== Token Management APIs =====
