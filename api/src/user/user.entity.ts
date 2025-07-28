@@ -41,7 +41,7 @@ export class User {
   username: string;
 
   /** User nickname (default is email prefix) */
-  @Column()
+  @Column({ nullable: true })
   nickname: string;
 
   /** Password (used for LOCAL login) */
@@ -61,7 +61,7 @@ export class User {
   googleId: string;
 
   /** Profile picture URL */
-  @Column({ nullable: true })
+  @Column({ default: 'default-avatar.png' })
   profilePicture: string;
 
   /** Login provider */
