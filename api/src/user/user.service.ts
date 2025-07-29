@@ -77,9 +77,9 @@ export class UserService {
     // Business logic: Username duplication check (with other users)
     if (
       updateUserDto.username &&
-      updateUserDto.username !== existingUser.username
+      updateUserDto.username !== existingUser.name
     ) {
-      const userWithUsername = await this.userRepository.findByUsername(
+      const userWithUsername = await this.userRepository.findByName(
         updateUserDto.username,
       );
       if (userWithUsername) {

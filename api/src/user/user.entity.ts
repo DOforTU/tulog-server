@@ -38,7 +38,7 @@ export class User {
 
   /** User real name (firstName + lastName from Google login) */
   @Column({ nullable: true })
-  username: string;
+  name: string;
 
   /** User nickname (default is email prefix) */
   @Column({ nullable: true })

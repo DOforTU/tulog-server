@@ -65,9 +65,9 @@ export class UserRepository {
   }
 
   /** Find active user by username */
-  async findByUsername(username: string): Promise<User | null> {
+  async findByName(name: string): Promise<User | null> {
     return this.userRepository.findOne({
-      where: { username, isDeleted: false },
+      where: { name, isDeleted: false },
     });
   }
 
