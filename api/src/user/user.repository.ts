@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
-import { CreateUserDto, UpdatePasswordDto, UpdateUserDto } from './user.dto';
+import { CreateUserDto, UpdateUserDto } from './user.dto';
 
 /**
  * User Data Access Layer (Repository Pattern)
@@ -41,10 +41,10 @@ export class UserRepository {
   /** Update user Password */
   async updatePassword(
     id: number,
-    updatePasswordDto: UpdatePasswordDto,
+    hashedNewPassword: string,
   ): Promise<User | null> {
     await this.userRepository.update(id, {
-      password: updatePasswordDto.newPassword,
+      password: hashedNewPassword,
     });
     return await this.findById(id);
   }

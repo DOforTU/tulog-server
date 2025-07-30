@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import { User } from './user.entity';
-import { CreateUserDto, UpdatePasswordDto, UpdateUserDto } from './user.dto';
+import { CreateUserDto, UpdateUserDto } from './user.dto';
 
 /**
  * User Business Logic Service
@@ -77,14 +77,11 @@ export class UserService {
   }
 
   /** Update user password */
-  async updatePassword(
-    id: number,
-    updatePasswordDto: UpdatePasswordDto,
-  ): Promise<User> {
+  async updatePassword(id: number, hashedNewPassword: string): Promise<User> {
     // Business logic: Update user password
     const updatedUser = await this.userRepository.updatePassword(
       id,
-      updatePasswordDto,
+      hashedNewPassword,
     );
 
     if (!updatedUser) {

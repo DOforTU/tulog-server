@@ -59,7 +59,10 @@ export class AuthController {
 
   /** Start Google OAuth login */
   @Get('google')
-  @UseGuards(AuthGuard('google'), RateLimitGuard)
+  @UseGuards(
+    AuthGuard('google'), // call GoogleStrategy
+    RateLimitGuard,
+  )
   async googleAuth() {
     // Route to start Google OAuth flow
   }
