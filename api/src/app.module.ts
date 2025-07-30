@@ -15,6 +15,7 @@ import { FollowModule } from './follow/follow.module';
 import { TeamController } from './team/team.controller';
 import { TeamService } from './team/team.service';
 import { TeamModule } from './team/team.module';
+import { Follow } from './follow/follow.entity';
 
 @Module({
   imports: [
@@ -37,7 +38,7 @@ import { TeamModule } from './team/team.module';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         schema: configService.get('DB_SCHEMA'),
-        entities: [User, Auth],
+        entities: [User, Auth, Follow],
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
       }),

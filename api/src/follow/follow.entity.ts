@@ -19,10 +19,10 @@ export class Follow {
   followingId: number;  
 
   @ManyToOne(() => User, (user) => user.followers, { onDelete: 'CASCADE' })
-  follower: User;
+    follower: User;
 
   @ManyToOne(() => User, (user) => user.followings, { onDelete: 'CASCADE' })
-  following: User;
+    following: User;
 
 }
 
