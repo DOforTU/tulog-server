@@ -5,7 +5,6 @@ import { User } from '../user/user.entity';
 import { Response } from 'express';
 import { AuthProvider, Auth } from './auth.entity';
 import { AuthRepository } from './auth.repository';
-import { CreateAuthDto } from './auth.dto';
 
 /** Google OAuth user information interface */
 export interface GoogleUser {
@@ -75,68 +74,57 @@ export class AuthService {
   ): Promise<AuthResult | undefined> {
     const { id: oauthId, email, firstName, lastName, picture } = googleUser;
 
-    /** 구글 로그인 시 고려해야 할 사항
-     * 1. 해당 이메일 유저가 존재하는지 확인
-     * --> 1-1. 없다면 user, auth 새로 만들고, accessToken, user 반환
-     *  --> 끝
-     * --> 1-2. 존재한다면, provider가 google인지 확인
-     * 2. email 존재하고, provider가 google 이라면 accessToken, user 반환
-     * 3. email이 존재하지만, provider가 google이 아니라면
-     * --> 구글 email이지만, LOCAL로 로그인을 했다는 뜻이므로 "email already exists" 반환
-     */
-
-    // 1. Check if user exists with email
+    // 1. Check if user exists by email
     let user = await this.userService.findByEmail(email);
-    console.log(user);
-    let auth: Auth;
+    let auth: Auth | null = null;
 
-    // 1-1. If can't find user, create it
+    // 1-1. If user does not exist, create one
     if (!user) {
       user = await this.userService.createUser({
         email,
-        name: `${firstName} ${lastName}`.trim(), // Real name as username
-        nickname: email.split('@')[0], // Email prefix as nickname
+        name: `${firstName} ${lastName}`.trim(),
+        nickname: email.split('@')[0],
         profilePicture: picture,
         isActive: true,
       });
 
-      // Create new auth
-      const authData: CreateAuthDto = {
-        oauthId,
-        provider: AuthProvider.GOOGLE,
-      };
-      auth = await this.authRepository.createAuth(authData, user);
-      // Generate JWT token
-      const payload = { sub: user.id, email: user.email };
-      const accessToken = this.jwtService.sign(payload);
-
-      return {
-        accessToken,
+      // Create auth record for the new user
+      await this.authRepository.createAuth(
+        {
+          oauthId,
+          provider: AuthProvider.GOOGLE,
+        },
         user,
-      };
+      );
+
+      return this.generateAuthResult(user);
     }
 
-    // 1-2. If can find it, check provider with auth
+    // 1-2. If user exists, find auth record
     auth = await this.findAuthByUserId(user.id);
 
-    // 2. exit email and provider is GOOGLE
-    if (user && auth.provider === AuthProvider.GOOGLE) {
-      // Generate JWT token
-      const payload = { sub: user.id, email: user.email };
-      const accessToken = this.jwtService.sign(payload);
-
-      return {
-        accessToken,
-        user,
-      };
+    if (!auth) {
+      throw new BadRequestException(`"${email}" has no auth record.`);
     }
 
-    // exit email and provider is not GOOGLE
-    if (user && auth.provider != AuthProvider.GOOGLE) {
-      throw new BadRequestException(`"${email}" already exists`);
+    if (auth.provider !== AuthProvider.GOOGLE) {
+      throw new BadRequestException(
+        `"${email}" already exists with a different login method.`,
+      );
     }
 
-    return;
+    return this.generateAuthResult(user);
+  }
+
+  /** JWT token generation helper */
+  private generateAuthResult(user: User): AuthResult {
+    const payload = { sub: user.id, email: user.email };
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      accessToken,
+      user,
+    };
   }
 
   /** Find auth by user id */
