@@ -59,9 +59,7 @@ export class User extends Common {
   @Column({ default: false })
   isActive: boolean;
 
-  @OneToOne(() => Auth, (auth) => auth.user, {
-    onDelete: 'CASCADE',
-  })
+  @OneToOne(() => Auth, (auth) => auth.user)
   auth: Auth;
 }
 
