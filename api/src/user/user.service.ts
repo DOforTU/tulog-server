@@ -64,26 +64,16 @@ export class UserService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    // Business logic: Email duplication check (with other users)
-    if (updateUserDto.email && updateUserDto.email !== existingUser.email) {
-      const userWithEmail = await this.userRepository.findByEmail(
-        updateUserDto.email,
-      );
-      if (userWithEmail) {
-        throw new ConflictException('Email already exists');
-      }
-    }
-
     // Business logic: Username duplication check (with other users)
     if (
-      updateUserDto.username &&
-      updateUserDto.username !== existingUser.name
+      updateUserDto.nickname &&
+      updateUserDto.nickname !== existingUser.nickname
     ) {
-      const userWithUsername = await this.userRepository.findByName(
-        updateUserDto.username,
+      const userWithUsername = await this.userRepository.findByNickname(
+        updateUserDto.nickname,
       );
       if (userWithUsername) {
-        throw new ConflictException('Username already exists');
+        throw new ConflictException('nickname already exists');
       }
     }
 

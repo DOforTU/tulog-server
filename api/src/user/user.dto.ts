@@ -17,9 +17,9 @@ export class CreateUserDto {
   @IsEmail()
   email: string;
 
-  /** Username (required) */
+  /** Name (required) */
   @IsString()
-  username: string;
+  name: string;
 
   /** Password (optional, not required for Google OAuth) */
   @IsOptional()
@@ -58,15 +58,10 @@ export class CreateUserDto {
  * - All fields are optional
  */
 export class UpdateUserDto {
-  /** User email (optional, valid email format) */
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
   /** Username (optional) */
   @IsOptional()
   @IsString()
-  username?: string;
+  name?: string;
 
   /** Password (optional) */
   @IsOptional()
@@ -78,25 +73,10 @@ export class UpdateUserDto {
   @IsString()
   nickname?: string;
 
-  /** Google OAuth ID (optional) */
-  @IsOptional()
-  @IsString()
-  googleId?: string;
-
   /** Profile picture URL (optional) */
   @IsOptional()
   @IsString()
   profilePicture?: string;
-
-  /** Login provider (optional) */
-  @IsOptional()
-  @IsEnum(AuthProvider)
-  provider?: AuthProvider;
-
-  /** Account activation status (optional) */
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
 }
 
 // TODO: Add user search DTO

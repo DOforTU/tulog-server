@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Put,
   Delete,
   Patch,
   Body,
@@ -53,13 +52,13 @@ export class UserController {
   }
 
   /** Update user information */
-  @Put(':id')
+  @Patch('me')
   @UseGuards(JwtAuthGuard)
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Request() req: { user: User },
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<User> {
-    return this.userService.updateUser(id, updateUserDto);
+    return this.userService.updateUser(req.user.id, updateUserDto);
   }
 
   /** Soft delete user */

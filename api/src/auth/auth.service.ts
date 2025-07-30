@@ -99,9 +99,9 @@ export class AuthService {
             googleId: id,
             profilePicture: picture,
           });
-          // Update username with current Google information
+          // Update name with current Google information
           user = await this.userService.updateUser(user.id, {
-            username: `${firstName} ${lastName}`.trim(),
+            name: `${firstName} ${lastName}`.trim(),
             nickname: email.split('@')[0],
           });
         } else {
