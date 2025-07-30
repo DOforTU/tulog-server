@@ -1,11 +1,13 @@
 import { Auth } from 'src/auth/auth.entity';
 import { Common } from 'src/common/entity/common.entity';
+import { Follow } from 'src/follow/follow.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   Index,
   OneToOne,
+  OneToMany,
 } from 'typeorm';
 
 export enum UserRole {
@@ -61,6 +63,12 @@ export class User extends Common {
 
   @OneToOne(() => Auth, (auth) => auth.user)
   auth: Auth;
+
+  @OneToMany(() => Follow, (follow) => follow.follower)
+  followings: Follow[];
+
+  @OneToMany(() => Follow, (follow) => follow.following)
+  followers: Follow[];  
 }
 
 // TODO: Add email verification functionality
