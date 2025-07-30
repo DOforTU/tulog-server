@@ -1,11 +1,11 @@
+import { Auth } from 'src/auth/auth.entity';
+import { Common } from 'src/common/entity/common.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  DeleteDateColumn,
   Index,
+  OneToOne,
 } from 'typeorm';
 
 export enum AuthProvider {
@@ -28,7 +28,7 @@ export enum UserRole {
 @Entity('user')
 @Index(['email'], { where: '"isDeleted" = false', unique: true })
 @Index(['nickname'], { where: '"isDeleted" = false', unique: true })
-export class User {
+export class User extends Common {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -76,21 +76,10 @@ export class User {
   @Column({ default: true })
   isActive: boolean;
 
-  /** Soft delete flag */
-  @Column({ default: false })
-  isDeleted: boolean;
-
-  /** Creation timestamp */
-  @CreateDateColumn()
-  createdAt: Date;
-
-  /** Update timestamp */
-  @UpdateDateColumn()
-  updatedAt: Date;
-
-  /** Deletion timestamp (set when soft deleted) */
-  @DeleteDateColumn({ nullable: true })
-  deletedAt: Date;
+  @OneToOne(() => Auth, (auth) => auth.user, {
+    onDelete: 'CASCADE',
+  })
+  auth: Auth;
 }
 
 // TODO: Add email verification functionality

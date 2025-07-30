@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { User } from './user/user.entity';
 import { LoggingMiddleware } from './common/middleware/logging.middleware';
 import { SecurityMiddleware } from './common/middleware/security.middleware';
+import { Auth } from './auth/auth.entity';
 
 @Module({
   imports: [
@@ -32,7 +33,7 @@ import { SecurityMiddleware } from './common/middleware/security.middleware';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         schema: configService.get('DB_SCHEMA'),
-        entities: [User],
+        entities: [User, Auth],
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
       }),
