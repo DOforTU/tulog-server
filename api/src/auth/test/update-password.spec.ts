@@ -1,11 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthService } from './auth.service';
-import { UserService } from '../user/user.service';
-import { AuthRepository } from './auth.repository';
+import { AuthService } from '../auth.service';
+import { UserService } from '../../user/user.service';
+import { AuthRepository } from '../auth.repository';
 import * as bcrypt from 'bcrypt';
-import { AuthProvider } from './auth.entity';
+import { AuthProvider } from '../auth.entity';
 import { UpdatePasswordDto } from 'src/user/user.dto';
 import { JwtService } from '@nestjs/jwt';
+import { DataSource } from 'typeorm';
 
 describe('AuthService - updatePassword()', () => {
   let authService: AuthService;
@@ -26,12 +27,17 @@ describe('AuthService - updatePassword()', () => {
       sign: jest.fn().mockReturnValue('fake-jwt-token'),
     };
 
+    const mockDataSource = {
+      createQueryRunner: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: UserService, useValue: userService },
         { provide: AuthRepository, useValue: authRepository },
         { provide: JwtService, useValue: jwtService },
+        { provide: DataSource, useValue: mockDataSource },
       ],
     }).compile();
 
@@ -46,25 +52,24 @@ describe('AuthService - updatePassword()', () => {
     newPassword: 'NewPass1!',
   };
 
-  it('✅ 1. 정상적으로 비밀번호를 변경한다', async () => {
+  it('✅ 1. Successfully changes the password', async () => {
     (userService.findWithPasswordById as jest.Mock).mockResolvedValue(
       validUser,
     );
     (authRepository.findAuthByUserId as jest.Mock).mockResolvedValue(validAuth);
     (jest.spyOn(bcrypt, 'compare') as jest.Mock).mockResolvedValue(true);
     (jest.spyOn(bcrypt, 'hash') as jest.Mock).mockResolvedValue('hashed-new');
-
     (userService.updatePassword as jest.Mock).mockResolvedValue({ id: 1 });
 
     const result = await authService.updatePassword(1, validDto);
 
     expect(result).toEqual({ id: 1 });
-    expect(bcrypt.compare).toBeCalledWith('OldPass1!', 'hashed-old');
-    expect(bcrypt.hash).toBeCalledWith('NewPass1!', 10);
-    expect(userService.updatePassword).toBeCalledWith(1, 'hashed-new');
+    expect(bcrypt.compare).toHaveBeenCalledWith('OldPass1!', 'hashed-old');
+    expect(bcrypt.hash).toHaveBeenCalledWith('NewPass1!', 10);
+    expect(userService.updatePassword).toHaveBeenCalledWith(1, 'hashed-new');
   });
 
-  it('❌ 2. 유저가 존재하지 않으면 예외 발생', async () => {
+  it('❌ 2. Throws if user does not exist', async () => {
     (userService.findWithPasswordById as jest.Mock).mockResolvedValue(null);
 
     await expect(authService.updatePassword(1, validDto)).rejects.toThrow(
@@ -72,7 +77,7 @@ describe('AuthService - updatePassword()', () => {
     );
   });
 
-  it('❌ 3. provider가 LOCAL이 아니면 예외 발생', async () => {
+  it('❌ 3. Throws if provider is not LOCAL', async () => {
     (userService.findWithPasswordById as jest.Mock).mockResolvedValue(
       validUser,
     );
@@ -85,7 +90,7 @@ describe('AuthService - updatePassword()', () => {
     );
   });
 
-  it('❌ 4. old password가 틀리면 예외 발생', async () => {
+  it('❌ 4. Throws if old password is incorrect', async () => {
     (userService.findWithPasswordById as jest.Mock).mockResolvedValue(
       validUser,
     );
@@ -95,30 +100,5 @@ describe('AuthService - updatePassword()', () => {
     await expect(authService.updatePassword(1, validDto)).rejects.toThrow(
       'Old password is incorrect.',
     );
-  });
-
-  it('❌ 5. 대문자가 없으면 유효성 검사 실패 (형식 검증)', () => {
-    const dto = { ...validDto, newPassword: 'password1!' };
-    expect(dto.newPassword).not.toMatch(/[A-Z]/);
-  });
-
-  it('❌ 6. 소문자가 없으면 유효성 검사 실패 (형식 검증)', () => {
-    const dto = { ...validDto, newPassword: 'PASSWORD1!' };
-    expect(dto.newPassword).not.toMatch(/[a-z]/);
-  });
-
-  it('❌ 7. 숫자가 없으면 유효성 검사 실패 (형식 검증)', () => {
-    const dto = { ...validDto, newPassword: 'Password!' };
-    expect(dto.newPassword).not.toMatch(/\d/);
-  });
-
-  it('❌ 8. 특수문자가 없으면 유효성 검사 실패 (형식 검증)', () => {
-    const dto = { ...validDto, newPassword: 'Password1' };
-    expect(dto.newPassword).not.toMatch(/[!@#$%^&*(),.?":{}|<>]/);
-  });
-
-  it('❌ 9. 8자 미만이면 유효성 검사 실패 (형식 검증)', () => {
-    const dto = { ...validDto, newPassword: 'P1!a' };
-    expect(dto.newPassword.length).toBeLessThan(8);
   });
 });
