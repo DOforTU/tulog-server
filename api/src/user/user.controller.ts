@@ -9,6 +9,7 @@ import {
   ParseIntPipe,
   UseGuards,
   Request,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './user.entity';
@@ -31,6 +32,24 @@ export class UserController {
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number): Promise<User> {
     return this.userService.getUserById(id);
+  }
+
+  /** Get user by id or nickname (query) */
+  @Get()
+  async findUser(
+    @Query('id') id?: string,
+    @Query('nickname') nickname?: string,
+  ): Promise<User | null> {
+    if (id) {
+      const idNum = Number(id);
+      if (!isNaN(idNum)) {
+        return this.userService.getUserById(idNum);
+      }
+    }
+    if (nickname) {
+      return this.userService.getUserByNickname(nickname);
+    }
+    return null;
   }
 
   /** Update user information */
@@ -57,6 +76,14 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   getCurrentUser(@Request() req: { user: User }): User {
     return req.user;
+  }
+
+  /** Get user by nickname */
+  @Get('nickname/:nickname')
+  async findByNickname(
+    @Param('nickname') nickname: string,
+  ): Promise<User | null> {
+    return this.userService.getUserByNickname(nickname);
   }
 
   /** Get deleted users list */

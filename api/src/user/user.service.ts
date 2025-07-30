@@ -120,6 +120,15 @@ export class UserService {
     return user;
   }
 
+  /** Get user by nickname(throws exception) */
+  async getUserByNickname(nickname: string): Promise<User | null> {
+    const user = await this.userRepository.findByNickname(nickname);
+    if (!user) {
+      throw new NotFoundException(`User with nickname ${nickname} not found`);
+    }
+    return user;
+  }
+
   /** Get user by Google ID */
   async getUserByGoogleId(googleId: string): Promise<User | null> {
     return this.userRepository.findByGoogleId(googleId);

@@ -71,6 +71,12 @@ export class UserRepository {
     });
   }
 
+  async findByNickname(nickname: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { nickname, isDeleted: false },
+    });
+  }
+
   /** Find active user by Google ID */
   async findByGoogleId(googleId: string): Promise<User | null> {
     return this.userRepository.findOne({
