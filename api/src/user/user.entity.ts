@@ -37,11 +37,11 @@ export class User {
   email: string;
 
   /** User real name (firstName + lastName from Google login) */
-  @Column({ nullable: true })
+  @Column()
   name: string;
 
   /** User nickname (default is email prefix) */
-  @Column({ nullable: true })
+  @Column()
   nickname: string;
 
   /** Password (used for LOCAL login) */
