@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
 import { User } from '../user/user.entity';
@@ -7,6 +11,7 @@ import { AuthProvider, Auth } from './auth.entity';
 import { AuthRepository } from './auth.repository';
 import { UpdatePasswordDto } from 'src/user/user.dto';
 import * as bcrypt from 'bcrypt';
+import { DataSource } from 'typeorm';
 
 /** Google OAuth user information interface */
 export interface GoogleUser {
@@ -66,6 +71,7 @@ export class AuthService {
     private readonly authRepository: AuthRepository,
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
+    private dataSource: DataSource,
   ) {}
 
   // ===== Authentication and Validation Methods =====
@@ -77,29 +83,47 @@ export class AuthService {
     const { id: oauthId, email, firstName, lastName, picture } = googleUser;
 
     // 1. Check if user exists by email
-    let user = await this.userService.findByEmail(email);
+    const user = await this.userService.findByEmail(email);
     let auth: Auth | null = null;
 
     // 1-1. If user does not exist, create one
     if (!user) {
-      user = await this.userService.createUser({
-        email,
-        name: `${firstName} ${lastName}`.trim(),
-        nickname: email.split('@')[0],
-        profilePicture: picture,
-        isActive: true,
-      });
+      const queryRunner = this.dataSource.createQueryRunner();
 
-      // Create auth record for the new user
-      await this.authRepository.createAuth(
-        {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      try {
+        // create new user
+        const createdUser = await queryRunner.manager.save(User, {
+          email,
+          name: `${firstName} ${lastName}`.trim(),
+          nickname: email.split('@')[0],
+          profilePicture: picture,
+          isActive: true,
+        });
+
+        // create auth record
+        await queryRunner.manager.save(Auth, {
           oauthId,
           provider: AuthProvider.GOOGLE,
-        },
-        user,
-      );
+          user: createdUser,
+        });
 
-      return this.generateAuthResult(user);
+        // commit transaction
+        await queryRunner.commitTransaction();
+        return this.generateAuthResult(createdUser);
+      } catch (error: any) {
+        console.error('OAuth registration error:', error);
+        // if error occurs, rollback transaction
+        await queryRunner.rollbackTransaction();
+        throw new InternalServerErrorException(
+          'Failed Google OAuth registration',
+        );
+      } finally {
+        // release(): return connection to pool
+        await queryRunner.release();
+      }
     }
 
     // 1-2. If user exists, find auth record
