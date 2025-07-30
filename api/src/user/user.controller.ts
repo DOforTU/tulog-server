@@ -33,6 +33,13 @@ export class UserController {
     return this.userService.getUserById(id);
   }
 
+  /** Get current logged-in user information */
+  @Get('me/info')
+  @UseGuards(JwtAuthGuard)
+  getCurrentUser(@Request() req: { user: User }): User {
+    return req.user;
+  }
+
   /** Get user by id or nickname (query) */
   @Get()
   async findUser(
@@ -69,13 +76,6 @@ export class UserController {
   }
 
   // ===== Special Query APIs =====
-
-  /** Get current logged-in user information */
-  @Get('me/info')
-  @UseGuards(JwtAuthGuard)
-  getCurrentUser(@Request() req: { user: User }): User {
-    return req.user;
-  }
 
   /** Get user by nickname */
   @Get('nickname/:nickname')

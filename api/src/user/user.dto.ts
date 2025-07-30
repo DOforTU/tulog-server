@@ -46,11 +46,6 @@ export class UpdateUserDto {
   @IsString()
   name?: string;
 
-  /** Password (optional) */
-  @IsOptional()
-  @IsString()
-  password?: string;
-
   /** User nickname (optional) */
   @IsOptional()
   @IsString()
@@ -62,8 +57,16 @@ export class UpdateUserDto {
   profilePicture?: string;
 }
 
-// TODO: Add user search DTO
-// TODO: Add password change DTO
-// TODO: Add profile image upload DTO
-// TODO: Add user settings DTO
-// TODO: Add email verification DTO
+/**
+ * User password update DTO
+ * - Used when updating user password
+ */
+export class UpdatePasswordDto {
+  /** Password (required) */
+  @IsString()
+  oldPassword: string;
+
+  /** Password (required) */
+  @IsString()
+  newPassword: string;
+}

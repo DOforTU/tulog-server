@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
-import { CreateUserDto, UpdateUserDto } from './user.dto';
+import { CreateUserDto, UpdatePasswordDto, UpdateUserDto } from './user.dto';
 
 /**
  * User Data Access Layer (Repository Pattern)
@@ -21,7 +21,7 @@ export class UserRepository {
 
   /** Find active user by ID */
   async findById(id: number): Promise<User | null> {
-    return this.userRepository.findOne({
+    return await this.userRepository.findOne({
       where: { id, isDeleted: false },
     });
   }
@@ -29,13 +29,24 @@ export class UserRepository {
   /** Create new user */
   async create(createUserDto: CreateUserDto): Promise<User> {
     const user = this.userRepository.create(createUserDto);
-    return this.userRepository.save(user);
+    return await this.userRepository.save(user);
   }
 
   /** Update user information */
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User | null> {
     await this.userRepository.update(id, updateUserDto);
-    return this.findById(id);
+    return await this.findById(id);
+  }
+
+  /** Update user Password */
+  async updatePassword(
+    id: number,
+    updatePasswordDto: UpdatePasswordDto,
+  ): Promise<User | null> {
+    await this.userRepository.update(id, {
+      password: updatePasswordDto.newPassword,
+    });
+    return await this.findById(id);
   }
 
   /** Soft delete user */
@@ -51,7 +62,7 @@ export class UserRepository {
 
   /** Find all active users (admin only) */
   async findAll(): Promise<User[]> {
-    return this.userRepository.find({
+    return await this.userRepository.find({
       where: { isDeleted: false },
       order: { createdAt: 'DESC' },
     });
@@ -59,42 +70,50 @@ export class UserRepository {
 
   /** Find active user by email */
   async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({
+    return await this.userRepository.findOne({
       where: { email, isDeleted: false },
     });
   }
 
   /** Find active user by username */
   async findByName(name: string): Promise<User | null> {
-    return this.userRepository.findOne({
+    return await this.userRepository.findOne({
       where: { name, isDeleted: false },
     });
   }
 
   async findByNickname(nickname: string): Promise<User | null> {
-    return this.userRepository.findOne({
+    return await this.userRepository.findOne({
       where: { nickname, isDeleted: false },
     });
   }
 
   /** Find user by email (including deleted users) */
   async findByEmailIncludingDeleted(email: string): Promise<User | null> {
-    return this.userRepository.findOne({
+    return await this.userRepository.findOne({
       where: { email },
     });
   }
 
   /** Find all deleted users */
   async findDeleted(): Promise<User[]> {
-    return this.userRepository.find({
+    return await this.userRepository.find({
       where: { isDeleted: true },
     });
   }
 
   /** Find deleted user by ID */
   async findDeletedById(id: number): Promise<User | null> {
-    return this.userRepository.findOne({
+    return await this.userRepository.findOne({
       where: { id, isDeleted: true },
+    });
+  }
+
+  /** Find User with password */
+  async findWithPasswordById(id: number): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { id, isDeleted: false },
+      select: ['id', 'email', 'password'],
     });
   }
 
@@ -127,7 +146,7 @@ export class UserRepository {
 
   /** Count active users */
   async count(): Promise<number> {
-    return this.userRepository.count({
+    return await this.userRepository.count({
       where: { isDeleted: false },
     });
   }

@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import { User } from './user.entity';
-import { CreateUserDto, UpdateUserDto } from './user.dto';
+import { CreateUserDto, UpdatePasswordDto, UpdateUserDto } from './user.dto';
 
 /**
  * User Business Logic Service
@@ -71,6 +71,24 @@ export class UserService {
     const updatedUser = await this.userRepository.update(id, updateUserDto);
     if (!updatedUser) {
       throw new NotFoundException(`Failed to update user with ID ${id}`);
+    }
+
+    return updatedUser;
+  }
+
+  /** Update user password */
+  async updatePassword(
+    id: number,
+    updatePasswordDto: UpdatePasswordDto,
+  ): Promise<User> {
+    // Business logic: Update user password
+    const updatedUser = await this.userRepository.updatePassword(
+      id,
+      updatePasswordDto,
+    );
+
+    if (!updatedUser) {
+      throw new Error(`Failed to update password for user with ID ${id}`);
     }
 
     return updatedUser;
@@ -172,6 +190,11 @@ export class UserService {
   /** Find user by email (including deleted users) */
   async findByEmailIncludingDeleted(email: string): Promise<User | null> {
     return this.userRepository.findByEmailIncludingDeleted(email);
+  }
+
+  /** Find User with password by Id */
+  async findWithPasswordById(id: number): Promise<User | null> {
+    return this.userRepository.findWithPasswordById(id);
   }
 }
 

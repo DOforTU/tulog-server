@@ -5,6 +5,8 @@ import { User } from '../user/user.entity';
 import { Response } from 'express';
 import { AuthProvider, Auth } from './auth.entity';
 import { AuthRepository } from './auth.repository';
+import { UpdatePasswordDto } from 'src/user/user.dto';
+import * as bcrypt from 'bcrypt';
 
 /** Google OAuth user information interface */
 export interface GoogleUser {
@@ -203,6 +205,50 @@ export class AuthService {
   /** Retrieve user by ID */
   async findUserById(userId: number): Promise<User | null> {
     return await this.userService.findById(userId);
+  }
+
+  /** Update user password */
+  async updatePassword(
+    userId: number,
+    updatePasswordDto: UpdatePasswordDto,
+  ): Promise<User> {
+    // Validate user existence
+    const user = await this.userService.findWithPasswordById(userId);
+    if (!user) {
+      throw new BadRequestException(`User with ID ${userId} not found.`);
+    }
+
+    // check user's provider: if it's not local, throw an error
+    const auth = await this.findAuthByUserId(userId);
+    if (auth.provider !== AuthProvider.LOCAL) {
+      throw new BadRequestException(
+        'Password update is only allowed for local accounts.',
+      );
+    }
+
+    // compare old password
+    const isPasswordValid = await bcrypt.compare(
+      updatePasswordDto.oldPassword,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new BadRequestException('Old password is incorrect.');
+    }
+
+    // password bcrypt hashing
+    updatePasswordDto.newPassword = await bcrypt.hash(
+      updatePasswordDto.newPassword,
+      10,
+    );
+
+    // Update password
+    const updatedUser = await this.userService.updatePassword(
+      userId,
+      updatePasswordDto,
+    );
+
+    return updatedUser;
   }
 
   // ===== Token Management Methods =====
