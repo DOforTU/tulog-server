@@ -1,12 +1,15 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
-import { AuthProvider, User } from '../user/user.entity';
+import { User } from '../user/user.entity';
 import { Response } from 'express';
+import { AuthProvider, Auth } from './auth.entity';
+import { AuthRepository } from './auth.repository';
+import { CreateAuthDto } from './auth.dto';
 
 /** Google OAuth user information interface */
 export interface GoogleUser {
-  id: string;
+  id: string; // Google OAuth ID
   email: string;
   firstName: string;
   lastName: string;
@@ -59,6 +62,7 @@ function isValidJwtPayload(token: unknown): token is JwtPayload {
 @Injectable()
 export class AuthService {
   constructor(
+    private readonly authRepository: AuthRepository,
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
   ) {}
@@ -66,65 +70,84 @@ export class AuthService {
   // ===== Authentication and Validation Methods =====
 
   /** Google OAuth user validation and login processing */
-  async validateGoogleUser(googleUser: GoogleUser): Promise<AuthResult> {
-    const { id, email, firstName, lastName, picture } = googleUser;
+  async validateGoogleUser(
+    googleUser: GoogleUser,
+  ): Promise<AuthResult | undefined> {
+    const { id: oauthId, email, firstName, lastName, picture } = googleUser;
 
-    // Check if user exists with this Google ID (active users only)
-    let user = await this.userService.findByGoogleId(id);
+    /** 구글 로그인 시 고려해야 할 사항
+     * 1. 해당 이메일 유저가 존재하는지 확인
+     * --> 1-1. 없다면 user, auth 새로 만들고, accessToken, user 반환
+     *  --> 끝
+     * --> 1-2. 존재한다면, provider가 google인지 확인
+     * 2. email 존재하고, provider가 google 이라면 accessToken, user 반환
+     * 3. email이 존재하지만, provider가 google이 아니라면
+     * --> 구글 email이지만, LOCAL로 로그인을 했다는 뜻이므로 "email already exists" 반환
+     */
 
+    // 1. Check if user exists with email
+    let user = await this.userService.findByEmail(email);
+    console.log(user);
+    let auth: Auth;
+
+    // 1-1. If can't find user, create it
     if (!user) {
-      // Check if active user exists with this email (might have signed up differently)
-      const existingActiveUser = await this.userService.findByEmail(email);
+      user = await this.userService.createUser({
+        email,
+        name: `${firstName} ${lastName}`.trim(), // Real name as username
+        nickname: email.split('@')[0], // Email prefix as nickname
+        profilePicture: picture,
+        isActive: true,
+      });
 
-      if (existingActiveUser) {
-        // Link Google account to existing active user
-        user = await this.userService.linkGoogleAccount(existingActiveUser.id, {
-          googleId: id,
-          profilePicture: picture,
-        });
-      } else {
-        // Check for user by email including deleted users
-        const existingUserIncludingDeleted =
-          await this.userService.findByEmailIncludingDeleted(email);
+      // Create new auth
+      const authData: CreateAuthDto = {
+        oauthId,
+        provider: AuthProvider.GOOGLE,
+      };
+      auth = await this.authRepository.createAuth(authData, user);
+      // Generate JWT token
+      const payload = { sub: user.id, email: user.email };
+      const accessToken = this.jwtService.sign(payload);
 
-        if (
-          existingUserIncludingDeleted &&
-          existingUserIncludingDeleted.isDeleted
-        ) {
-          // If deleted user exists, restore and update with new Google information
-          user = await this.userService.restoreUser(
-            existingUserIncludingDeleted.id,
-          );
-          user = await this.userService.linkGoogleAccount(user.id, {
-            googleId: id,
-            profilePicture: picture,
-          });
-          // Update name with current Google information
-          user = await this.userService.updateUser(user.id, {
-            name: `${firstName} ${lastName}`.trim(),
-            nickname: email.split('@')[0],
-          });
-        } else {
-          // Create new user with Google account
-          user = await this.userService.createGoogleUser({
-            googleId: id,
-            email,
-            username: `${firstName} ${lastName}`.trim(), // Real name as username
-            nickname: email.split('@')[0], // Email prefix as nickname
-            profilePicture: picture,
-          });
-        }
-      }
+      return {
+        accessToken,
+        user,
+      };
     }
 
-    // Generate JWT token
-    const payload = { sub: user.id, email: user.email };
-    const accessToken = this.jwtService.sign(payload);
+    // 1-2. If can find it, check provider with auth
+    auth = await this.findAuthByUserId(user.id);
 
-    return {
-      accessToken,
-      user,
-    };
+    // 2. exit email and provider is GOOGLE
+    if (user && auth.provider === AuthProvider.GOOGLE) {
+      // Generate JWT token
+      const payload = { sub: user.id, email: user.email };
+      const accessToken = this.jwtService.sign(payload);
+
+      return {
+        accessToken,
+        user,
+      };
+    }
+
+    // exit email and provider is not GOOGLE
+    if (user && auth.provider != AuthProvider.GOOGLE) {
+      throw new BadRequestException(`"${email}" already exists`);
+    }
+
+    return;
+  }
+
+  /** Find auth by user id */
+  async findAuthByUserId(userId: number): Promise<Auth> {
+    const auth = await this.authRepository.findAuthByUserId(userId);
+
+    if (!auth) {
+      throw new BadRequestException(`We can find ${userId}.`);
+    }
+
+    return auth;
   }
 
   /** Validate refresh token and generate new access token */

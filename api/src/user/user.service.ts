@@ -4,17 +4,8 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { UserRepository } from './user.repository';
-import { User, AuthProvider } from './user.entity';
-import { UpdateUserDto } from './user.dto';
-
-/** Google OAuth user data interface */
-interface GoogleUserData {
-  googleId: string;
-  email: string;
-  nickname: string;
-  username: string;
-  profilePicture?: string;
-}
+import { User } from './user.entity';
+import { CreateUserDto, UpdateUserDto } from './user.dto';
 
 /**
  * User Business Logic Service
@@ -44,7 +35,7 @@ export class UserService {
   }
 
   /** Create user */
-  async createUser(userData: GoogleUserData): Promise<User> {
+  async createUser(userData: CreateUserDto): Promise<User> {
     // Check for email duplication only among non-deleted users
     const existingActiveUser = await this.userRepository.findByEmail(
       userData.email,
@@ -53,7 +44,7 @@ export class UserService {
       throw new ConflictException('Email already exists');
     }
 
-    return this.userRepository.createGoogleUser(userData);
+    return this.userRepository.create(userData);
   }
 
   /** Update user information */
@@ -119,11 +110,6 @@ export class UserService {
     return user;
   }
 
-  /** Get user by Google ID */
-  async getUserByGoogleId(googleId: string): Promise<User | null> {
-    return this.userRepository.findByGoogleId(googleId);
-  }
-
   /** Get deleted users list */
   async getDeletedUsers(): Promise<User[]> {
     return this.userRepository.findDeleted();
@@ -171,42 +157,6 @@ export class UserService {
     return restoredUser;
   }
 
-  /** Create Google OAuth user */
-  async createGoogleUser(googleUserData: GoogleUserData): Promise<User> {
-    // Check for email duplication only among non-deleted users
-    // Deleted users can create new accounts
-    const existingActiveUser = await this.userRepository.findByEmail(
-      googleUserData.email,
-    );
-    if (existingActiveUser) {
-      throw new ConflictException('Email already exists');
-    }
-
-    // Create new account even if deleted users exist
-    return this.userRepository.createGoogleUser(googleUserData);
-  }
-
-  /** Link Google account to existing account */
-  async linkGoogleAccount(
-    userId: number,
-    linkData: { googleId: string; profilePicture?: string },
-  ): Promise<User> {
-    const updateData = {
-      googleId: linkData.googleId,
-      profilePicture: linkData.profilePicture,
-      provider: AuthProvider.GOOGLE,
-    };
-
-    const updatedUser = await this.userRepository.update(userId, updateData);
-    if (!updatedUser) {
-      throw new NotFoundException(
-        `Failed to link Google account for user ${userId}`,
-      );
-    }
-
-    return updatedUser;
-  }
-
   // ===== Internal Helper Methods - Simple Form =====
 
   /** Find active user by email (nullable) */
@@ -222,11 +172,6 @@ export class UserService {
   /** Find user by email (including deleted users) */
   async findByEmailIncludingDeleted(email: string): Promise<User | null> {
     return this.userRepository.findByEmailIncludingDeleted(email);
-  }
-
-  /** Find user by Google ID */
-  async findByGoogleId(googleId: string): Promise<User | null> {
-    return this.userRepository.findByGoogleId(googleId);
   }
 }
 

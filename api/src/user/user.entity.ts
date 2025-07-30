@@ -8,11 +8,6 @@ import {
   OneToOne,
 } from 'typeorm';
 
-export enum AuthProvider {
-  GOOGLE = 'google',
-  LOCAL = 'local',
-}
-
 export enum UserRole {
   USER = 'user',
   ADMIN = 'admin',
@@ -56,24 +51,12 @@ export class User extends Common {
   })
   role: UserRole;
 
-  /** Google OAuth ID */
-  @Column({ nullable: true })
-  googleId: string;
-
   /** Profile picture URL */
   @Column({ default: 'default-avatar.png' })
   profilePicture: string;
 
-  /** Login provider */
-  @Column({
-    type: 'enum',
-    enum: AuthProvider,
-    default: AuthProvider.GOOGLE,
-  })
-  provider: AuthProvider;
-
   /** Account activation status */
-  @Column({ default: true })
+  @Column({ default: false })
   isActive: boolean;
 
   @OneToOne(() => Auth, (auth) => auth.user, {

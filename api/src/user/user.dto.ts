@@ -1,11 +1,4 @@
-import {
-  IsEmail,
-  IsString,
-  IsOptional,
-  IsBoolean,
-  IsEnum,
-} from 'class-validator';
-import { AuthProvider } from './user.entity';
+import { IsEmail, IsString, IsOptional, IsBoolean } from 'class-validator';
 
 /**
  * User creation DTO
@@ -26,27 +19,17 @@ export class CreateUserDto {
   @IsString()
   password?: string;
 
-  /** User nickname (optional) */
+  /** User nickname */
   @IsOptional()
   @IsString()
-  nickname?: string;
+  nickname: string;
 
-  /** Google OAuth ID (optional) */
+  /** Profile picture URL (default: default-avatar.png) */
   @IsOptional()
   @IsString()
-  googleId?: string;
+  profilePicture: string;
 
-  /** Profile picture URL (optional) */
-  @IsOptional()
-  @IsString()
-  profilePicture?: string;
-
-  /** Login provider (optional) */
-  @IsOptional()
-  @IsEnum(AuthProvider)
-  provider?: AuthProvider;
-
-  /** Account activation status (optional, default: true) */
+  /** Account activation status (optional, default: false) */
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;

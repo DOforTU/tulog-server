@@ -1,6 +1,12 @@
 import { Common } from 'src/common/entity/common.entity';
 import { User } from 'src/user/user.entity';
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  JoinColumn,
+} from 'typeorm';
 
 export enum AuthProvider {
   GOOGLE = 'google',
@@ -23,8 +29,13 @@ export class Auth extends Common {
   })
   provider: AuthProvider;
 
+  /** googleId, kakaoId, ... etc */
+  @Column({ nullable: true })
+  oauthId: string;
+
   @OneToOne(() => User, (user) => user.auth, {
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'userId' })
   user: User;
 }

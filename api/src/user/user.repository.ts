@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, AuthProvider } from './user.entity';
+import { User } from './user.entity';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
 
 /**
@@ -77,13 +77,6 @@ export class UserRepository {
     });
   }
 
-  /** Find active user by Google ID */
-  async findByGoogleId(googleId: string): Promise<User | null> {
-    return this.userRepository.findOne({
-      where: { googleId, isDeleted: false },
-    });
-  }
-
   /** Find user by email (including deleted users) */
   async findByEmailIncludingDeleted(email: string): Promise<User | null> {
     return this.userRepository.findOne({
@@ -106,21 +99,6 @@ export class UserRepository {
   }
 
   // ===== Special Operations - Data Access =====
-
-  /** Create Google OAuth user */
-  async createGoogleUser(userData: {
-    email: string;
-    nickname: string;
-    username: string;
-    googleId: string;
-    profilePicture?: string;
-  }): Promise<User> {
-    const user = this.userRepository.create({
-      ...userData,
-      provider: AuthProvider.GOOGLE,
-    });
-    return this.userRepository.save(user);
-  }
 
   /** Permanently delete user */
   async hardDelete(id: number): Promise<boolean> {
