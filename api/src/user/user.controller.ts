@@ -59,7 +59,7 @@ export class UserController {
   }
 
   /** Update user information */
-  @Patch('me')
+  @Patch('me/info')
   @UseGuards(JwtAuthGuard)
   async update(
     @Request() req: { user: User },
