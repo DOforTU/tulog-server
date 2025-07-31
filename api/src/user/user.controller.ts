@@ -26,18 +26,17 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   // ===== Basic CRUD - REST API =====
+  /** Get current logged-in user information */
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  getCurrentUser(@Request() req: { user: User }): User {
+    return req.user;
+  }
 
   /** Get user by ID */
   @Get(':id')
   async getUserById(@Param('id', ParseIntPipe) id: number): Promise<User> {
     return this.userService.getUserById(id);
-  }
-
-  /** Get current logged-in user information */
-  @Get('me/info')
-  @UseGuards(JwtAuthGuard)
-  getCurrentUser(@Request() req: { user: User }): User {
-    return req.user;
   }
 
   /** Get user by id or nickname (query) */
@@ -59,7 +58,7 @@ export class UserController {
   }
 
   /** Update user information */
-  @Patch('me/info')
+  @Patch('me')
   @UseGuards(JwtAuthGuard)
   async updateUser(
     @Request() req: { user: User },
