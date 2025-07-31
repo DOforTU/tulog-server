@@ -1,4 +1,4 @@
-import { IsString, IsEnum } from 'class-validator';
+import { IsString, IsEnum, IsOptional } from 'class-validator';
 import { AuthProvider } from './auth.entity';
 
 /**
@@ -7,8 +7,9 @@ import { AuthProvider } from './auth.entity';
  * - Email and username are required, others are optional
  */
 export class CreateAuthDto {
+  @IsOptional()
   @IsString()
-  oauthId: string;
+  oauthId?: string;
 
   @IsEnum(AuthProvider)
   provider: AuthProvider;

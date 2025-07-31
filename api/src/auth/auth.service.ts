@@ -10,10 +10,12 @@ import { User } from '../user/user.entity';
 import { Response } from 'express';
 import { AuthProvider, Auth } from './auth.entity';
 import { AuthRepository } from './auth.repository';
-import { CreateLocalUserDto, UpdatePasswordDto } from 'src/user/user.dto';
-import * as bcrypt from 'bcrypt';
 import { DataSource } from 'typeorm';
 import * as nodemailer from 'nodemailer';
+import { CreateOauthUserDto, UpdatePasswordDto } from 'src/user/user.dto';
+import * as bcrypt from 'bcrypt';
+import { plainToInstance } from 'class-transformer';
+import { validateOrReject } from 'class-validator';
 
 /** Google OAuth user information interface */
 export interface GoogleUser {
@@ -96,14 +98,19 @@ export class AuthService {
       await queryRunner.startTransaction();
 
       try {
-        // create new user
-        const createdUser = await queryRunner.manager.save(User, {
+        // Validate user data
+        const userDto = plainToInstance(CreateOauthUserDto, {
           email,
           name: `${firstName} ${lastName}`.trim(),
           nickname: email.split('@')[0],
           profilePicture: picture,
           isActive: true,
         });
+
+        await validateOrReject(userDto);
+
+        // create new user
+        const createdUser = await queryRunner.manager.save(User, userDto);
 
         // create auth record
         await queryRunner.manager.save(Auth, {

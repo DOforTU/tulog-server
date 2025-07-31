@@ -29,7 +29,7 @@ export class Auth extends Common {
   })
   provider: AuthProvider;
 
-  /** googleId, kakaoId, ... etc */
+  /** local=null, googleId, kakaoId, ... etc */
   @Column({ nullable: true })
   oauthId: string;
 

@@ -29,7 +29,7 @@ export class UserController {
 
   /** Get user by ID */
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<User> {
+  async getUserById(@Param('id', ParseIntPipe) id: number): Promise<User> {
     return this.userService.getUserById(id);
   }
 
@@ -42,7 +42,7 @@ export class UserController {
 
   /** Get user by id or nickname (query) */
   @Get()
-  async findUser(
+  async getUserByIdOrNickname(
     @Query('id') id?: string,
     @Query('nickname') nickname?: string,
   ): Promise<User | null> {
@@ -59,9 +59,9 @@ export class UserController {
   }
 
   /** Update user information */
-  @Patch('me')
+  @Patch('me/info')
   @UseGuards(JwtAuthGuard)
-  async update(
+  async updateUser(
     @Request() req: { user: User },
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<User> {
@@ -69,17 +69,17 @@ export class UserController {
   }
 
   /** Soft delete user */
-  @Delete(':id')
+  @Patch('me/delete')
   @UseGuards(JwtAuthGuard)
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.userService.deleteUser(id);
+  async deleteUser(@Request() req: { user: User }): Promise<boolean> {
+    return this.userService.deleteUser(req.user.id);
   }
 
   // ===== Special Query APIs =====
 
   /** Get user by nickname */
   @Get('nickname/:nickname')
-  async findByNickname(
+  async getUserByNickname(
     @Param('nickname') nickname: string,
   ): Promise<User | null> {
     return this.userService.getUserByNickname(nickname);
@@ -87,7 +87,7 @@ export class UserController {
 
   /** Get deleted users list */
   @Get('deleted')
-  async findDeleted(): Promise<User[]> {
+  async getDeletedUsers(): Promise<User[]> {
     return this.userService.getDeletedUsers();
   }
 
@@ -102,20 +102,20 @@ export class UserController {
 
   /** Get all active users */
   @Get()
-  async findAll(): Promise<User[]> {
+  async getAllUsers(): Promise<User[]> {
     return this.userService.getAllUsers();
   }
 
   /** Permanently delete user */
   @Delete(':id/hard')
   @UseGuards(JwtAuthGuard)
-  async hardDelete(@Param('id', ParseIntPipe) id: number): Promise<void> {
+  async hardDeleteUser(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.userService.hardDeleteUser(id);
   }
 
   /** Restore deleted user */
   @Patch(':id/restore')
-  async restore(@Param('id', ParseIntPipe) id: number): Promise<User> {
+  async restoreUser(@Param('id', ParseIntPipe) id: number): Promise<User> {
     return this.userService.restoreUser(id);
   }
 }

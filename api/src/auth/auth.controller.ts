@@ -157,8 +157,6 @@ export class AuthController {
       message: 'Logged out successfully',
     });
   }
-
-  
 }
 
 // TODO: Implement additional social login providers (Kakao, Naver, etc.)
