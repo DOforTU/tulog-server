@@ -30,7 +30,7 @@ export class CreateOauthUserDto {
   /** Profile picture URL (default: default-avatar.png) */
   @IsOptional()
   @IsString()
-  profilePicture: string;
+  profilePicture?: string;
 
   /** Account activation status (optional, default: false) */
   @IsOptional()
