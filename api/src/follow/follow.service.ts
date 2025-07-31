@@ -6,6 +6,7 @@ import {
 import { UserService } from 'src/user/user.service';
 import { FollowRepository } from './follow.repository';
 import { Follow } from './follow.entity';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class FollowService {
@@ -62,5 +63,27 @@ export class FollowService {
     }
 
     return await this.followRepository.unfollowUser(followerId, followId);
+  }
+
+  /** Get followers of a user */
+  async getFollowers(userId: number): Promise<User[] | null> {
+    const user = await this.userService.findWithFollowersById(userId);
+
+    if (!user) {
+      throw new BadRequestException(`User with ID ${userId} not found`);
+    }
+
+    return user.followers.map((f) => f.follower);
+  }
+
+  /** Get followings of a user */
+  async getFollowings(userId: number): Promise<User[] | null> {
+    const user = await this.userService.findWithFollowingsById(userId);
+
+    if (!user) {
+      throw new BadRequestException(`User with ID ${userId} not found`);
+    }
+
+    return user.followings.map((f) => f.following);
   }
 }

@@ -112,6 +112,22 @@ export class UserRepository {
     });
   }
 
+  /** Find User with Followers */
+  async findWithFollowersById(id: number): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { id, deletedAt: IsNull() },
+      relations: ['followers', 'followers.follower'],
+    });
+  }
+
+  /** Find user with Followings */
+  async findWithFollowingsById(id: number): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { id, deletedAt: IsNull() },
+      relations: ['followings', 'followings.following'],
+    });
+  }
+
   // ===== Special Operations - Data Access =====
 
   /** Permanently delete user */

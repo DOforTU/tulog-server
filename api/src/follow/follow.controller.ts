@@ -1,6 +1,7 @@
 import {
   Controller,
   Delete,
+  Get,
   Param,
   Post,
   Request,
@@ -31,5 +32,17 @@ export class FollowController {
     @Param('id') id: number,
   ): Promise<boolean> {
     return await this.followService.unfollowUser(req.user.id, id);
+  }
+
+  /** Get users who follow me */
+  @Get('followers')
+  async getFollowers(@Param('id') id: number): Promise<User[] | null> {
+    return await this.followService.getFollowers(id);
+  }
+
+  /** Get users I follow */
+  @Get('followings')
+  async getFollowings(@Param('id') id: number): Promise<User[] | null> {
+    return await this.followService.getFollowings(id);
   }
 }
