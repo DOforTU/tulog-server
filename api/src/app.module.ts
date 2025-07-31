@@ -16,7 +16,6 @@ import { TeamController } from './team/team.controller';
 import { TeamService } from './team/team.service';
 import { TeamModule } from './team/team.module';
 import { Follow } from './follow/follow.entity';
-import { RedisModule } from '@liaoliaots/nestjs-redis';
 
 @Module({
   imports: [
@@ -42,17 +41,6 @@ import { RedisModule } from '@liaoliaots/nestjs-redis';
         entities: [User, Auth, Follow],
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
-      }),
-      inject: [ConfigService],
-    }),
-    RedisModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        config: {
-          host: configService.get('REDIS_HOST'),
-          port: configService.get('REDIS_PORT'),
-          password: configService.get('REDIS_PASSWORD'),
-        },
       }),
       inject: [ConfigService],
     }),
