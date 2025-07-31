@@ -14,7 +14,7 @@ import { AuthService, AuthResult } from './auth.service';
 import { Response } from 'express';
 import { RateLimitGuard } from '../common/guards/rate-limit.guard';
 import { User } from 'src/user/user.entity';
-import { UpdatePasswordDto } from 'src/user/user.dto';
+import { CreateLocalUserDto, UpdatePasswordDto } from 'src/user/user.dto';
 import { JwtAuthGuard } from './jwt/jwt-auth.guard';
 
 /** Cookie type definition */
@@ -54,6 +54,24 @@ export class AuthController {
   ): Promise<User> {
     return this.authService.updatePassword(req.user.id, updatePasswordDto);
   }
+
+  @Post('send-email-code')
+  async sendEmailCode(@Body('email') email: string) {
+    await this.authService.sendEmailCode(email);
+    return { success: true, message: '인증코드가 전송되었습니다.' };
+  }
+
+  /** Sign up with local account */
+  @Post('singup')
+  async signup(@Body() signupDto: CreateLocalUserDto):Promise<boolean>{
+    return await this.authService.signup(signupDto);
+  }
+
+  //@Post('login')
+  //async login(
+  //  @Body() loginDto: CreateLocalUserDto): Promise<boolean>{
+  //    return await this.authService.login(loginDto);
+  //  }
 
   // ===== Authentication APIs =====
 

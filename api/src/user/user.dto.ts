@@ -59,6 +59,9 @@ export class CreateLocalUserDto {
   /** User nickname (required)*/
   @IsString()
   nickname: string;
+
+  @IsString()
+  code: string;
 }
 
 /**
