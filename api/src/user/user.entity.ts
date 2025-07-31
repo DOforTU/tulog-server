@@ -23,8 +23,14 @@ export enum UserRole {
  * - Unique constraints for email/nickname applied only to non-deleted users
  */
 @Entity('user')
-@Index(['email'], { where: '"isDeleted" = false', unique: true })
-@Index(['nickname'], { where: '"isDeleted" = false', unique: true })
+@Index('UQ_user_email_not_deleted', ['email'], {
+  unique: true,
+  where: '"deletedAt" IS NULL',
+})
+@Index('UQ_user_nickname_not_deleted', ['nickname'], {
+  unique: true,
+  where: '"deletedAt" IS NULL',
+})
 export class User extends Common {
   @PrimaryGeneratedColumn()
   id: number;

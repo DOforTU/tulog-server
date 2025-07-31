@@ -1,16 +1,11 @@
-import {
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  DeleteDateColumn,
-} from 'typeorm';
+import { CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from 'typeorm';
 
 /**
  * Common Entity
  */
 export class Common {
-  @Column({ default: false })
-  isDeleted: boolean;
+  // @Column({ default: false })
+  // isDeleted: boolean;
 
   /** Creation timestamp */
   @CreateDateColumn()
@@ -22,5 +17,5 @@ export class Common {
 
   /** Deletion timestamp (set when soft deleted) */
   @DeleteDateColumn({ nullable: true })
-  deletedAt: Date;
+  deletedAt: Date | null;
 }
