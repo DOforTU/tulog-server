@@ -13,19 +13,14 @@ import {
  * - Used when creating new user accounts
  * - Email and username are required, others are optional
  */
-export class CreateUserDto {
-  /** User email (required, valid email format) */
+export class CreateOauthUserDto {
+  /** User email */
   @IsEmail()
   email: string;
 
-  /** Name (required) */
+  /** Name */
   @IsString()
   name: string;
-
-  /** Password (optional, not required for Google OAuth) */
-  @IsOptional()
-  @IsString()
-  password?: string;
 
   /** User nickname */
   @IsOptional()
@@ -40,7 +35,30 @@ export class CreateUserDto {
   /** Account activation status (optional, default: false) */
   @IsOptional()
   @IsBoolean()
-  isActive?: boolean;
+  isActive: boolean;
+}
+
+/**
+ * User creation DTO
+ * - Used when creating new user accounts
+ * - Email and username are required, others are optional
+ */
+export class CreateLocalUserDto {
+  /** User email (required, valid email format) */
+  @IsEmail()
+  email: string;
+
+  /** Password (required) */
+  @IsString()
+  password: string;
+
+  /** Name (required) */
+  @IsString()
+  name: string;
+
+  /** User nickname (required)*/
+  @IsString()
+  nickname: string;
 }
 
 /**

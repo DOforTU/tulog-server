@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import { User } from './user.entity';
-import { CreateUserDto, UpdateUserDto } from './user.dto';
+import { UpdateUserDto } from './user.dto';
 
 /**
  * User Business Logic Service
@@ -32,19 +32,6 @@ export class UserService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
     return user;
-  }
-
-  /** Create user */
-  async createUser(userData: CreateUserDto): Promise<User> {
-    // Check for email duplication only among non-deleted users
-    const existingActiveUser = await this.userRepository.findByEmail(
-      userData.email,
-    );
-    if (existingActiveUser) {
-      throw new ConflictException('Email already exists');
-    }
-
-    return this.userRepository.create(userData);
   }
 
   /** Update user information */
