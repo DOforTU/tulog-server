@@ -14,7 +14,7 @@ import { AuthService, AuthResult } from './auth.service';
 import { Response } from 'express';
 import { RateLimitGuard } from '../common/guards/rate-limit.guard';
 import { User } from 'src/user/user.entity';
-import { CreateUserDto, UpdatePasswordDto } from 'src/user/user.dto';
+import { CreateLocalUserDto, UpdatePasswordDto } from 'src/user/user.dto';
 import { JwtAuthGuard } from './jwt/jwt-auth.guard';
 
 /** Cookie type definition */
@@ -55,19 +55,23 @@ export class AuthController {
     return this.authService.updatePassword(req.user.id, updatePasswordDto);
   }
 
-  @Post('singup')
-  async signup(@Body() signupDto: CreateUserDto, @Res() res: Response){
-    const result = await this.authService.signup(signupDto);
-    if (!result.success) {
-      return res.status(400).json({ success: false, message: result.message });
-    }
-    // 회원가입 성공 시 토큰 발급 및 쿠키 설정 등
-    return res.status(201).json({ success: true, data: result.data });
+  @Post('send-email-code')
+  async sendEmailCode(@Body('email') email: string) {
+    await this.authService.sendEmailCode(email);
+    return { success: true, message: '인증코드가 전송되었습니다.' };
   }
 
-  @Post('login')
-  async login(
-    @Body() loginDto: CreateUserDto,){}
+  /** Sign up with local account */
+  @Post('singup')
+  async signup(@Body() signupDto: CreateLocalUserDto):Promise<boolean>{
+    return await this.authService.signup(signupDto);
+  }
+
+  //@Post('login')
+  //async login(
+  //  @Body() loginDto: CreateLocalUserDto): Promise<boolean>{
+  //    return await this.authService.login(loginDto);
+  //  }
 
   // ===== Authentication APIs =====
 

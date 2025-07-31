@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
@@ -9,9 +10,10 @@ import { User } from '../user/user.entity';
 import { Response } from 'express';
 import { AuthProvider, Auth } from './auth.entity';
 import { AuthRepository } from './auth.repository';
-import { UpdatePasswordDto } from 'src/user/user.dto';
+import { CreateLocalUserDto, UpdatePasswordDto } from 'src/user/user.dto';
 import * as bcrypt from 'bcrypt';
 import { DataSource } from 'typeorm';
+import * as nodemailer from 'nodemailer';
 
 /** Google OAuth user information interface */
 export interface GoogleUser {
@@ -59,7 +61,7 @@ function isValidJwtPayload(token: unknown): token is JwtPayload {
   );
 }
 
-/**
+    /**
  * Authentication Service
  * - Google OAuth user validation and processing
  * - JWT token generation
@@ -224,7 +226,100 @@ export class AuthService {
     }
   }
 
+
+  async signup(dto: CreateLocalUserDto): Promise<boolean> {
+    // 1. 이메일 인증코드 검증
+    if (!this.emailCodeStore.has(dto.email)) {
+      throw new NotFoundException('이메일 인증이 필요합니다.');
+    }   
+    
+    // Check if user already exists
+    const existingUser = await this.userService.findByEmail(dto.email);
+    if (existingUser) {
+      throw new Error('Email already exists.');
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    // Create user
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      try {
+        // create new user
+        const createdUser = await queryRunner.manager.save(User, {
+          email: dto.email,
+          password: hashedPassword,
+          name: dto.name,
+          nickname: dto.nickname,
+        });
+
+        // create auth record
+        await queryRunner.manager.save(Auth, {
+          provider: AuthProvider.LOCAL,
+          user: createdUser,
+        });
+
+        // commit transaction
+        await queryRunner.commitTransaction();
+
+        // 인증코드 삭제
+        this.emailCodeStore.delete(dto.email); 
+        return true;
+
+      } catch (error: any) {
+        console.error('Local signup error:', error);
+        // if error occurs, rollback transaction
+        await queryRunner.rollbackTransaction();
+        throw new InternalServerErrorException(
+          'Failed Local OAuth registration',
+        );
+      } finally {
+        // release(): return connection to pool
+        await queryRunner.release();
+      }
+  }
+  
+  // ===== 로컬 이메일 인증코드 Methods =====
+    /** 
+   * Email code storage
+  */
+  private emailCodeStore = new Map<string, string>();
+  /** 6자리 인증코드 생성 */
+  private generateCode() {
+    return Math.floor(100000 + Math.random() * 900000).toString(); 
+  }
+
+  /** 이메일로 인증코드 전송 (실제 서비스는 nodemailer 등 사용) */
+  // npm install nodemailer 설치해야함
+  async sendEmailCode(email: string): Promise<void> {
+    const code = this.generateCode();
+    this.emailCodeStore.set(email, code);
+    
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.GMAIL_OAUTH_USER,
+        pass: process.env.EMAIL_PASS,
+      }
+  });
+  const mailOptions = {
+    from: process.env.GMAIL_OAUTH_USER,
+    to: email,
+    subject: 'Tulog 회원가입 인증코드',
+    text: `회원가입을 위한 인증코드입니다: ${code}`,
+  };
+
+  await transporter.sendMail(mailOptions);
+}
+
+
   // ===== User Management Methods =====
+
+  //** login user */ 
+
 
   /** Retrieve user by ID */
   async findUserById(userId: number): Promise<User | null> {
