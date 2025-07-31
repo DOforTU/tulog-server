@@ -23,4 +23,13 @@ export class FollowRepository {
     const follow = this.followRepository.create({ followerId, followingId });
     return await this.followRepository.save(follow);
   }
+
+  /** Unfollow a user */
+  async unfollowUser(
+    followerId: number,
+    followingId: number,
+  ): Promise<boolean> {
+    await this.followRepository.delete({ followerId, followingId });
+    return true;
+  }
 }
