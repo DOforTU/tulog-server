@@ -207,6 +207,8 @@ export class AuthService {
         };
       }
 
+      // TODO: Check if refresh token is blacklisted or expired
+
       // Generate new access token
       const newAccessToken = this.generateAccessToken(user);
 

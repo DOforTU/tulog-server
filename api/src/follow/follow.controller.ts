@@ -12,11 +12,27 @@ import { User } from 'src/user/user.entity';
 import { Follow } from './follow.entity';
 import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
 
-@Controller('users/:id')
+@Controller('users')
 export class FollowController {
   constructor(private readonly followService: FollowService) {}
 
-  @Post('follow')
+  /** Get my followers */
+  @Get('me/followers')
+  @UseGuards(JwtAuthGuard)
+  async getMyFollowers(@Request() req: { user: User }): Promise<User[] | null> {
+    return await this.followService.getFollowers(req.user.id);
+  }
+
+  /** Get my followings */
+  @Get('me/followings')
+  @UseGuards(JwtAuthGuard)
+  async getMyFollowings(
+    @Request() req: { user: User },
+  ): Promise<User[] | null> {
+    return await this.followService.getFollowings(req.user.id);
+  }
+
+  @Post(':id/follow')
   @UseGuards(JwtAuthGuard)
   async followUser(
     @Request() req: { user: User },
@@ -25,7 +41,7 @@ export class FollowController {
     return await this.followService.followUser(req.user.id, id);
   }
 
-  @Delete('unfollow')
+  @Delete(':id/unfollow')
   @UseGuards(JwtAuthGuard)
   async unfollowUser(
     @Request() req: { user: User },
@@ -35,13 +51,13 @@ export class FollowController {
   }
 
   /** Get users who follow me */
-  @Get('followers')
+  @Get(':id/followers')
   async getFollowers(@Param('id') id: number): Promise<User[] | null> {
     return await this.followService.getFollowers(id);
   }
 
   /** Get users I follow */
-  @Get('followings')
+  @Get(':id/followings')
   async getFollowings(@Param('id') id: number): Promise<User[] | null> {
     return await this.followService.getFollowings(id);
   }
