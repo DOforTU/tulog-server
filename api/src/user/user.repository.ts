@@ -114,18 +114,32 @@ export class UserRepository {
 
   /** Find User with Followers */
   async findWithFollowersById(id: number): Promise<User | null> {
-    return await this.userRepository.findOne({
-      where: { id, deletedAt: IsNull() },
-      relations: ['followers', 'followers.follower'],
-    });
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.followers', 'follow')
+      .leftJoinAndSelect('follow.follower', 'followerUser')
+      .where('user.id = :id', { id })
+      .andWhere('user.deletedAt IS NULL AND user.isActive = true')
+      .andWhere(
+        'followerUser.deletedAt IS NULL AND followerUser.isActive = true',
+      )
+      .getOne();
+
+    return user;
   }
 
   /** Find user with Followings */
   async findWithFollowingsById(id: number): Promise<User | null> {
-    return await this.userRepository.findOne({
-      where: { id, deletedAt: IsNull() },
-      relations: ['followings', 'followings.following'],
-    });
+    return await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.followings', 'follow')
+      .leftJoinAndSelect('follow.following', 'followingUser')
+      .where('user.id = :id', { id })
+      .andWhere('user.deletedAt IS NULL AND user.isActive = true')
+      .andWhere(
+        'followingUser.deletedAt IS NULL AND followingUser.isActive = true',
+      )
+      .getOne();
   }
 
   // ===== Special Operations - Data Access =====

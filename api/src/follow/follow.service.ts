@@ -67,10 +67,14 @@ export class FollowService {
 
   /** Get followers of a user */
   async getFollowers(userId: number): Promise<User[] | null> {
-    const user = await this.userService.findWithFollowersById(userId);
+    // check if the user exists
+    await this.userService.getUserById(userId);
 
+    // user will be null, when no followers exist
+    const user = await this.userService.findWithFollowersById(userId);
     if (!user) {
-      throw new BadRequestException(`User with ID ${userId} not found`);
+      // so return []
+      return [];
     }
 
     return user.followers.map((f) => f.follower);
@@ -78,10 +82,14 @@ export class FollowService {
 
   /** Get followings of a user */
   async getFollowings(userId: number): Promise<User[] | null> {
-    const user = await this.userService.findWithFollowingsById(userId);
+    // check if the user exists
+    await this.userService.getUserById(userId);
 
+    // user will be null, when no followings exist
+    const user = await this.userService.findWithFollowingsById(userId);
     if (!user) {
-      throw new BadRequestException(`User with ID ${userId} not found`);
+      // so return []
+      return [];
     }
 
     return user.followings.map((f) => f.following);
