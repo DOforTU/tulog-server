@@ -63,7 +63,7 @@ export class AuthController {
 
   /** Sign up with local account */
   @Post('singup')
-  async signup(@Body() signupDto: CreateLocalUserDto):Promise<boolean>{
+  async signup(@Body() signupDto: CreateLocalUserDto): Promise<boolean> {
     return await this.authService.signup(signupDto);
   }
 
