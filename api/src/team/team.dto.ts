@@ -2,8 +2,8 @@ import { IsString, IsEnum, IsOptional } from 'class-validator';
 import { TeamVisibility } from './team.entity';
 
 export class CreateTeamDto {
-  @IsString()
-  teamId: string;
+  //@IsString()
+  //teamId: string;
 
   @IsString()
   teamName: string;
@@ -16,9 +16,10 @@ export class CreateTeamDto {
 
   @IsOptional()
   @IsString()
-  invitedMember?: string;
+  invitedMember?: string[];
 }
 
+// DTO for reporting a team
 export class ReportTeamDto {
   @IsString()
   reason: string;
@@ -26,4 +27,10 @@ export class ReportTeamDto {
   @IsOptional()
   @IsString()
   additionalInfo?: string;
+}
+
+// DTO for changing team visibility
+export class ChangeVisibilityDto {
+  @IsEnum(TeamVisibility)
+  visibility: TeamVisibility;
 }
