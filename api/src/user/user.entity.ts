@@ -64,10 +64,10 @@ export class User extends Common {
   @OneToOne(() => Auth, (auth) => auth.user)
   auth: Auth;
 
-  @OneToMany(() => Follow, (follow) => follow.follower)
+  @OneToMany(() => Follow, (follow) => follow.following)
   followings: Follow[];
 
-  @OneToMany(() => Follow, (follow) => follow.following)
+  @OneToMany(() => Follow, (follow) => follow.follower)
   followers: Follow[];
 }
 

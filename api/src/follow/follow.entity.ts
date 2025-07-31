@@ -22,11 +22,11 @@ export class Follow {
   @CreateDateColumn()
   createdAt: Date;
 
-  @ManyToOne(() => User, (user) => user.followers, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'followerId' })
-  follower: User;
-
   @ManyToOne(() => User, (user) => user.followings, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'followingId' })
   following: User;
+
+  @ManyToOne(() => User, (user) => user.followers, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'followerId' })
+  follower: User;
 }
