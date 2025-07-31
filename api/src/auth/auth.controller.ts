@@ -14,7 +14,7 @@ import { AuthService, AuthResult } from './auth.service';
 import { Response } from 'express';
 import { RateLimitGuard } from '../common/guards/rate-limit.guard';
 import { User } from 'src/user/user.entity';
-import { CreateUserDto, UpdatePasswordDto } from 'src/user/user.dto';
+import { UpdatePasswordDto } from 'src/user/user.dto';
 import { JwtAuthGuard } from './jwt/jwt-auth.guard';
 
 /** Cookie type definition */
@@ -54,20 +54,6 @@ export class AuthController {
   ): Promise<User> {
     return this.authService.updatePassword(req.user.id, updatePasswordDto);
   }
-
-  @Post('singup')
-  async signup(@Body() signupDto: CreateUserDto, @Res() res: Response){
-    const result = await this.authService.signup(signupDto);
-    if (!result.success) {
-      return res.status(400).json({ success: false, message: result.message });
-    }
-    // 회원가입 성공 시 토큰 발급 및 쿠키 설정 등
-    return res.status(201).json({ success: true, data: result.data });
-  }
-
-  @Post('login')
-  async login(
-    @Body() loginDto: CreateUserDto,){}
 
   // ===== Authentication APIs =====
 
@@ -153,8 +139,6 @@ export class AuthController {
       message: 'Logged out successfully',
     });
   }
-
-  
 }
 
 // TODO: Implement additional social login providers (Kakao, Naver, etc.)
