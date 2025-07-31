@@ -1,21 +1,34 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/user/user.entity';
-import { Repository } from 'typeorm';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
+import { UserService } from 'src/user/user.service';
+import { FollowRepository } from './follow.repository';
 import { Follow } from './follow.entity';
 
 @Injectable()
 export class FollowService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    @InjectRepository(Follow)
-    private readonly followRepository: Repository<Follow>,
+    private readonly userService: UserService,
+    private readonly followRepository: FollowRepository,
   ) {}
 
-  //   async followUser(followerId: number, followingId: number) {
-  //     // 중복 체크 등 로직 추가 가능
-  //     const follow = this.followRepository.create({ followerId, followingId });
-  //     return this.followRepository.save(follow);
-  //   }
+  // followerId follows followId
+  async followUser(followerId: number, followId: number): Promise<Follow> {
+    // check if the follow exists
+    await this.userService.getUserById(followId);
+
+    // check if the duplicate follow exists
+    const isFollowing = await this.followRepository.isFollowing(
+      followerId,
+      followId,
+    );
+
+    if (isFollowing) {
+      throw new ConflictException('You are already following this user');
+    }
+
+    return this.followRepository.followUser(followerId, followId);
+  }
 }
