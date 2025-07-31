@@ -3,53 +3,62 @@ import {
   IsString,
   IsOptional,
   IsBoolean,
-  IsEnum,
+  MinLength,
+  MaxLength,
+  Matches,
 } from 'class-validator';
-import { AuthProvider } from './user.entity';
 
 /**
  * User creation DTO
  * - Used when creating new user accounts
  * - Email and username are required, others are optional
  */
-export class CreateUserDto {
-  /** User email (required, valid email format) */
+export class CreateOauthUserDto {
+  /** User email */
   @IsEmail()
   email: string;
 
-  /** Username (required) */
+  /** Name */
   @IsString()
-  username: string;
+  name: string;
 
-  /** Password (optional, not required for Google OAuth) */
+  /** User nickname */
   @IsOptional()
   @IsString()
-  password?: string;
+  nickname: string;
 
-  /** User nickname (optional) */
-  @IsOptional()
-  @IsString()
-  nickname?: string;
-
-  /** Google OAuth ID (optional) */
-  @IsOptional()
-  @IsString()
-  googleId?: string;
-
-  /** Profile picture URL (optional) */
+  /** Profile picture URL (default: default-avatar.png) */
   @IsOptional()
   @IsString()
   profilePicture?: string;
 
-  /** Login provider (optional) */
-  @IsOptional()
-  @IsEnum(AuthProvider)
-  provider?: AuthProvider;
-
-  /** Account activation status (optional, default: true) */
+  /** Account activation status (optional, default: false) */
   @IsOptional()
   @IsBoolean()
-  isActive?: boolean;
+  isActive: boolean;
+}
+
+/**
+ * User creation DTO
+ * - Used when creating new user accounts
+ * - Email and username are required, others are optional
+ */
+export class CreateLocalUserDto {
+  /** User email (required, valid email format) */
+  @IsEmail()
+  email: string;
+
+  /** Password (required) */
+  @IsString()
+  password: string;
+
+  /** Name (required) */
+  @IsString()
+  name: string;
+
+  /** User nickname (required)*/
+  @IsString()
+  nickname: string;
 }
 
 /**
@@ -58,49 +67,49 @@ export class CreateUserDto {
  * - All fields are optional
  */
 export class UpdateUserDto {
-  /** User email (optional, valid email format) */
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
   /** Username (optional) */
   @IsOptional()
   @IsString()
-  username?: string;
-
-  /** Password (optional) */
-  @IsOptional()
-  @IsString()
-  password?: string;
+  name?: string;
 
   /** User nickname (optional) */
   @IsOptional()
   @IsString()
   nickname?: string;
 
-  /** Google OAuth ID (optional) */
-  @IsOptional()
-  @IsString()
-  googleId?: string;
-
   /** Profile picture URL (optional) */
   @IsOptional()
   @IsString()
   profilePicture?: string;
-
-  /** Login provider (optional) */
-  @IsOptional()
-  @IsEnum(AuthProvider)
-  provider?: AuthProvider;
-
-  /** Account activation status (optional) */
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
 }
 
-// TODO: Add user search DTO
-// TODO: Add password change DTO
-// TODO: Add profile image upload DTO
-// TODO: Add user settings DTO
-// TODO: Add email verification DTO
+/**
+ * User password update DTO
+ * - Used when updating user password
+ */
+export class UpdatePasswordDto {
+  /** Password (required) */
+  @IsString()
+  oldPassword: string;
+
+  /** Password (required) */
+  @MinLength(8)
+  @MaxLength(20)
+  @Matches(/(?=.*[A-Z])/, {
+    message: 'Must contain at least 1 uppercase letter',
+  })
+  @Matches(/(?=.*[a-z])/, {
+    message: 'Must contain at least 1 lowercase letter',
+  })
+  @Matches(/(?=.*\d)/, {
+    message: 'Must contain at least 1 number',
+  })
+  @Matches(/(?=.*[!@#$%^&*()\-_=+{}[\]|\\:;"'<>,.?/`~])/, {
+    message: 'Must contain at least 1 special character',
+  })
+  @Matches(/^[^\s]+$/, {
+    message: 'Password must not contain spaces',
+  })
+  @IsString()
+  newPassword: string;
+}

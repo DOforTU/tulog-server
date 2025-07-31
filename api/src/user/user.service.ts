@@ -4,17 +4,8 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { UserRepository } from './user.repository';
-import { User, AuthProvider } from './user.entity';
+import { User } from './user.entity';
 import { UpdateUserDto } from './user.dto';
-
-/** Google OAuth user data interface */
-interface GoogleUserData {
-  googleId: string;
-  email: string;
-  nickname: string;
-  username: string;
-  profilePicture?: string;
-}
 
 /**
  * User Business Logic Service
@@ -43,19 +34,6 @@ export class UserService {
     return user;
   }
 
-  /** Create user */
-  async createUser(userData: GoogleUserData): Promise<User> {
-    // Check for email duplication only among non-deleted users
-    const existingActiveUser = await this.userRepository.findByEmail(
-      userData.email,
-    );
-    if (existingActiveUser) {
-      throw new ConflictException('Email already exists');
-    }
-
-    return this.userRepository.createGoogleUser(userData);
-  }
-
   /** Update user information */
   async updateUser(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     // Business logic: Check user existence
@@ -64,26 +42,16 @@ export class UserService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    // Business logic: Email duplication check (with other users)
-    if (updateUserDto.email && updateUserDto.email !== existingUser.email) {
-      const userWithEmail = await this.userRepository.findByEmail(
-        updateUserDto.email,
-      );
-      if (userWithEmail) {
-        throw new ConflictException('Email already exists');
-      }
-    }
-
     // Business logic: Username duplication check (with other users)
     if (
-      updateUserDto.username &&
-      updateUserDto.username !== existingUser.username
+      updateUserDto.nickname &&
+      updateUserDto.nickname !== existingUser.nickname
     ) {
-      const userWithUsername = await this.userRepository.findByUsername(
-        updateUserDto.username,
+      const userWithUsername = await this.userRepository.findByNickname(
+        updateUserDto.nickname,
       );
       if (userWithUsername) {
-        throw new ConflictException('Username already exists');
+        throw new ConflictException('nickname already exists');
       }
     }
 
@@ -95,18 +63,31 @@ export class UserService {
     return updatedUser;
   }
 
-  /** Soft delete user */
-  async deleteUser(id: number): Promise<void> {
-    // Business logic: Check user existence
-    const userExists = await this.userRepository.exists(id);
-    if (!userExists) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+  /** Update user password */
+  async updatePassword(id: number, hashedNewPassword: string): Promise<User> {
+    // Business logic: Update user password
+    const updatedUser = await this.userRepository.updatePassword(
+      id,
+      hashedNewPassword,
+    );
+
+    if (!updatedUser) {
+      throw new Error(`Failed to update password for user with ID ${id}`);
     }
+
+    return updatedUser;
+  }
+
+  /** Soft delete user */
+  async deleteUser(id: number): Promise<boolean> {
+    // Check user existence
+    await this.getUserById(id);
 
     const deleted = await this.userRepository.delete(id);
     if (!deleted) {
       throw new Error(`Failed to delete user with ID ${id}`);
     }
+    return deleted;
   }
 
   // ===== Query Methods - Domain Specific =====
@@ -120,9 +101,13 @@ export class UserService {
     return user;
   }
 
-  /** Get user by Google ID */
-  async getUserByGoogleId(googleId: string): Promise<User | null> {
-    return this.userRepository.findByGoogleId(googleId);
+  /** Get user by nickname(throws exception) */
+  async getUserByNickname(nickname: string): Promise<User | null> {
+    const user = await this.userRepository.findByNickname(nickname);
+    if (!user) {
+      throw new NotFoundException(`User with nickname ${nickname} not found`);
+    }
+    return user;
   }
 
   /** Get deleted users list */
@@ -155,6 +140,7 @@ export class UserService {
   async restoreUser(id: number): Promise<User> {
     // Business logic: Check deleted user existence
     const deletedUser = await this.userRepository.findDeletedById(id);
+    console.log('Restoring user:', deletedUser);
     if (!deletedUser) {
       throw new NotFoundException(`Deleted user with ID ${id} not found`);
     }
@@ -170,42 +156,6 @@ export class UserService {
     }
 
     return restoredUser;
-  }
-
-  /** Create Google OAuth user */
-  async createGoogleUser(googleUserData: GoogleUserData): Promise<User> {
-    // Check for email duplication only among non-deleted users
-    // Deleted users can create new accounts
-    const existingActiveUser = await this.userRepository.findByEmail(
-      googleUserData.email,
-    );
-    if (existingActiveUser) {
-      throw new ConflictException('Email already exists');
-    }
-
-    // Create new account even if deleted users exist
-    return this.userRepository.createGoogleUser(googleUserData);
-  }
-
-  /** Link Google account to existing account */
-  async linkGoogleAccount(
-    userId: number,
-    linkData: { googleId: string; profilePicture?: string },
-  ): Promise<User> {
-    const updateData = {
-      googleId: linkData.googleId,
-      profilePicture: linkData.profilePicture,
-      provider: AuthProvider.GOOGLE,
-    };
-
-    const updatedUser = await this.userRepository.update(userId, updateData);
-    if (!updatedUser) {
-      throw new NotFoundException(
-        `Failed to link Google account for user ${userId}`,
-      );
-    }
-
-    return updatedUser;
   }
 
   // ===== Internal Helper Methods - Simple Form =====
@@ -225,9 +175,9 @@ export class UserService {
     return this.userRepository.findByEmailIncludingDeleted(email);
   }
 
-  /** Find user by Google ID */
-  async findByGoogleId(googleId: string): Promise<User | null> {
-    return this.userRepository.findByGoogleId(googleId);
+  /** Find User with password by Id */
+  async findWithPasswordById(id: number): Promise<User | null> {
+    return this.userRepository.findWithPasswordById(id);
   }
 }
 

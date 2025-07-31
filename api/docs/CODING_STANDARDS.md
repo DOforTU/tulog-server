@@ -4,81 +4,78 @@
 
 ### 계층별 명명 패턴
 
-```typescript
-// Controller - REST API 규칙
-@Controller('users')
-export class UserController {
-  // ===== 기본 CRUD - REST API =====
-  findOne()     // GET /users/:id
-  create()      // POST /users
-  update()      // PUT /users/:id
-  remove()      // DELETE /users/:id
+## Tulog 프로젝트 계층별 네이밍 컨벤션 가이드
 
-  // ===== 특수 조회 API =====
-  getCurrentUser()  // GET /users/me
-  findDeleted()     // GET /users/deleted
-  getCount()        // GET /users/count
+### 1. Controller 계층
 
-  // ===== 관리자 전용 API =====
-  findAll()         // GET /users (관리자 전용)
-  hardDelete()      // DELETE /users/:id/hard
-  restore()         // PATCH /users/:id/restore
-}
+- **역할**: REST API 라우팅 및 요청 응답 처리
+- **명명 규칙**:
+  - RESTful 메서드 명명
+  - 직관적인 액션 명 중심 (도메인 생략)
+  - `get`, `create`, `update`, `delete`, `restore`, `count` 등의 접두어 사용
 
-// Service - 도메인별 명시 패턴
-@Injectable()
-export class UserService {
-  // ===== 기본 CRUD - 도메인 명시 =====
-  async getAllUsers(): Promise<User[]> { ... }
-  async getUserById(id: number): Promise<User> { ... }
-  async createUser(userData: any): Promise<User> { ... }
-  async updateUser(id: number, data: any): Promise<User> { ... }
-  async deleteUser(id: number): Promise<void> { ... }
+| 목적               | 메서드 명                 | 예시 경로                  |
+| ------------------ | ------------------------- | -------------------------- |
+| 사용자 조회        | `getUser()`               | `GET /users/:id`           |
+| 전체 조회 (관리자) | `getAllUsers()`           | `GET /users`               |
+| 생성               | `createUser()`            | `POST /users`              |
+| 수정               | `updateUser()`            | `PUT /users/:id`           |
+| 삭제               | `deleteUser()`            | `DELETE /users/:id`        |
+| 하드 삭제          | `deleteUserPermanently()` | `DELETE /users/:id/hard`   |
+| 복구               | `restoreUser()`           | `PATCH /users/:id/restore` |
+| 현재 유저 조회     | `getCurrentUser()`        | `GET /users/me`            |
 
-  // ===== 조회 메서드 - 도메인 명시 =====
-  async getUserByEmail(email: string): Promise<User> { ... }
-  async getUserByGoogleId(googleId: string): Promise<User> { ... }
+---
 
-  // ===== 비즈니스 로직 - 동사 중심 =====
-  async activateUser(id: number): Promise<User> { ... }
-  async deactivateUser(id: number): Promise<User> { ... }
-  async restoreUser(id: number): Promise<User> { ... }
+### 2. Service 계층
 
-  // ===== 내부 헬퍼 메서드 - 간단한 형태 =====
-  private async findById(id: number): Promise<User | null> { ... }
-  private async findByEmail(email: string): Promise<User | null> { ... }
-}
+- **역할**: 비즈니스 로직 처리
+- **명명 규칙**:
+  - 동사 + 도메인 명시 (`User`, `Blog`, `Team` 등)
+  - `find`, `create`, `update`, `delete`, `restore`, `activate` 등 액션 중심
 
-// Repository - 데이터 접근 명시
-@Injectable()
-export class UserRepository {
-  // ===== 기본 CRUD - 데이터 접근 =====
-  async findById(id: number): Promise<User | null> { ... }
-  async create(createUserDto: CreateUserDto): Promise<User> { ... }
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<User | null> { ... }
-  async delete(id: number): Promise<boolean> { ... }
+| 목적          | 메서드 명                |
+| ------------- | ------------------------ |
+| 전체 조회     | `findAllUsers()`         |
+| 단일 조회     | `findUserById(id)`       |
+| 이메일로 조회 | `findUserByEmail(email)` |
+| 생성          | `createUser(data)`       |
+| 수정          | `updateUser(id, data)`   |
+| 삭제          | `deleteUser(id)`         |
+| 복구          | `restoreUser(id)`        |
+| 비활성화      | `deactivateUser(id)`     |
 
-  // ===== 조건별 조회 - 데이터 접근 =====
-  async findAll(): Promise<User[]> { ... }                    // 관리자 전용
-  async findByEmail(email: string): Promise<User | null> { ... }
-  async findByUsername(username: string): Promise<User | null> { ... }
-  async findByGoogleId(googleId: string): Promise<User | null> { ... }
-  async findByEmailIncludingDeleted(email: string): Promise<User | null> { ... }
+---
 
-  // ===== 삭제된 데이터 조회 =====
-  async findDeleted(): Promise<User[]> { ... }
-  async findDeletedById(id: number): Promise<User | null> { ... }
+### 3. Repository 계층
 
-  // ===== 특수 작업 - 데이터 접근 =====
-  async createGoogleUser(userData: GoogleUserData): Promise<User> { ... }
-  async hardDelete(id: number): Promise<boolean> { ... }
-  async restore(id: number): Promise<boolean> { ... }
+- **역할**: DB 직접 접근 및 쿼리 처리
+- **명명 규칙**:
+  - CRUD 중심 (`find`, `save`, `delete`, `update`, `count` 등)
+  - 조건 명시 (`findByEmail`, `findById`, `findDeletedById` 등)
+  - 도메인 생략 가능 (동작이 우선)
 
-  // ===== 유틸리티 메서드 =====
-  async exists(id: number): Promise<boolean> { ... }
-  async count(): Promise<number> { ... }
-}
-```
+| 목적             | 메서드 명             |
+| ---------------- | --------------------- |
+| ID로 조회        | `findById(id)`        |
+| 이메일로 조회    | `findByEmail(email)`  |
+| 전체 조회        | `findAll()`           |
+| 삭제된 유저 조회 | `findDeleted()`       |
+| 생성             | `saveUser(dto)`       |
+| 수정             | `updateUser(id, dto)` |
+| 삭제             | `deleteById(id)`      |
+| 하드 삭제        | `hardDelete(id)`      |
+| 복구             | `restore(id)`         |
+| 카운트           | `countUsers()`        |
+| 존재 여부        | `exists(id)`          |
+
+---
+
+### 부록: 네이밍 컨벤션 요약
+
+- Controller: RESTful, 액션 중심 (`getUser`, `createUser`)
+- Service: 도메인 + 동사 (`findUserById`, `createUser`)
+- Repository: DB 동작 + 조건 (`findByEmail`, `deleteById`)
 
 ### Auth 모듈 명명 패턴
 

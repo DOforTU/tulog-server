@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Put,
   Delete,
   Patch,
   Body,
@@ -9,6 +8,7 @@ import {
   ParseIntPipe,
   UseGuards,
   Request,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './user.entity';
@@ -29,28 +29,9 @@ export class UserController {
 
   /** Get user by ID */
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<User> {
+  async getUserById(@Param('id', ParseIntPipe) id: number): Promise<User> {
     return this.userService.getUserById(id);
   }
-
-  /** Update user information */
-  @Put(':id')
-  @UseGuards(JwtAuthGuard)
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateUserDto: UpdateUserDto,
-  ): Promise<User> {
-    return this.userService.updateUser(id, updateUserDto);
-  }
-
-  /** Soft delete user */
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.userService.deleteUser(id);
-  }
-
-  // ===== Special Query APIs =====
 
   /** Get current logged-in user information */
   @Get('me/info')
@@ -59,9 +40,54 @@ export class UserController {
     return req.user;
   }
 
+  /** Get user by id or nickname (query) */
+  @Get()
+  async getUserByIdOrNickname(
+    @Query('id') id?: string,
+    @Query('nickname') nickname?: string,
+  ): Promise<User | null> {
+    if (id) {
+      const idNum = Number(id);
+      if (!isNaN(idNum)) {
+        return this.userService.getUserById(idNum);
+      }
+    }
+    if (nickname) {
+      return this.userService.getUserByNickname(nickname);
+    }
+    return null;
+  }
+
+  /** Update user information */
+  @Patch('me/info')
+  @UseGuards(JwtAuthGuard)
+  async updateUser(
+    @Request() req: { user: User },
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<User> {
+    return this.userService.updateUser(req.user.id, updateUserDto);
+  }
+
+  /** Soft delete user */
+  @Patch('me/delete')
+  @UseGuards(JwtAuthGuard)
+  async deleteUser(@Request() req: { user: User }): Promise<boolean> {
+    return this.userService.deleteUser(req.user.id);
+  }
+
+  // ===== Special Query APIs =====
+
+  /** Get user by nickname */
+  @Get('nickname/:nickname')
+  async getUserByNickname(
+    @Param('nickname') nickname: string,
+  ): Promise<User | null> {
+    return this.userService.getUserByNickname(nickname);
+  }
+
   /** Get deleted users list */
   @Get('deleted')
-  async findDeleted(): Promise<User[]> {
+  async getDeletedUsers(): Promise<User[]> {
     return this.userService.getDeletedUsers();
   }
 
@@ -76,20 +102,20 @@ export class UserController {
 
   /** Get all active users */
   @Get()
-  async findAll(): Promise<User[]> {
+  async getAllUsers(): Promise<User[]> {
     return this.userService.getAllUsers();
   }
 
   /** Permanently delete user */
   @Delete(':id/hard')
   @UseGuards(JwtAuthGuard)
-  async hardDelete(@Param('id', ParseIntPipe) id: number): Promise<void> {
+  async hardDeleteUser(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.userService.hardDeleteUser(id);
   }
 
   /** Restore deleted user */
   @Patch(':id/restore')
-  async restore(@Param('id', ParseIntPipe) id: number): Promise<User> {
+  async restoreUser(@Param('id', ParseIntPipe) id: number): Promise<User> {
     return this.userService.restoreUser(id);
   }
 }

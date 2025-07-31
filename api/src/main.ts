@@ -10,6 +10,7 @@ async function bootstrap() {
 
   // Add cookie parser middleware
   app.use(cookieParser());
+  app.setGlobalPrefix('api');
 
   // CORS configuration (credentials: true added for cookie support)
   app.enableCors({
