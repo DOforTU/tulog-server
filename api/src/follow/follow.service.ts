@@ -1,21 +1,89 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/user/user.entity';
-import { Repository } from 'typeorm';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
+import { UserService } from 'src/user/user.service';
+import { FollowRepository } from './follow.repository';
 import { Follow } from './follow.entity';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class FollowService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    @InjectRepository(Follow)
-    private readonly followRepository: Repository<Follow>,
+    private readonly userService: UserService,
+    private readonly followRepository: FollowRepository,
   ) {}
 
-  //   async followUser(followerId: number, followingId: number) {
-  //     // 중복 체크 등 로직 추가 가능
-  //     const follow = this.followRepository.create({ followerId, followingId });
-  //     return this.followRepository.save(follow);
-  //   }
+  /** Follow a user
+   * followerId follows followId
+   */
+  async followUser(followerId: number, followId: number): Promise<Follow> {
+    // you cannot follow yourself
+    if (followerId === followId) {
+      throw new BadRequestException('You cannot follow yourself');
+    }
+
+    // check if the follow exists
+    await this.userService.getUserById(followId);
+
+    // check if the duplicate follow exists
+    const isFollowing = await this.followRepository.isFollowing(
+      followerId,
+      followId,
+    );
+
+    if (isFollowing) {
+      throw new ConflictException('You are already following this user');
+    }
+
+    return await this.followRepository.followUser(followerId, followId);
+  }
+
+  /** Unfollow a user
+   * followerId unfollows followId
+   */
+  async unfollowUser(followerId: number, followId: number): Promise<boolean> {
+    // you cannot unfollow yourself
+    if (followerId === followId) {
+      throw new BadRequestException('You cannot unfollow yourself');
+    }
+
+    // check if the follow exists
+    await this.userService.getUserById(followId);
+
+    // check if the follow exists
+    const isFollowing = await this.followRepository.isFollowing(
+      followerId,
+      followId,
+    );
+
+    if (!isFollowing) {
+      throw new ConflictException('You are not following this user');
+    }
+
+    return await this.followRepository.unfollowUser(followerId, followId);
+  }
+
+  /** Get followers of a user */
+  async getFollowers(userId: number): Promise<User[] | null> {
+    const user = await this.userService.findWithFollowersById(userId);
+
+    if (!user) {
+      throw new BadRequestException(`User with ID ${userId} not found`);
+    }
+
+    return user.followers.map((f) => f.follower);
+  }
+
+  /** Get followings of a user */
+  async getFollowings(userId: number): Promise<User[] | null> {
+    const user = await this.userService.findWithFollowingsById(userId);
+
+    if (!user) {
+      throw new BadRequestException(`User with ID ${userId} not found`);
+    }
+
+    return user.followings.map((f) => f.following);
+  }
 }

@@ -179,6 +179,16 @@ export class UserService {
   async findWithPasswordById(id: number): Promise<User | null> {
     return this.userRepository.findWithPasswordById(id);
   }
+
+  /** Find User with Followers by Id */
+  async findWithFollowersById(id: number): Promise<User | null> {
+    return this.userRepository.findWithFollowersById(id);
+  }
+
+  /** Find User with Followings by Id */
+  async findWithFollowingsById(id: number): Promise<User | null> {
+    return this.userRepository.findWithFollowingsById(id);
+  }
 }
 
 // TODO: Expand social login providers (Kakao, Naver, etc.)

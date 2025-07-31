@@ -70,10 +70,10 @@ export class User extends Common {
   @OneToOne(() => Auth, (auth) => auth.user)
   auth: Auth;
 
-  @OneToMany(() => Follow, (follow) => follow.following)
+  @OneToMany(() => Follow, (follow) => follow.follower)
   followings: Follow[];
 
-  @OneToMany(() => Follow, (follow) => follow.follower)
+  @OneToMany(() => Follow, (follow) => follow.following)
   followers: Follow[];
 }
 
