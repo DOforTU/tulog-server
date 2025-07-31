@@ -76,9 +76,3 @@ export class User extends Common {
   @OneToMany(() => Follow, (follow) => follow.following)
   followers: Follow[];
 }
-
-// TODO: Add email verification functionality
-// TODO: Add password login functionality (with bcrypt hash)
-// TODO: Add user profile image upload functionality
-// TODO: Add user permission management (role field)
-// TODO: Add account locking functionality (login failure count limit)
