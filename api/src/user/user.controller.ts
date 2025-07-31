@@ -71,7 +71,7 @@ export class UserController {
   /** Soft delete user */
   @Patch('me/delete')
   @UseGuards(JwtAuthGuard)
-  async deleteUser(@Request() req: { user: User }): Promise<void> {
+  async deleteUser(@Request() req: { user: User }): Promise<boolean> {
     return this.userService.deleteUser(req.user.id);
   }
 

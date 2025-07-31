@@ -79,17 +79,15 @@ export class UserService {
   }
 
   /** Soft delete user */
-  async deleteUser(id: number): Promise<void> {
-    // Business logic: Check user existence
-    const userExists = await this.userRepository.exists(id);
-    if (!userExists) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
+  async deleteUser(id: number): Promise<boolean> {
+    // Check user existence
+    await this.getUserById(id);
 
     const deleted = await this.userRepository.delete(id);
     if (!deleted) {
       throw new Error(`Failed to delete user with ID ${id}`);
     }
+    return deleted;
   }
 
   // ===== Query Methods - Domain Specific =====
@@ -142,6 +140,7 @@ export class UserService {
   async restoreUser(id: number): Promise<User> {
     // Business logic: Check deleted user existence
     const deletedUser = await this.userRepository.findDeletedById(id);
+    console.log('Restoring user:', deletedUser);
     if (!deletedUser) {
       throw new NotFoundException(`Deleted user with ID ${id} not found`);
     }
