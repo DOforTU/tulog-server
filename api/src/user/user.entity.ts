@@ -68,7 +68,7 @@ export class User extends Common {
   followings: Follow[];
 
   @OneToMany(() => Follow, (follow) => follow.following)
-  followers: Follow[];  
+  followers: Follow[];
 }
 
 // TODO: Add email verification functionality

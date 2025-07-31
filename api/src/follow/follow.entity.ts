@@ -1,10 +1,10 @@
 import { User } from 'src/user/user.entity';
 import {
   Entity,
-  OneToOne,
+  ManyToOne,
   JoinColumn,
   PrimaryColumn,
-  ManyToOne,
+  CreateDateColumn,
 } from 'typeorm';
 
 /**
@@ -16,13 +16,17 @@ export class Follow {
   followerId: number;
 
   @PrimaryColumn()
-  followingId: number;  
+  followingId: number;
+
+  /** Creation timestamp */
+  @CreateDateColumn()
+  createdAt: Date;
 
   @ManyToOne(() => User, (user) => user.followers, { onDelete: 'CASCADE' })
-    follower: User;
+  @JoinColumn({ name: 'followerId' })
+  follower: User;
 
   @ManyToOne(() => User, (user) => user.followings, { onDelete: 'CASCADE' })
-    following: User;
-
+  @JoinColumn({ name: 'followingId' })
+  following: User;
 }
-
