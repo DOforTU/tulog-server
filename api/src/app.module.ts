@@ -10,6 +10,12 @@ import { AuthModule } from './auth/auth.module';
 import { User } from './user/user.entity';
 import { LoggingMiddleware } from './common/middleware/logging.middleware';
 import { SecurityMiddleware } from './common/middleware/security.middleware';
+import { Auth } from './auth/auth.entity';
+import { FollowModule } from './follow/follow.module';
+import { TeamController } from './team/team.controller';
+import { TeamService } from './team/team.service';
+import { TeamModule } from './team/team.module';
+import { Follow } from './follow/follow.entity';
 
 @Module({
   imports: [
@@ -32,7 +38,7 @@ import { SecurityMiddleware } from './common/middleware/security.middleware';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         schema: configService.get('DB_SCHEMA'),
-        entities: [User],
+        entities: [User, Auth, Follow],
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
       }),
@@ -40,9 +46,11 @@ import { SecurityMiddleware } from './common/middleware/security.middleware';
     }),
     UserModule,
     AuthModule,
+    FollowModule,
+    TeamModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, TeamController],
+  providers: [AppService, TeamService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

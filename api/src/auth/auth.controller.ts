@@ -1,8 +1,21 @@
-import { Controller, Get, Post, UseGuards, Req, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  UseGuards,
+  Req,
+  Res,
+  Patch,
+  Body,
+  Request,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService, AuthResult } from './auth.service';
-import { Response, Request } from 'express';
+import { Response } from 'express';
 import { RateLimitGuard } from '../common/guards/rate-limit.guard';
+import { User } from 'src/user/user.entity';
+import { UpdatePasswordDto } from 'src/user/user.dto';
+import { JwtAuthGuard } from './jwt/jwt-auth.guard';
 
 /** Cookie type definition */
 interface AuthCookies {
@@ -30,11 +43,26 @@ interface AuthenticatedRequest extends Request {
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  // ===== User Management APIs =====
+
+  /** Update user password */
+  @Patch('password')
+  @UseGuards(JwtAuthGuard)
+  async updatePassword(
+    @Request() req: { user: User },
+    @Body() updatePasswordDto: UpdatePasswordDto,
+  ): Promise<User> {
+    return this.authService.updatePassword(req.user.id, updatePasswordDto);
+  }
+
   // ===== Authentication APIs =====
 
   /** Start Google OAuth login */
   @Get('google')
-  @UseGuards(AuthGuard('google'), RateLimitGuard)
+  @UseGuards(
+    AuthGuard('google'), // call GoogleStrategy --> validate user by GOOGLE --> validateGoogleUser()
+    RateLimitGuard,
+  )
   async googleAuth() {
     // Route to start Google OAuth flow
   }

@@ -3,9 +3,10 @@ import {
   IsString,
   IsOptional,
   IsBoolean,
-  IsEnum,
+  MinLength,
+  MaxLength,
+  Matches,
 } from 'class-validator';
-import { AuthProvider } from './user.entity';
 
 /**
  * User creation DTO
@@ -26,27 +27,17 @@ export class CreateUserDto {
   @IsString()
   password?: string;
 
-  /** User nickname (optional) */
+  /** User nickname */
   @IsOptional()
   @IsString()
-  nickname?: string;
+  nickname: string;
 
-  /** Google OAuth ID (optional) */
+  /** Profile picture URL (default: default-avatar.png) */
   @IsOptional()
   @IsString()
-  googleId?: string;
+  profilePicture: string;
 
-  /** Profile picture URL (optional) */
-  @IsOptional()
-  @IsString()
-  profilePicture?: string;
-
-  /** Login provider (optional) */
-  @IsOptional()
-  @IsEnum(AuthProvider)
-  provider?: AuthProvider;
-
-  /** Account activation status (optional, default: true) */
+  /** Account activation status (optional, default: false) */
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
@@ -63,11 +54,6 @@ export class UpdateUserDto {
   @IsString()
   name?: string;
 
-  /** Password (optional) */
-  @IsOptional()
-  @IsString()
-  password?: string;
-
   /** User nickname (optional) */
   @IsOptional()
   @IsString()
@@ -79,8 +65,33 @@ export class UpdateUserDto {
   profilePicture?: string;
 }
 
-// TODO: Add user search DTO
-// TODO: Add password change DTO
-// TODO: Add profile image upload DTO
-// TODO: Add user settings DTO
-// TODO: Add email verification DTO
+/**
+ * User password update DTO
+ * - Used when updating user password
+ */
+export class UpdatePasswordDto {
+  /** Password (required) */
+  @IsString()
+  oldPassword: string;
+
+  /** Password (required) */
+  @MinLength(8)
+  @MaxLength(20)
+  @Matches(/(?=.*[A-Z])/, {
+    message: 'Must contain at least 1 uppercase letter',
+  })
+  @Matches(/(?=.*[a-z])/, {
+    message: 'Must contain at least 1 lowercase letter',
+  })
+  @Matches(/(?=.*\d)/, {
+    message: 'Must contain at least 1 number',
+  })
+  @Matches(/(?=.*[!@#$%^&*()\-_=+{}[\]|\\:;"'<>,.?/`~])/, {
+    message: 'Must contain at least 1 special character',
+  })
+  @Matches(/^[^\s]+$/, {
+    message: 'Password must not contain spaces',
+  })
+  @IsString()
+  newPassword: string;
+}

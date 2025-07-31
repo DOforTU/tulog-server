@@ -1,12 +1,21 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
-import { AuthProvider, User } from '../user/user.entity';
+import { User } from '../user/user.entity';
 import { Response } from 'express';
+import { AuthProvider, Auth } from './auth.entity';
+import { AuthRepository } from './auth.repository';
+import { UpdatePasswordDto } from 'src/user/user.dto';
+import * as bcrypt from 'bcrypt';
+import { DataSource } from 'typeorm';
 
 /** Google OAuth user information interface */
 export interface GoogleUser {
-  id: string;
+  id: string; // Google OAuth ID
   email: string;
   firstName: string;
   lastName: string;
@@ -59,65 +68,82 @@ function isValidJwtPayload(token: unknown): token is JwtPayload {
 @Injectable()
 export class AuthService {
   constructor(
+    private readonly authRepository: AuthRepository,
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
+    private dataSource: DataSource,
   ) {}
 
   // ===== Authentication and Validation Methods =====
 
   /** Google OAuth user validation and login processing */
-  async validateGoogleUser(googleUser: GoogleUser): Promise<AuthResult> {
-    const { id, email, firstName, lastName, picture } = googleUser;
+  async validateGoogleUser(
+    googleUser: GoogleUser,
+  ): Promise<AuthResult | undefined> {
+    const { id: oauthId, email, firstName, lastName, picture } = googleUser;
 
-    // Check if user exists with this Google ID (active users only)
-    let user = await this.userService.findByGoogleId(id);
+    // 1. Check if user exists by email
+    const user = await this.userService.findByEmail(email);
+    let auth: Auth | null = null;
 
+    // 1-1. If user does not exist, create one
     if (!user) {
-      // Check if active user exists with this email (might have signed up differently)
-      const existingActiveUser = await this.userService.findByEmail(email);
+      const queryRunner = this.dataSource.createQueryRunner();
 
-      if (existingActiveUser) {
-        // Link Google account to existing active user
-        user = await this.userService.linkGoogleAccount(existingActiveUser.id, {
-          googleId: id,
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      try {
+        // create new user
+        const createdUser = await queryRunner.manager.save(User, {
+          email,
+          name: `${firstName} ${lastName}`.trim(),
+          nickname: email.split('@')[0],
           profilePicture: picture,
+          isActive: true,
         });
-      } else {
-        // Check for user by email including deleted users
-        const existingUserIncludingDeleted =
-          await this.userService.findByEmailIncludingDeleted(email);
 
-        if (
-          existingUserIncludingDeleted &&
-          existingUserIncludingDeleted.isDeleted
-        ) {
-          // If deleted user exists, restore and update with new Google information
-          user = await this.userService.restoreUser(
-            existingUserIncludingDeleted.id,
-          );
-          user = await this.userService.linkGoogleAccount(user.id, {
-            googleId: id,
-            profilePicture: picture,
-          });
-          // Update name with current Google information
-          user = await this.userService.updateUser(user.id, {
-            name: `${firstName} ${lastName}`.trim(),
-            nickname: email.split('@')[0],
-          });
-        } else {
-          // Create new user with Google account
-          user = await this.userService.createGoogleUser({
-            googleId: id,
-            email,
-            username: `${firstName} ${lastName}`.trim(), // Real name as username
-            nickname: email.split('@')[0], // Email prefix as nickname
-            profilePicture: picture,
-          });
-        }
+        // create auth record
+        await queryRunner.manager.save(Auth, {
+          oauthId,
+          provider: AuthProvider.GOOGLE,
+          user: createdUser,
+        });
+
+        // commit transaction
+        await queryRunner.commitTransaction();
+        return this.generateAuthResult(createdUser);
+      } catch (error: any) {
+        console.error('OAuth registration error:', error);
+        // if error occurs, rollback transaction
+        await queryRunner.rollbackTransaction();
+        throw new InternalServerErrorException(
+          'Failed Google OAuth registration',
+        );
+      } finally {
+        // release(): return connection to pool
+        await queryRunner.release();
       }
     }
 
-    // Generate JWT token
+    // 1-2. If user exists, find auth record
+    auth = await this.findAuthByUserId(user.id);
+
+    if (!auth) {
+      throw new BadRequestException(`"${email}" has no auth record.`);
+    }
+
+    if (auth.provider !== AuthProvider.GOOGLE) {
+      throw new BadRequestException(
+        `"${email}" already exists with a different login method.`,
+      );
+    }
+
+    return this.generateAuthResult(user);
+  }
+
+  /** JWT token generation helper */
+  private generateAuthResult(user: User): AuthResult {
     const payload = { sub: user.id, email: user.email };
     const accessToken = this.jwtService.sign(payload);
 
@@ -125,6 +151,17 @@ export class AuthService {
       accessToken,
       user,
     };
+  }
+
+  /** Find auth by user id */
+  async findAuthByUserId(userId: number): Promise<Auth> {
+    const auth = await this.authRepository.findAuthByUserId(userId);
+
+    if (!auth) {
+      throw new BadRequestException(`We can find ${userId}.`);
+    }
+
+    return auth;
   }
 
   /** Validate refresh token and generate new access token */
@@ -192,6 +229,50 @@ export class AuthService {
   /** Retrieve user by ID */
   async findUserById(userId: number): Promise<User | null> {
     return await this.userService.findById(userId);
+  }
+
+  /** Update user password */
+  async updatePassword(
+    userId: number,
+    updatePasswordDto: UpdatePasswordDto,
+  ): Promise<User> {
+    // Validate user existence
+    const user = await this.userService.findWithPasswordById(userId);
+    if (!user) {
+      throw new BadRequestException(`User with ID ${userId} not found.`);
+    }
+
+    // check user's provider: if it's not local, throw an error
+    const auth = await this.findAuthByUserId(userId);
+    if (auth.provider !== AuthProvider.LOCAL) {
+      throw new BadRequestException(
+        'Password update is only allowed for local accounts.',
+      );
+    }
+
+    // compare old password
+    const isPasswordValid = await bcrypt.compare(
+      updatePasswordDto.oldPassword,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new BadRequestException('Old password is incorrect.');
+    }
+
+    // password bcrypt hashing
+    const hashedNewPassword: string = await bcrypt.hash(
+      updatePasswordDto.newPassword,
+      10,
+    );
+
+    // Update password
+    const updatedUser = await this.userService.updatePassword(
+      userId,
+      hashedNewPassword,
+    );
+
+    return updatedUser;
   }
 
   // ===== Token Management Methods =====

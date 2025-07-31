@@ -1,17 +1,14 @@
+import { Auth } from 'src/auth/auth.entity';
+import { Common } from 'src/common/entity/common.entity';
+import { Follow } from 'src/follow/follow.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  DeleteDateColumn,
   Index,
+  OneToOne,
+  OneToMany,
 } from 'typeorm';
-
-export enum AuthProvider {
-  GOOGLE = 'google',
-  LOCAL = 'local',
-}
 
 export enum UserRole {
   USER = 'user',
@@ -28,7 +25,7 @@ export enum UserRole {
 @Entity('user')
 @Index(['email'], { where: '"isDeleted" = false', unique: true })
 @Index(['nickname'], { where: '"isDeleted" = false', unique: true })
-export class User {
+export class User extends Common {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -56,41 +53,22 @@ export class User {
   })
   role: UserRole;
 
-  /** Google OAuth ID */
-  @Column({ nullable: true })
-  googleId: string;
-
   /** Profile picture URL */
   @Column({ default: 'default-avatar.png' })
   profilePicture: string;
 
-  /** Login provider */
-  @Column({
-    type: 'enum',
-    enum: AuthProvider,
-    default: AuthProvider.GOOGLE,
-  })
-  provider: AuthProvider;
-
   /** Account activation status */
-  @Column({ default: true })
+  @Column({ default: false })
   isActive: boolean;
 
-  /** Soft delete flag */
-  @Column({ default: false })
-  isDeleted: boolean;
+  @OneToOne(() => Auth, (auth) => auth.user)
+  auth: Auth;
 
-  /** Creation timestamp */
-  @CreateDateColumn()
-  createdAt: Date;
+  @OneToMany(() => Follow, (follow) => follow.following)
+  followings: Follow[];
 
-  /** Update timestamp */
-  @UpdateDateColumn()
-  updatedAt: Date;
-
-  /** Deletion timestamp (set when soft deleted) */
-  @DeleteDateColumn({ nullable: true })
-  deletedAt: Date;
+  @OneToMany(() => Follow, (follow) => follow.follower)
+  followers: Follow[];
 }
 
 // TODO: Add email verification functionality
