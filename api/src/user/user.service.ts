@@ -6,7 +6,6 @@ import {
 import { UserRepository } from './user.repository';
 import { User } from './user.entity';
 import { UpdateUserDto } from './user.dto';
-import { UserBlock } from 'src/block/user-block.entity';
 
 /**
  * User Business Logic Service
