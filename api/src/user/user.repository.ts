@@ -22,7 +22,7 @@ export class UserRepository {
   /** Find active user by ID */
   async findById(id: number): Promise<User | null> {
     return await this.userRepository.findOne({
-      where: { id, deletedAt: IsNull() },
+      where: { id, deletedAt: IsNull(), isActive: true },
     });
   }
 
