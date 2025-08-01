@@ -14,7 +14,11 @@ import { AuthService, AuthResult } from './auth.service';
 import { Response } from 'express';
 import { RateLimitGuard } from '../common/guards/rate-limit.guard';
 import { User } from 'src/user/user.entity';
-import { CreateLocalUserDto, LoginDto, UpdatePasswordDto } from 'src/user/user.dto';
+import {
+  CreateLocalUserDto,
+  LoginDto,
+  UpdatePasswordDto,
+} from 'src/user/user.dto';
 import { JwtAuthGuard } from './jwt/jwt-auth.guard';
 
 /** Cookie type definition */
@@ -52,7 +56,7 @@ export class AuthController {
     @Request() req: { user: User },
     @Body() updatePasswordDto: UpdatePasswordDto,
   ): Promise<User> {
-    return this.authService.updatePassword(req.user.id, updatePasswordDto);
+    return this.authService.updatePassword(req.user, updatePasswordDto);
   }
 
   @Post('send-email-code')
@@ -61,26 +65,32 @@ export class AuthController {
     return { success: true, message: '인증코드가 전송되었습니다.' };
   }
 
-  //@Post('check-code')
-  //async checkCode()
+  /** 이메일 인증코드 확인 */
+  @Post('check-code')
+  async checkCode(
+    @Body('email') email: string,
+    @Body('code') code: string,
+  ): Promise<{ email: string }> {
+    return await this.authService.verifyEmailCode(email, code);
+  }
 
   /** Sign up with local account */
   @Post('signup')
-  async signup(@Body() signupDto: CreateLocalUserDto): Promise<User> {
+  async signup(
+    @Body() signupDto: CreateLocalUserDto,
+  ): Promise<{ email: string }> {
     return await this.authService.signup(signupDto);
   }
 
   @Post('login')
-   @UseGuards(
-    RateLimitGuard,
-  )
+  @UseGuards(RateLimitGuard)
   /** Local account login */
   async login(
     @Body() loginDto: LoginDto,
-    @Res({ passthrough: true }) res: Response): Promise<boolean>{
-      return await this.authService.login(loginDto, res);
-    }
-
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<User> {
+    return await this.authService.login(loginDto, res);
+  }
 
   // ===== Authentication APIs =====
 

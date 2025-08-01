@@ -158,11 +158,39 @@ export class UserService {
     return restoredUser;
   }
 
+  /** Activate user account */
+  async activateUser(id: number): Promise<User> {
+    // Business logic: Check user existence
+    const existingUser = await this.userRepository.findById(id);
+    if (!existingUser) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    // Business logic: Check if already active
+    if (existingUser.isActive) {
+      throw new Error(`User with ID ${id} is already active`);
+    }
+
+    const updatedUser = await this.userRepository.update(id, {
+      isActive: true,
+    });
+    if (!updatedUser) {
+      throw new Error(`Failed to activate user with ID ${id}`);
+    }
+
+    return updatedUser;
+  }
+
   // ===== Internal Helper Methods - Simple Form =====
 
   /** Find active user by email (nullable) */
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findByEmail(email);
+  }
+
+  /** Find active user by email with password (for login) */
+  async findByEmailWithPassword(email: string): Promise<User | null> {
+    return this.userRepository.findByEmailWithPassword(email);
   }
 
   async findByNickname(nickname: string): Promise<User | null> {
@@ -179,19 +207,14 @@ export class UserService {
     return this.userRepository.findByEmailIncludingDeleted(email);
   }
 
-  /** Find User with password by Id */
-  async findWithPasswordById(id: number): Promise<User | null> {
-    return this.userRepository.findWithPasswordById(id);
-  }
-
   /** Find User with Followers by Id */
-  async findWithFollowersById(id: number): Promise<User | null> {
-    return this.userRepository.findWithFollowersById(id);
+  async findByIdWithFollowers(id: number): Promise<User | null> {
+    return this.userRepository.findByIdWithFollowers(id);
   }
 
   /** Find User with Followings by Id */
-  async findWithFollowingsById(id: number): Promise<User | null> {
-    return this.userRepository.findWithFollowingsById(id);
+  async findByIdWithFollowings(id: number): Promise<User | null> {
+    return this.userRepository.findByIdWithFollowings(id);
   }
 }
 
