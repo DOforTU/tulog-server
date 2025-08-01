@@ -92,7 +92,7 @@ export class UserService {
 
   // ===== Query Methods - Domain Specific =====
 
-  /** Get user by email (throws exception) */
+  /** Get user by email (with throws exception, can get no isActive user) */
   async getUserByEmail(email: string): Promise<User> {
     const user = await this.userRepository.findByEmail(email);
     if (!user) {
@@ -200,6 +200,11 @@ export class UserService {
   /** Find active user by ID (nullable) */
   async findById(id: number): Promise<User | null> {
     return this.userRepository.findById(id);
+  }
+
+  /** Find active user by sub (used in JWT validation) */
+  async findBySub(sub: number): Promise<User | null> {
+    return this.userRepository.findBySub(sub);
   }
 
   /** Find user by email (including deleted users) */

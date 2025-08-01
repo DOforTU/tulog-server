@@ -394,7 +394,8 @@ export class AuthService {
       // Generate tokens and set cookies
       const tokens = this.generateTokenPair(user);
       this.setAuthCookies(res, tokens);
-      return await this.userService.getUserById(user.id);
+
+      return await this.userService.getUserByEmail(user.email);
     } catch (error: any) {
       console.error('Local login error:', error);
       if (error instanceof BadRequestException) {

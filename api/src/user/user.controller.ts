@@ -13,9 +13,8 @@ import {
 import { UserService } from './user.service';
 import { User } from './user.entity';
 import { UpdateUserDto } from './user.dto';
-import { SmartAuthGuard } from '../auth/jwt/smart-auth.guard';
-import { AllowInactiveUser } from '../common/decorator/allow-inactive-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
+import { SmartAuthGuard } from 'src/auth/jwt';
 
 /**
  * User Management Controller
@@ -30,8 +29,7 @@ export class UserController {
   // ===== Basic CRUD - REST API =====
   /** Get current logged-in user information */
   @Get('me')
-  @UseGuards(SmartAuthGuard)
-  @AllowInactiveUser()
+  @UseGuards(JwtAuthGuard)
   getCurrentUser(@Request() req: { user: User }): User {
     return req.user;
   }
@@ -60,9 +58,9 @@ export class UserController {
     return null;
   }
 
-  /** Update user information */
+  /** Update user information(only active users) */
   @Patch('me')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(SmartAuthGuard)
   async updateUser(
     @Request() req: { user: User },
     @Body() updateUserDto: UpdateUserDto,
