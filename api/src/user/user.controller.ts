@@ -13,6 +13,8 @@ import {
 import { UserService } from './user.service';
 import { User } from './user.entity';
 import { UpdateUserDto } from './user.dto';
+import { SmartAuthGuard } from '../auth/jwt/smart-auth.guard';
+import { AllowInactiveUser } from '../common/decorator/allow-inactive-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
 
 /**
@@ -28,7 +30,8 @@ export class UserController {
   // ===== Basic CRUD - REST API =====
   /** Get current logged-in user information */
   @Get('me')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(SmartAuthGuard)
+  @AllowInactiveUser()
   getCurrentUser(@Request() req: { user: User }): User {
     return req.user;
   }
@@ -118,11 +121,3 @@ export class UserController {
     return this.userService.restoreUser(id);
   }
 }
-
-// TODO: Add user search API (search by name, email, nickname)
-// TODO: Add pagination API
-// TODO: Add user profile image upload API
-// TODO: Add social account linking/unlinking API
-// TODO: Add account activation/deactivation API
-// TODO: Add admin permission check middleware
-// TODO: Add user statistics dashboard API

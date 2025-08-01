@@ -61,7 +61,7 @@ export class User extends Common {
   role: UserRole;
 
   /** Profile picture URL */
-  @Column({ default: 'default-avatar.png' })
+  @Column()
   profilePicture: string;
 
   /** Account activation status */

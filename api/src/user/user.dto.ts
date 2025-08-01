@@ -7,6 +7,7 @@ import {
   MaxLength,
   Matches,
 } from 'class-validator';
+import { Match } from 'src/common/decorator/match.decorator';
 
 /**
  * User creation DTO
@@ -69,6 +70,9 @@ export class CreateLocalUserDto {
   @IsString()
   password: string;
 
+  @Match('password', { message: 'Passwords do not match' })
+  passwordConfirm: string;
+
   /** Name (required) */
   @IsString()
   name: string;
@@ -78,7 +82,7 @@ export class CreateLocalUserDto {
   nickname: string;
 }
 
-export class LoginDto{
+export class LoginDto {
   /** User email (required, valid email format) */
   @IsEmail()
   email: string;
@@ -125,6 +129,11 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   profilePicture?: string;
+
+  /** Account activation status (optional) */
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
 
 /**
@@ -156,4 +165,10 @@ export class UpdatePasswordDto {
   })
   @IsString()
   newPassword: string;
+}
+
+export class ResponseUserDto {
+  email: string;
+  nickname: string;
+  isActive: boolean;
 }
