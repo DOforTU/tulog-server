@@ -1,4 +1,5 @@
 import { Auth } from 'src/auth/auth.entity';
+import { UserBlock } from 'src/block/user-block.entity';
 import { Common } from 'src/common/entity/common.entity';
 import { Follow } from 'src/follow/follow.entity';
 import {
@@ -75,4 +76,10 @@ export class User extends Common {
 
   @OneToMany(() => Follow, (follow) => follow.following)
   followers: Follow[];
+
+  @OneToMany(() => UserBlock, (userBlcok) => userBlcok.blocked)
+  blockers: UserBlock[];
+
+  @OneToMany(() => UserBlock, (userBlcok) => userBlcok.blocker)
+  blocked: UserBlock[];
 }
