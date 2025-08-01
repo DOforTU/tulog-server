@@ -18,6 +18,7 @@ import {
   LoginDto,
   UpdatePasswordDto,
 } from 'src/user/user.dto';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { plainToInstance } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
@@ -77,6 +78,7 @@ function isValidJwtPayload(token: unknown): token is JwtPayload {
 @Injectable()
 export class AuthService {
   constructor(
+    private readonly configService: ConfigService,
     private readonly authRepository: AuthRepository,
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
@@ -256,6 +258,7 @@ export class AuthService {
         password: hashedPassword,
         name: dto.name,
         nickname: dto.nickname,
+        profilePicture: `${this.configService.get('SERVER_URL')}/default-avatar.png`,
         // isActive: false (default)
       });
 
