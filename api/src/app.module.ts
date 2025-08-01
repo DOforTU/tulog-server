@@ -17,6 +17,7 @@ import { TeamService } from './team/team.service';
 import { TeamModule } from './team/team.module';
 import { Follow } from './follow/follow.entity';
 import { Team } from './team/team.entity';
+import { TeammemberController } from './teammember/teammember.controller';
 
 @Module({
   imports: [
@@ -50,7 +51,7 @@ import { Team } from './team/team.entity';
     FollowModule,
     TeamModule,
   ],
-  controllers: [AppController, TeamController],
+  controllers: [AppController, TeamController, TeammemberController],
   providers: [AppService, TeamService],
 })
 export class AppModule implements NestModule {

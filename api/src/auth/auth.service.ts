@@ -301,7 +301,7 @@ export class AuthService {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
-  /** 이메일로 인증코드 전송 (실제 서비스는 nodemailer 등 사용) */
+/** 이메일로 인증코드 전송 (실제 서비스는 nodemailer 등 사용) */
   // npm install nodemailer 설치해야함
   async sendEmailCode(email: string): Promise<void> {
     const code = this.generateCode();
@@ -323,6 +323,7 @@ export class AuthService {
 
     await transporter.sendMail(mailOptions);
   }
+
 
   // ===== User Management Methods =====
 
