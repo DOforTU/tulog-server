@@ -1,8 +1,8 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
-  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
@@ -15,8 +15,10 @@ import * as nodemailer from 'nodemailer';
 import {
   CreateLocalUserDto,
   CreateOauthUserDto,
+  LoginDto,
   UpdatePasswordDto,
 } from 'src/user/user.dto';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { plainToInstance } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
@@ -76,6 +78,7 @@ function isValidJwtPayload(token: unknown): token is JwtPayload {
 @Injectable()
 export class AuthService {
   constructor(
+    private readonly configService: ConfigService,
     private readonly authRepository: AuthRepository,
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
@@ -102,11 +105,15 @@ export class AuthService {
       await queryRunner.startTransaction();
 
       try {
+        const nickname = email.split('@')[0];
+
+        // TODO: nickname valid
+
         // Validate user data
         const userDto = plainToInstance(CreateOauthUserDto, {
           email,
           name: `${firstName} ${lastName}`.trim(),
-          nickname: email.split('@')[0],
+          nickname,
           profilePicture: picture,
           isActive: true,
         });
@@ -140,11 +147,7 @@ export class AuthService {
     }
 
     // 1-2. If user exists, find auth record
-    auth = await this.findAuthByUserId(user.id);
-
-    if (!auth) {
-      throw new BadRequestException(`"${email}" has no auth record.`);
-    }
+    auth = await this.getAuthByUserId(user.id);
 
     if (auth.provider !== AuthProvider.GOOGLE) {
       throw new BadRequestException(
@@ -167,8 +170,8 @@ export class AuthService {
   }
 
   /** Find auth by user id */
-  async findAuthByUserId(userId: number): Promise<Auth> {
-    const auth = await this.authRepository.findAuthByUserId(userId);
+  async getAuthByUserId(userId: number): Promise<Auth> {
+    const auth = await this.authRepository.findByUserId(userId);
 
     if (!auth) {
       throw new BadRequestException(`We can find ${userId}.`);
@@ -225,30 +228,19 @@ export class AuthService {
     }
   }
 
-  // Handle provider-specific processing in AuthService
-  async validateUser(provider: AuthProvider, userData: GoogleUser) {
-    switch (provider) {
-      case AuthProvider.GOOGLE:
-        return this.validateGoogleUser(userData);
-      // case AuthProvider.KAKAO:
-      //   return this.validateKakaoUser(userData);
-      // case AuthProvider.LOCAL:
-      //   return this.validateLocalUser(userData);
-      default:
-        throw new BadRequestException('Unsupported login method.');
-    }
-  }
-
-  async signup(dto: CreateLocalUserDto): Promise<boolean> {
-    // 1. 이메일 인증코드 검증
-    if (!this.emailCodeStore.has(dto.email)) {
-      throw new NotFoundException('이메일 인증이 필요합니다.');
-    }
-
+  async signup(dto: CreateLocalUserDto): Promise<{ email: string }> {
     // Check if user already exists
     const existingUser = await this.userService.findByEmail(dto.email);
     if (existingUser) {
-      throw new Error('Email already exists.');
+      throw new ConflictException('Email already exists.');
+    }
+
+    // Check same nickname
+    const existingUserNickname = await this.userService.findByNickname(
+      dto.nickname,
+    );
+    if (existingUserNickname) {
+      throw new ConflictException('Nickname already exists.');
     }
 
     // Hash password
@@ -260,12 +252,14 @@ export class AuthService {
     await queryRunner.startTransaction();
 
     try {
-      // create new user
+      // create new user with isActive: false (default)
       const createdUser = await queryRunner.manager.save(User, {
         email: dto.email,
         password: hashedPassword,
         name: dto.name,
         nickname: dto.nickname,
+        profilePicture: `${this.configService.get('SERVER_URL')}/default-avatar.png`,
+        // isActive: false (default)
       });
 
       // create auth record
@@ -277,36 +271,36 @@ export class AuthService {
       // commit transaction
       await queryRunner.commitTransaction();
 
-      // 인증코드 삭제
-      this.emailCodeStore.delete(dto.email);
-      return true;
+      // 회원가입 성공 시 email만 반환
+      return { email: createdUser.email };
     } catch (error: any) {
       console.error('Local signup error:', error);
       // if error occurs, rollback transaction
       await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException('Failed Local OAuth registration');
+      throw new InternalServerErrorException(
+        'Failed Local signup registration',
+      );
     } finally {
       // release(): return connection to pool
       await queryRunner.release();
     }
   }
 
-  // ===== 로컬 이메일 인증코드 Methods =====
+  // ===== Local Email Verification Methods =====
   /**
    * Email code storage
    */
   private emailCodeStore = new Map<string, string>();
-  /** 6자리 인증코드 생성 */
-  private generateCode() {
+  /** code generation 6 digits */
+  private generateCode(): string {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
-  /** 이메일로 인증코드 전송 (실제 서비스는 nodemailer 등 사용) */
-  // npm install nodemailer 설치해야함
+  /** Send email verification code (actual service should use nodemailer, etc.) */
+  // npm install nodemailer
   async sendEmailCode(email: string): Promise<void> {
     const code = this.generateCode();
     this.emailCodeStore.set(email, code);
-
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -318,15 +312,97 @@ export class AuthService {
       from: process.env.GMAIL_OAUTH_USER,
       to: email,
       subject: 'Tulog 회원가입 인증코드',
-      text: `회원가입을 위한 인증코드입니다: ${code}`,
+      text: `That's the code for signup: ${code}`,
     };
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log(`Email sent to ${email} with code ${code}`);
+    } catch (error) {
+      console.error('Failed to send email:', error);
+      throw error;
+    }
+  }
 
-    await transporter.sendMail(mailOptions);
+  /** Verify email code and activate account */
+  async verifyEmailCode(
+    email: string,
+    code: string,
+  ): Promise<{ email: string }> {
+    // Check stored verification code
+    const storedCode = this.emailCodeStore.get(email);
+    if (!storedCode) {
+      throw new BadRequestException(
+        'Verification code has expired or does not exist.',
+      );
+    }
+
+    if (storedCode !== code) {
+      throw new BadRequestException('Verification code does not match.');
+    }
+
+    // Find user
+    const user = await this.userService.findByEmail(email);
+    if (!user) {
+      throw new BadRequestException('User not found.');
+    }
+
+    // Check if account is already activated
+    if (user.isActive) {
+      throw new BadRequestException('Account is already activated.');
+    }
+
+    // Activate account
+    await this.userService.activateUser(user.id);
+
+    // Delete verification code
+    this.emailCodeStore.delete(email);
+
+    return { email: user.email };
   }
 
   // ===== User Management Methods =====
 
   //** login user */
+  async login(loginDto: LoginDto, res: Response): Promise<User> {
+    try {
+      // Check if user exists (with password for comparison)
+      const user = await this.userService.findByEmailWithPassword(
+        loginDto.email,
+      );
+      if (!user) {
+        throw new BadRequestException('User not found.');
+      }
+
+      // Check if auth exists
+      const auth = await this.getAuthByUserId(user.id);
+
+      if (auth.provider !== AuthProvider.LOCAL) {
+        throw new BadRequestException(
+          'Login is only allowed for local accounts.',
+        );
+      }
+
+      // Check password (user.password should now be available)
+      const isPasswordValid = await bcrypt.compare(
+        loginDto.password,
+        user.password,
+      );
+      if (!isPasswordValid) {
+        throw new BadRequestException('Invalid password.');
+      }
+
+      // Generate tokens and set cookies
+      const tokens = this.generateTokenPair(user);
+      this.setAuthCookies(res, tokens);
+      return await this.userService.getUserById(user.id);
+    } catch (error: any) {
+      console.error('Local login error:', error);
+      if (error instanceof BadRequestException) {
+        throw error; // 기존 에러 메시지 유지
+      }
+      throw new InternalServerErrorException('Failed Local login');
+    }
+  }
 
   /** Retrieve user by ID */
   async findUserById(userId: number): Promise<User | null> {
@@ -335,27 +411,29 @@ export class AuthService {
 
   /** Update user password */
   async updatePassword(
-    userId: number,
+    user: User,
     updatePasswordDto: UpdatePasswordDto,
   ): Promise<User> {
-    // Validate user existence
-    const user = await this.userService.findWithPasswordById(userId);
-    if (!user) {
-      throw new BadRequestException(`User with ID ${userId} not found.`);
-    }
-
     // check user's provider: if it's not local, throw an error
-    const auth = await this.findAuthByUserId(userId);
+    const auth = await this.getAuthByUserId(user.id);
     if (auth.provider !== AuthProvider.LOCAL) {
       throw new BadRequestException(
         'Password update is only allowed for local accounts.',
       );
     }
 
+    // Validate user existence and get user with password
+    const userWithPW = await this.userService.findByEmailWithPassword(
+      user.email,
+    );
+    if (!userWithPW) {
+      throw new BadRequestException(`User with email ${user.email} not found.`);
+    }
+
     // compare old password
     const isPasswordValid = await bcrypt.compare(
       updatePasswordDto.oldPassword,
-      user.password,
+      userWithPW.password,
     );
 
     if (!isPasswordValid) {
@@ -369,12 +447,9 @@ export class AuthService {
     );
 
     // Update password
-    const updatedUser = await this.userService.updatePassword(
-      userId,
-      hashedNewPassword,
-    );
+    await this.userService.updatePassword(user.id, hashedNewPassword);
 
-    return updatedUser;
+    return user;
   }
 
   // ===== Token Management Methods =====

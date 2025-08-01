@@ -7,6 +7,7 @@ import {
   MaxLength,
   Matches,
 } from 'class-validator';
+import { Match } from 'src/common/decorator/match.decorator';
 
 /**
  * User creation DTO
@@ -49,8 +50,28 @@ export class CreateLocalUserDto {
   email: string;
 
   /** Password (required) */
+  @MinLength(8)
+  @MaxLength(20)
+  @Matches(/(?=.*[A-Z])/, {
+    message: 'Must contain at least 1 uppercase letter',
+  })
+  @Matches(/(?=.*[a-z])/, {
+    message: 'Must contain at least 1 lowercase letter',
+  })
+  @Matches(/(?=.*\d)/, {
+    message: 'Must contain at least 1 number',
+  })
+  @Matches(/(?=.*[!@#$%^&*()\-_=+{}[\]|\\:;"'<>,.?/`~])/, {
+    message: 'Must contain at least 1 special character',
+  })
+  @Matches(/^[^\s]+$/, {
+    message: 'Password must not contain spaces',
+  })
   @IsString()
   password: string;
+
+  @Match('password', { message: 'Passwords do not match' })
+  passwordConfirm: string;
 
   /** Name (required) */
   @IsString()
@@ -59,9 +80,33 @@ export class CreateLocalUserDto {
   /** User nickname (required)*/
   @IsString()
   nickname: string;
+}
 
+export class LoginDto {
+  /** User email (required, valid email format) */
+  @IsEmail()
+  email: string;
+
+  /** Password (required) */
+  @MinLength(8)
+  @MaxLength(20)
+  @Matches(/(?=.*[A-Z])/, {
+    message: 'Must contain at least 1 uppercase letter',
+  })
+  @Matches(/(?=.*[a-z])/, {
+    message: 'Must contain at least 1 lowercase letter',
+  })
+  @Matches(/(?=.*\d)/, {
+    message: 'Must contain at least 1 number',
+  })
+  @Matches(/(?=.*[!@#$%^&*()\-_=+{}[\]|\\:;"'<>,.?/`~])/, {
+    message: 'Must contain at least 1 special character',
+  })
+  @Matches(/^[^\s]+$/, {
+    message: 'Password must not contain spaces',
+  })
   @IsString()
-  code: string;
+  password: string;
 }
 
 /**
@@ -84,6 +129,11 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   profilePicture?: string;
+
+  /** Account activation status (optional) */
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
 
 /**
@@ -115,4 +165,10 @@ export class UpdatePasswordDto {
   })
   @IsString()
   newPassword: string;
+}
+
+export class ResponseUserDto {
+  email: string;
+  nickname: string;
+  isActive: boolean;
 }

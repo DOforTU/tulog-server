@@ -69,6 +69,25 @@ export class UserRepository {
     });
   }
 
+  /** Find active user by email with password (for login and update pw) */
+  async findByEmailWithPassword(email: string): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { email, deletedAt: IsNull() },
+      select: [
+        'id',
+        'email',
+        'name',
+        'nickname',
+        'password', // include password for login and update pw
+        'role',
+        'profilePicture',
+        'isActive',
+        'createdAt',
+        'updatedAt',
+      ],
+    });
+  }
+
   /** Find active user by username */
   async findByName(name: string): Promise<User | null> {
     return await this.userRepository.findOne({
@@ -105,7 +124,7 @@ export class UserRepository {
   }
 
   /** Find User with password */
-  async findWithPasswordById(id: number): Promise<User | null> {
+  async findByIdWithPassword(id: number): Promise<User | null> {
     return await this.userRepository.findOne({
       where: { id, deletedAt: IsNull() },
       select: ['id', 'email', 'password'],
@@ -113,7 +132,7 @@ export class UserRepository {
   }
 
   /** Find User with Followers */
-  async findWithFollowersById(id: number): Promise<User | null> {
+  async findByIdWithFollowers(id: number): Promise<User | null> {
     const user = await this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.followers', 'follow')
@@ -129,7 +148,7 @@ export class UserRepository {
   }
 
   /** Find user with Followings */
-  async findWithFollowingsById(id: number): Promise<User | null> {
+  async findByIdWithFollowings(id: number): Promise<User | null> {
     return await this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.followings', 'follow')
@@ -138,6 +157,20 @@ export class UserRepository {
       .andWhere('user.deletedAt IS NULL AND user.isActive = true')
       .andWhere(
         'followingUser.deletedAt IS NULL AND followingUser.isActive = true',
+      )
+      .getOne();
+  }
+
+  /** Find user with Blocked  */
+  async findWithBlockedById(id: number): Promise<User | null> {
+    return await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.blockers', 'userBlock')
+      .leftJoinAndSelect('userBlock.blocker', 'blockingUser')
+      .where('user.id = :id', { id })
+      .andWhere('user.deletedAt IS NULL AND user.isActive = true')
+      .andWhere(
+        'blockingUser.deletedAt IS NULL AND blockingUser.isActive = true',
       )
       .getOne();
   }

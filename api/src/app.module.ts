@@ -16,6 +16,9 @@ import { TeamController } from './team/team.controller';
 import { TeamService } from './team/team.service';
 import { TeamModule } from './team/team.module';
 import { Follow } from './follow/follow.entity';
+import { Team } from './team/team.entity';
+import { UserBlcokModule } from './block/user-block.module';
+import { UserBlock } from './block/user-block.entity';
 
 @Module({
   imports: [
@@ -38,7 +41,7 @@ import { Follow } from './follow/follow.entity';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         schema: configService.get('DB_SCHEMA'),
-        entities: [User, Auth, Follow],
+        entities: [User, Auth, Follow, Team, UserBlock],
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
       }),
@@ -48,6 +51,7 @@ import { Follow } from './follow/follow.entity';
     AuthModule,
     FollowModule,
     TeamModule,
+    UserBlcokModule,
   ],
   controllers: [AppController, TeamController],
   providers: [AppService, TeamService],
