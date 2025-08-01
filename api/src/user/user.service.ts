@@ -165,6 +165,10 @@ export class UserService {
     return this.userRepository.findByEmail(email);
   }
 
+  async findByNickname(nickname: string): Promise<User | null> {
+    return this.userRepository.findByNickname(nickname);
+  }
+
   /** Find active user by ID (nullable) */
   async findById(id: number): Promise<User | null> {
     return this.userRepository.findById(id);

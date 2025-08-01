@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -15,6 +16,7 @@ import * as nodemailer from 'nodemailer';
 import {
   CreateLocalUserDto,
   CreateOauthUserDto,
+  LoginDto,
   UpdatePasswordDto,
 } from 'src/user/user.dto';
 import * as bcrypt from 'bcrypt';
@@ -102,14 +104,20 @@ export class AuthService {
       await queryRunner.startTransaction();
 
       try {
+
+        const nickname = email.split('@')[0]
+        
+        // TODO: nickname valid
+
         // Validate user data
         const userDto = plainToInstance(CreateOauthUserDto, {
           email,
           name: `${firstName} ${lastName}`.trim(),
-          nickname: email.split('@')[0],
+          nickname,
           profilePicture: picture,
           isActive: true,
         });
+
 
         await validateOrReject(userDto);
 
@@ -239,16 +247,23 @@ export class AuthService {
     }
   }
 
-  async signup(dto: CreateLocalUserDto): Promise<boolean> {
+  async signup(dto: CreateLocalUserDto): Promise<User> {
     // 1. 이메일 인증코드 검증
-    if (!this.emailCodeStore.has(dto.email)) {
-      throw new NotFoundException('이메일 인증이 필요합니다.');
-    }
+    //console.log(this.emailCodeStore.get(dto.email))
+    //if (!this.emailCodeStore.has(dto.email)) {
+    //  throw new NotFoundException('이메일 인증이 필요합니다.');
+    //}
 
     // Check if user already exists
     const existingUser = await this.userService.findByEmail(dto.email);
     if (existingUser) {
-      throw new Error('Email already exists.');
+      throw new ConflictException('Email already exists.');
+    }
+
+    // Check same nickname
+    const existingUserNickname = await this.userService.findByNickname(dto.nickname)
+    if (existingUserNickname) {
+      throw new ConflictException('Nickname already exists.');
     }
 
     // Hash password
@@ -279,7 +294,7 @@ export class AuthService {
 
       // 인증코드 삭제
       this.emailCodeStore.delete(dto.email);
-      return true;
+      return await this.userService.getUserById(createdUser.id);
     } catch (error: any) {
       console.error('Local signup error:', error);
       // if error occurs, rollback transaction
@@ -297,7 +312,7 @@ export class AuthService {
    */
   private emailCodeStore = new Map<string, string>();
   /** 6자리 인증코드 생성 */
-  private generateCode() {
+  private generateCode(): string {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
@@ -306,7 +321,6 @@ export class AuthService {
   async sendEmailCode(email: string): Promise<void> {
     const code = this.generateCode();
     this.emailCodeStore.set(email, code);
-
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -320,13 +334,55 @@ export class AuthService {
       subject: 'Tulog 회원가입 인증코드',
       text: `회원가입을 위한 인증코드입니다: ${code}`,
     };
-
-    await transporter.sendMail(mailOptions);
-  }
-
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`Email sent to ${email} with code ${code}`);
+      } catch (error) {
+        console.error('Failed to send email:', error);
+        // 필요 시 에러 재던지기 or 처리
+        throw error;
+      }
+    }
   // ===== User Management Methods =====
 
   //** login user */
+  async login(loginDto: LoginDto, res: Response): Promise<boolean> {
+    try {
+    // Check if user exists
+    const user = await this.userService.findByEmail(loginDto.email);
+    if (!user) {
+      throw new BadRequestException('User not found.');
+    }
+
+    const auth = await this.findAuthByUserId(user.id);
+    if (!auth) {
+      throw new BadRequestException('User not found.');
+    }
+    
+    if (auth.provider !== AuthProvider.LOCAL) {
+      throw new BadRequestException(
+        'Login is only allowed for local accounts.',
+      );
+    }
+
+    // Check password
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
+    if (!isPasswordValid) {
+      throw new BadRequestException('Invalid password.');
+    }
+
+    // Generate tokens and set cookies
+    const tokens = this.generateTokenPair(user);
+    this.setAuthCookies(res, tokens);
+    return true;
+  } catch (error: any) {
+      console.error('Local login error:', error);
+      throw new InternalServerErrorException('Failed Local OAuth registration');
+    }
+  }
 
   /** Retrieve user by ID */
   async findUserById(userId: number): Promise<User | null> {
