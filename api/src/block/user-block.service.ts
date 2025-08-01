@@ -20,6 +20,9 @@ export class UserBlockService {
       throw new BadRequestException('Cannot block yourself.');
     }
 
+    // check if blocked user exists
+    await this.userService.getUserById(blockedId);
+
     const isBlocking = await this.userBlockRepository.isBlocking(
       blockerId,
       blockedId,
