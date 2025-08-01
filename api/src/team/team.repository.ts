@@ -20,7 +20,7 @@ export class TeamRepository {
   }
 
   // 팀 리스트 조회
-  async findTeams(): Promise<Team[]> {
+  async findAllTeams(): Promise<Team[]> {
     // 팀 리스트 조회
     return await this.teamRepository.find({
       where: { deletedAt: IsNull() },
