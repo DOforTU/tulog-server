@@ -6,6 +6,7 @@ import {
 import { UserRepository } from './user.repository';
 import { User } from './user.entity';
 import { UpdateUserDto } from './user.dto';
+import { UserBlock } from 'src/block/user-block.entity';
 
 /**
  * User Business Logic Service
@@ -192,6 +193,11 @@ export class UserService {
   /** Find User with Followings by Id */
   async findWithFollowingsById(id: number): Promise<User | null> {
     return this.userRepository.findWithFollowingsById(id);
+  }
+
+  /** Find User with Blocked user by Id*/
+  async findWithBlockedById(id: number): Promise<User | null> {
+    return this.userRepository.findWithBlockedById(id);
   }
 }
 

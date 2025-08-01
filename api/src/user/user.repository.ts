@@ -142,6 +142,20 @@ export class UserRepository {
       .getOne();
   }
 
+  /** Find user with Blocked  */
+  async findWithBlockedById(id: number): Promise<User | null> {
+    return await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.blockers', 'userBlock')
+      .leftJoinAndSelect('userBlock.blocker', 'blockingUser')
+      .where('user.id = :id', { id })
+      .andWhere('user.deletedAt IS NULL AND user.isActive = true')
+      .andWhere(
+        'blockingUser.deletedAt IS NULL AND blockingUser.isActive = true',
+      )
+      .getOne();
+  }
+
   // ===== Special Operations - Data Access =====
 
   /** Permanently delete user */

@@ -5,41 +5,44 @@ import { TeamRepository } from './team.repository';
 
 @Injectable()
 export class TeamService {
-    constructor(private readonly teamRepository: TeamRepository) {}
+  constructor(private readonly teamRepository: TeamRepository) {}
 
-    // 팀 생성 로직
-    async createTeam(teamDto: CreateTeamDto): Promise<boolean> {
-        // 팀 생성 로직을 호출
-        // 팀 생성 성공 여부를 반환
-        return await this.teamRepository.createTeam(teamDto);
-    }
+  // 팀 생성 로직
+  async createTeam(teamDto: CreateTeamDto): Promise<boolean> {
+    // 팀 생성 로직을 호출
+    // 팀 생성 성공 여부를 반환
+    return await this.teamRepository.createTeam(teamDto);
+  }
 
+  // 팀 리스트 조회
+  async findTeams(): Promise<Team[]> {
     // 팀 리스트 조회
-    async findTeams(): Promise<Team[]> {
-        // 팀 리스트 조회
-        return await this.teamRepository.findTeams();
-    }
+    return await this.teamRepository.findTeams();
+  }
 
+  // 팀 아이디로 상세 조회 로직
+  async findTeamById(id: string): Promise<Team | null> {
     // 팀 아이디로 상세 조회 로직
-    async findTeamById(id: string): Promise<Team | null> {
-        // 팀 아이디로 상세 조회 로직
-        return await this.teamRepository.findTeamById(id);
-    }
+    return await this.teamRepository.findTeamById(id);
+  }
 
-    // 팀 이름으로 상세 조회 로직
-    async findTeamByName(name: string): Promise<Team | null> {
-        return await this.teamRepository.findTeamByName(name);
-    }
+  // 팀 이름으로 상세 조회 로직
+  async findTeamByName(name: string): Promise<Team | null> {
+    return await this.teamRepository.findTeamByName(name);
+  }
 
-    // 팀 이름 변경 로직
-    async changeTeamName(name: string, newName: string): Promise<Team | null> {
-        return await this.teamRepository.changeTeamName(newName);
-    }
+  // 팀 이름 변경 로직
+  async changeTeamName(name: string, newName: string): Promise<Team | null> {
+    return await this.teamRepository.changeTeamName(newName);
+  }
 
-    // 팀 상태 설정 기능 로직
-    async changeStatus(id: number, visibility: ChangeVisibilityDto ): Promise<Team | null> {
-        // 팀 생성 로직을 호출
-        // 팀 생성 성공 여부를 반환
-        return await this.teamRepository.changeStatus(id, visibility);
-    }
+  // 팀 상태 설정 기능 로직
+  async changeStatus(
+    id: number,
+    visibility: ChangeVisibilityDto,
+  ): Promise<Team | null> {
+    // 팀 생성 로직을 호출
+    // 팀 생성 성공 여부를 반환
+    return await this.teamRepository.changeStatus(id, visibility);
+  }
 }
