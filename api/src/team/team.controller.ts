@@ -29,7 +29,7 @@ export class TeamController {
   @Get()
   async findTeams(): Promise<Team[]> {
     // 팀 리스트 조회
-    return await this.teamService.findTeams();
+    return await this.teamService.findAllTeams();
   }
 
   // 팀 아이디로 상세 조회 로직
