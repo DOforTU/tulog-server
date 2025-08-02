@@ -111,10 +111,10 @@ export class UserRepository {
     });
   }
 
-  /** Find active user include no-active by nickname (ONLY not-deleted) */
+  /** Find active user include no-active by nickname (ONLY not-deleted & isActive) */
   async findByNickname(nickname: string): Promise<User | null> {
     return await this.userRepository.findOne({
-      where: { nickname, deletedAt: IsNull() },
+      where: { nickname, deletedAt: IsNull(), isActive: true },
     });
   }
 
