@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ChangeVisibilityDto, CreateTeamDto } from './team.dto';
 import { TeamService } from './team.service';
-import { Team, TeamVisibility } from './team.entity';
+import { Team } from './team.entity';
 import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
 
 @Controller('teams')
@@ -29,7 +29,7 @@ export class TeamController {
   @Get()
   async findTeams(): Promise<Team[]> {
     // 팀 리스트 조회
-    return await this.teamService.findTeams();
+    return await this.teamService.findAllTeams();
   }
 
   // 팀 아이디로 상세 조회 로직
