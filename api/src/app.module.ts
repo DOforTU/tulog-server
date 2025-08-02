@@ -19,6 +19,7 @@ import { Follow } from './follow/follow.entity';
 import { Team } from './team/team.entity';
 import { UserBlcokModule } from './block/user-block.module';
 import { UserBlock } from './block/user-block.entity';
+import { TeammemberController } from './teammember/teammember.controller';
 
 @Module({
   imports: [
@@ -53,7 +54,7 @@ import { UserBlock } from './block/user-block.entity';
     TeamModule,
     UserBlcokModule,
   ],
-  controllers: [AppController, TeamController],
+  controllers: [AppController, TeamController, TeammemberController],
   providers: [AppService, TeamService],
 })
 export class AppModule implements NestModule {
