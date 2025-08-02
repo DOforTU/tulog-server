@@ -258,7 +258,7 @@ export class AuthService {
         password: hashedPassword,
         name: dto.name,
         nickname: dto.nickname,
-        profilePicture: `${this.configService.get('SERVER_URL')}/default-avatar.png`,
+        profilePicture: `${this.configService.get('USER_DEFAULT_AVATAR_URL')}`,
         // isActive: false (default)
       });
 
