@@ -8,31 +8,31 @@
 
 ### 1. Controller 계층
 
-- **역할**: REST API 라우팅 및 요청 응답 처리
-- **명명 규칙**:
-  - RESTful 메서드 명명
-  - 직관적인 액션 명 중심 (도메인 생략)
-  - `get`, `create`, `update`, `delete`, `restore`, `count` 등의 접두어 사용
+-   **역할**: REST API 라우팅 및 요청 응답 처리
+-   **명명 규칙**:
+    -   RESTful 메서드 명명
+    -   직관적인 액션 명 중심 (도메인 생략)
+    -   `get`, `create`, `update`, `delete`, `restore`, `count` 등의 접두어 사용
 
-| 목적               | 메서드 명                 | 예시 경로                  |
-| ------------------ | ------------------------- | -------------------------- |
-| 사용자 조회        | `getUser()`               | `GET /users/:id`           |
-| 전체 조회 (관리자) | `getAllUsers()`           | `GET /users`               |
-| 생성               | `createUser()`            | `POST /users`              |
-| 수정               | `updateUser()`            | `PUT /users/:id`           |
-| 삭제               | `deleteUser()`            | `DELETE /users/:id`        |
-| 하드 삭제          | `deleteUserPermanently()` | `DELETE /users/:id/hard`   |
-| 복구               | `restoreUser()`           | `PATCH /users/:id/restore` |
-| 현재 유저 조회     | `getCurrentUser()`        | `GET /users/me`            |
+| 목적                            | 메서드 명                 | 예시 경로                  |
+| ------------------------------- | ------------------------- | -------------------------- |
+| 사용자 조회(무조건 데이터 반환) | `getUserById()`           | `GET /users/:id`           |
+| 전체 조회 (관리자)              | `getAllUsers()`           | `GET /users`               |
+| 생성                            | `createUser()`            | `POST /users`              |
+| 수정                            | `updateUser()`            | `PUT /users/:id`           |
+| 삭제                            | `deleteUser()`            | `DELETE /users/:id`        |
+| 하드 삭제                       | `deleteUserPermanently()` | `DELETE /users/:id/hard`   |
+| 복구                            | `restoreUser()`           | `PATCH /users/:id/restore` |
+| 현재 유저 조회                  | `getCurrentUser()`        | `GET /users/me`            |
 
 ---
 
 ### 2. Service 계층
 
-- **역할**: 비즈니스 로직 처리
-- **명명 규칙**:
-  - 동사 + 도메인 명시 (`User`, `Blog`, `Team` 등)
-  - `find`, `create`, `update`, `delete`, `restore`, `activate` 등 액션 중심
+-   **역할**: 비즈니스 로직 처리
+-   **명명 규칙**:
+    -   동사 + 도메인 명시 (`User`, `Blog`, `Team` 등)
+    -   `find`, `create`, `update`, `delete`, `restore`, `activate` 등 액션 중심
 
 | 목적          | 메서드 명                |
 | ------------- | ------------------------ |
@@ -49,11 +49,11 @@
 
 ### 3. Repository 계층
 
-- **역할**: DB 직접 접근 및 쿼리 처리
-- **명명 규칙**:
-  - CRUD 중심 (`find`, `save`, `delete`, `update`, `count` 등)
-  - 조건 명시 (`findByEmail`, `findById`, `findDeletedById` 등)
-  - 도메인 생략 가능 (동작이 우선)
+-   **역할**: DB 직접 접근 및 쿼리 처리
+-   **명명 규칙**:
+    -   CRUD 중심 (`find`, `save`, `delete`, `update`, `count` 등)
+    -   조건 명시 (`findByEmail`, `findById`, `findDeletedById` 등)
+    -   도메인 생략 가능 (동작이 우선)
 
 | 목적             | 메서드 명             |
 | ---------------- | --------------------- |
@@ -73,9 +73,9 @@
 
 ### 부록: 네이밍 컨벤션 요약
 
-- Controller: RESTful, 액션 중심 (`getUser`, `createUser`)
-- Service: 도메인 + 동사 (`findUserById`, `createUser`)
-- Repository: DB 동작 + 조건 (`findByEmail`, `deleteById`)
+-   Controller: RESTful, 액션 중심 (`getUser`, `createUser`)
+-   Service: 도메인 + 동사 (`findUserById`, `createUser`)
+-   Repository: DB 동작 + 조건 (`findByEmail`, `deleteById`)
 
 ### Auth 모듈 명명 패턴
 
@@ -131,9 +131,9 @@ async validateUserAccess(userId: number, resourceId: number): Promise<boolean> {
 
 ### 일반 변수
 
-- **camelCase** 사용
-- **의미있는 이름** 사용
-- **줄임말 지양**
+-   **camelCase** 사용
+-   **의미있는 이름** 사용
+-   **줄임말 지양**
 
 ```typescript
 // Good
@@ -147,30 +147,30 @@ const usr = await userService.createUser(data);
 
 ### 상수
 
-- **UPPER_SNAKE_CASE** 사용
+-   **UPPER_SNAKE_CASE** 사용
 
 ```typescript
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_RETRY_COUNT = 3;
-const JWT_EXPIRATION_TIME = '15m';
+const JWT_EXPIRATION_TIME = "15m";
 ```
 
 ### 타입 및 인터페이스
 
-- **PascalCase** 사용
-- **Interface 접두사 지양**
+-   **PascalCase** 사용
+-   **Interface 접두사 지양**
 
 ```typescript
 // Good
 interface UserCreateRequest {
-  email: string;
-  username: string;
+    email: string;
+    username: string;
 }
 
 // Bad
 interface IUserCreateRequest {
-  email: string;
-  username: string;
+    email: string;
+    username: string;
 }
 ```
 
@@ -178,8 +178,8 @@ interface IUserCreateRequest {
 
 ### 기본 규칙
 
-- **kebab-case** 사용
-- **의미있는 이름** 사용
+-   **kebab-case** 사용
+-   **의미있는 이름** 사용
 
 ```
 user.controller.ts
@@ -241,13 +241,13 @@ src/
 
 ```typescript
 // 1. Node.js 내장 모듈
-import { readFileSync } from 'fs';
+import { readFileSync } from "fs";
 
 // 2. 외부 라이브러리
-import { Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Injectable } from "@nestjs/common";
+import { Repository } from "typeorm";
 
 // 3. 내부 모듈 (상대 경로)
-import { User } from './user.entity';
-import { UserRepository } from './user.repository';
+import { User } from "./user.entity";
+import { UserRepository } from "./user.repository";
 ```

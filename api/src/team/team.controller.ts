@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ChangeVisibilityDto, CreateTeamDto } from './team.dto';
 import { TeamService } from './team.service';
-import { Team, TeamVisibility } from './team.entity';
+import { Team } from './team.entity';
 import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
 import { SmartAuthGuard } from 'src/auth/jwt';
 
