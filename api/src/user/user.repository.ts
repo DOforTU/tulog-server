@@ -86,7 +86,7 @@ export class UserRepository {
   }
 
   /** Find active user by email with password (for login and update pw) */
-  async findByEmailWithPassword(email: string): Promise<User | null> {
+  async findWithPasswordByEmail(email: string): Promise<User | null> {
     return await this.userRepository.findOne({
       where: { email, deletedAt: IsNull() },
       select: [
@@ -118,8 +118,16 @@ export class UserRepository {
     });
   }
 
+  async findIncludingNoActiveByNickname(
+    nickname: string,
+  ): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { nickname, deletedAt: IsNull() },
+    });
+  }
+
   /** Find user by email (including deleted users) */
-  async findByEmailIncludingDeleted(email: string): Promise<User | null> {
+  async findIncludingDeletedByEmail(email: string): Promise<User | null> {
     return await this.userRepository.findOne({
       where: { email },
     });

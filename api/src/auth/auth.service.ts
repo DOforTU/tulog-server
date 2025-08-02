@@ -107,13 +107,34 @@ export class AuthService {
       try {
         const nickname = email.split('@')[0];
 
-        // TODO: nickname valid
+        // nickname valid
+        let randomNickname = nickname;
+        let attempt = 0;
+        const MAX_ATTEMPTS = 5;
+
+        while (attempt < MAX_ATTEMPTS) {
+          const existing =
+            await this.userService.findIncludingNoActiveByNickname(
+              randomNickname,
+            );
+          if (!existing) break;
+
+          const randomSuffix = Math.floor(Math.random() * 99999) + 1;
+          randomNickname = `${nickname}${randomSuffix}`;
+          attempt++;
+        }
+
+        if (attempt === MAX_ATTEMPTS) {
+          throw new ConflictException(
+            'Unable to generate a unique nickname after multiple attempts, Please try again later.',
+          );
+        }
 
         // Validate user data
         const userDto = plainToInstance(CreateOauthUserDto, {
           email,
           name: `${firstName} ${lastName}`.trim(),
-          nickname,
+          nickname: randomNickname,
           profilePicture: picture,
           isActive: true,
         });
@@ -366,7 +387,7 @@ export class AuthService {
   async login(loginDto: LoginDto, res: Response): Promise<User> {
     try {
       // Check if user exists (with password for comparison)
-      const user = await this.userService.findByEmailWithPassword(
+      const user = await this.userService.findWithPasswordByEmail(
         loginDto.email,
       );
       if (!user) {
@@ -424,7 +445,7 @@ export class AuthService {
     }
 
     // Validate user existence and get user with password
-    const userWithPW = await this.userService.findByEmailWithPassword(
+    const userWithPW = await this.userService.findWithPasswordByEmail(
       user.email,
     );
     if (!userWithPW) {
