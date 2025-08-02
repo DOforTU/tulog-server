@@ -140,7 +140,6 @@ export class UserService {
   async restoreUser(id: number): Promise<User> {
     // Business logic: Check deleted user existence
     const deletedUser = await this.userRepository.findDeletedById(id);
-    console.log('Restoring user:', deletedUser);
     if (!deletedUser) {
       throw new NotFoundException(`Deleted user with ID ${id} not found`);
     }
