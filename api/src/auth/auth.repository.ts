@@ -25,7 +25,7 @@ export class AuthRepository {
     return this.authRepository.save(auth);
   }
 
-  async findAuthByUserId(userId: number): Promise<Auth | null> {
+  async findByUserId(userId: number): Promise<Auth | null> {
     return this.authRepository.findOne({
       where: {
         user: { id: userId },

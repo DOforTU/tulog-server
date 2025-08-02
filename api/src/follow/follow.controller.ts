@@ -10,7 +10,7 @@ import {
 import { FollowService } from './follow.service';
 import { User } from 'src/user/user.entity';
 import { Follow } from './follow.entity';
-import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
+import { SmartAuthGuard } from 'src/auth/jwt';
 
 @Controller('users')
 export class FollowController {
@@ -18,14 +18,14 @@ export class FollowController {
 
   /** Get my followers */
   @Get('me/followers')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(SmartAuthGuard)
   async getMyFollowers(@Request() req: { user: User }): Promise<User[] | null> {
     return await this.followService.getFollowers(req.user.id);
   }
 
   /** Get my followings */
   @Get('me/followings')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(SmartAuthGuard)
   async getMyFollowings(
     @Request() req: { user: User },
   ): Promise<User[] | null> {
@@ -33,7 +33,7 @@ export class FollowController {
   }
 
   @Post(':id/follow')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(SmartAuthGuard)
   async followUser(
     @Request() req: { user: User },
     @Param('id') id: number,
@@ -42,7 +42,7 @@ export class FollowController {
   }
 
   @Delete(':id/unfollow')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(SmartAuthGuard)
   async unfollowUser(
     @Request() req: { user: User },
     @Param('id') id: number,

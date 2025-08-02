@@ -14,6 +14,7 @@ import { UserService } from './user.service';
 import { User } from './user.entity';
 import { UpdateUserDto } from './user.dto';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
+import { SmartAuthGuard } from 'src/auth/jwt';
 
 /**
  * User Management Controller
@@ -57,9 +58,9 @@ export class UserController {
     return null;
   }
 
-  /** Update user information */
+  /** Update user information(only active users) */
   @Patch('me')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(SmartAuthGuard)
   async updateUser(
     @Request() req: { user: User },
     @Body() updateUserDto: UpdateUserDto,
@@ -118,11 +119,3 @@ export class UserController {
     return this.userService.restoreUser(id);
   }
 }
-
-// TODO: Add user search API (search by name, email, nickname)
-// TODO: Add pagination API
-// TODO: Add user profile image upload API
-// TODO: Add social account linking/unlinking API
-// TODO: Add account activation/deactivation API
-// TODO: Add admin permission check middleware
-// TODO: Add user statistics dashboard API
