@@ -47,7 +47,7 @@ export class UserService {
       updateUserDto.nickname &&
       updateUserDto.nickname !== existingUser.nickname
     ) {
-      const userWithUsername = await this.userRepository.findByNickname(
+      const userWithUsername = await this.findByNickname(
         updateUserDto.nickname,
       );
       if (userWithUsername) {
@@ -188,8 +188,8 @@ export class UserService {
   }
 
   /** Find active user by email with password (for login) */
-  async findByEmailWithPassword(email: string): Promise<User | null> {
-    return this.userRepository.findByEmailWithPassword(email);
+  async findWithPasswordByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findWithPasswordByEmail(email);
   }
 
   async findByNickname(nickname: string): Promise<User | null> {
@@ -206,9 +206,16 @@ export class UserService {
     return this.userRepository.findBySub(sub);
   }
 
-  /** Find user by email (including deleted users) */
-  async findByEmailIncludingDeleted(email: string): Promise<User | null> {
-    return this.userRepository.findByEmailIncludingDeleted(email);
+  /** Find user by email (with deleted users) */
+  async findIncludingDeletedByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findIncludingDeletedByEmail(email);
+  }
+
+  /** Find user by nickname (including no active users) */
+  async findIncludingNoActiveByNickname(
+    nickname: string,
+  ): Promise<User | null> {
+    return await this.userRepository.findIncludingNoActiveByNickname(nickname);
   }
 
   /** Find User with Followers by Id */

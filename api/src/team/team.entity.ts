@@ -16,13 +16,13 @@ export enum TeamVisibility {
 @Unique(['leaderId'])
 export class Team extends Common {
   @PrimaryColumn()
-  teamId: string;
+  teamId: number;
 
   @Column()
   teamName: string;
 
   @Column()
-  leaderId: string;
+  leaderId: number;
 
   @Column({
     type: 'enum',

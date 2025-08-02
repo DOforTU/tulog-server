@@ -25,6 +25,7 @@ export class AuthRepository {
     return this.authRepository.save(auth);
   }
 
+  /** Find auth by UserId(NOT Auth Id) */
   async findByUserId(userId: number): Promise<Auth | null> {
     return this.authRepository.findOne({
       where: {
