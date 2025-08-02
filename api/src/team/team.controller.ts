@@ -6,12 +6,14 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 import { ChangeVisibilityDto, CreateTeamDto } from './team.dto';
 import { TeamService } from './team.service';
 import { Team } from './team.entity';
-import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
+import { SmartAuthGuard } from 'src/auth/jwt';
+import { User } from 'src/user/user.entity';
 
 @Controller('teams')
 export class TeamController {
@@ -19,53 +21,66 @@ export class TeamController {
 
   // 팀 생성 로직
   @Post()
-  async createTeam(@Body() teamDto: CreateTeamDto): Promise<boolean> {
+  @UseGuards(SmartAuthGuard)
+  async createTeam(
+    @Body() teamDto: CreateTeamDto,
+    @Request() req: { user: User },
+  ): Promise<Team> {
     // 팀 생성 로직을 호출
     // 팀 생성 성공 여부를 반환
-    return await this.teamService.createTeam(teamDto);
+    return await this.teamService.createTeam(teamDto, req.user);
   }
 
   // 팀 리스트 조회
   @Get()
-  async findTeams(): Promise<Team[]> {
+  // 조회도 로그인한 사용자만 가능인가?
+  async findTeams(@Request() req: { user: User }): Promise<Team[]> {
     // 팀 리스트 조회
-    return await this.teamService.findAllTeams();
+    return await this.teamService.findAllTeams(req.user);
   }
 
   // 팀 아이디로 상세 조회 로직
   @Get(':id')
+  @UseGuards(SmartAuthGuard)
   async findTeamById(
-    @Param('id', ParseIntPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: { user: User },
   ): Promise<Team | null> {
     // 팀 아이디로 상세 조회 로직
-    return await this.teamService.findTeamById(id);
+    return await this.teamService.findTeamById(id, req.user);
   }
 
   // 팀 이름으로 상세 조회 로직
   @Get('name/:name')
-  async findTeamByName(@Param('name') name: string): Promise<Team | null> {
-    //
-    return await this.teamService.findTeamByName(name);
+  @UseGuards(SmartAuthGuard)
+  async findTeamByName(
+    @Param('name') name: string,
+    @Request() req: { user: User },
+  ): Promise<Team | null> {
+    return await this.teamService.findTeamByName(name, req.user);
   }
 
   // 팀 이름 변경 로직
   @Patch(':name')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(SmartAuthGuard)
   async changeTeamName(
-    @Param('name') name: string,
+    @Request() req: { user: User },
+    @Param('name') oldName: string,
     @Body('newName') newName: string,
   ): Promise<Team | null> {
-    return await this.teamService.changeTeamName(name, newName);
+    return await this.teamService.changeTeamName(req.user, oldName, newName);
   }
 
   // 팀 상태 설정 기능 로직
   @Post(':id/visibility')
+  @UseGuards(SmartAuthGuard)
   async changeStatus(
+    @Request() req: { user: User },
     @Param('id', ParseIntPipe) id: number,
     @Body() visibility: ChangeVisibilityDto,
   ): Promise<Team | null> {
     // 팀 생성 로직을 호출
     // 팀 생성 성공 여부를 반환
-    return await this.teamService.changeStatus(id, visibility);
+    return await this.teamService.changeStatus(req.user, id, visibility);
   }
 }

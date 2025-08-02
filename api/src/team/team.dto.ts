@@ -1,15 +1,28 @@
-import { IsString, IsEnum, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  MinLength,
+  MaxLength,
+  Matches,
+} from 'class-validator';
 import { TeamVisibility } from './team.entity';
 
 export class CreateTeamDto {
   //@IsString()
   //teamId: string;
 
+  /** Tema Name (required) */
+  @MinLength(5)
+  @MaxLength(20)
+  @Matches(/(?=.*[A-Z\uac00-\ud7af])/, {
+    message: 'Must contain at least 5 letter',
+  })
   @IsString()
   teamName: string;
 
-  @IsString()
-  leaderId: string;
+  //@IsString()
+  //leaderId: string;
 
   @IsEnum(TeamVisibility)
   visibility: TeamVisibility;

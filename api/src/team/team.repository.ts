@@ -11,12 +11,15 @@ export class TeamRepository {
   ) {}
 
   // 팀 생성 로직
-  async createTeam(teamDto: CreateTeamDto): Promise<boolean> {
+  async createTeam(teamDto: CreateTeamDto): Promise<Team> {
     // 팀 생성 로직을 호출
     // 팀 생성 성공 여부를 반환
     const team = this.teamRepository.create(teamDto as DeepPartial<Team>);
-    await this.teamRepository.save(team);
-    return true;
+    return await this.teamRepository.save(team);
+  }
+
+  async countTeamsByLeaderId(leaderId: number): Promise<number> {
+    return this.teamRepository.count({ where: { leaderId } });
   }
 
   // 팀 리스트 조회
@@ -29,7 +32,7 @@ export class TeamRepository {
   }
 
   // 팀 아이디로 상세 조회 로직
-  async findTeamById(id: string): Promise<Team | null> {
+  async findTeamById(id: number): Promise<Team | null> {
     // 팀 아이디로 상세 조회 로직
     return await this.teamRepository.findOne({
       where: { teamId: id, deletedAt: IsNull() },
@@ -44,7 +47,7 @@ export class TeamRepository {
   }
 
   // 팀 이름 변경 로직
-  async changeTeamName(newName: string): Promise<Team | null> {
+  async changeTeamName(oldName: string, newName: string): Promise<Team | null> {
     await this.teamRepository.update(newName, { teamName: newName });
     return await this.findTeamByName(newName);
   }
@@ -57,6 +60,6 @@ export class TeamRepository {
     // 팀 생성 로직을 호출
     // 팀 생성 성공 여부를 반환
     await this.teamRepository.update(id, visibility);
-    return await this.findTeamById(id.toString());
+    return await this.findTeamById(id);
   }
 }
