@@ -66,7 +66,7 @@ export class FollowService {
   }
 
   /** Get followers of a user */
-  async getFollowers(userId: number): Promise<User[] | null> {
+  async getFollowers(userId: number): Promise<User[]> {
     // check if the user exists
     await this.userService.getUserById(userId);
 
@@ -81,7 +81,7 @@ export class FollowService {
   }
 
   /** Get followings of a user */
-  async getFollowings(userId: number): Promise<User[] | null> {
+  async getFollowings(userId: number): Promise<User[]> {
     // check if the user exists
     await this.userService.getUserById(userId);
 

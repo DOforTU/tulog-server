@@ -11,6 +11,8 @@ import { FollowService } from './follow.service';
 import { User } from 'src/user/user.entity';
 import { Follow } from './follow.entity';
 import { SmartAuthGuard } from 'src/auth/jwt';
+import { ResponsePublicUser } from 'src/user/user.dto';
+import { toPublicUsers } from 'src/common/helper/to-public-user';
 
 @Controller('users')
 export class FollowController {
@@ -19,8 +21,10 @@ export class FollowController {
   /** Get my followers */
   @Get('me/followers')
   @UseGuards(SmartAuthGuard)
-  async getMyFollowers(@Request() req: { user: User }): Promise<User[] | null> {
-    return await this.followService.getFollowers(req.user.id);
+  async getMyFollowers(
+    @Request() req: { user: User },
+  ): Promise<ResponsePublicUser[]> {
+    return toPublicUsers(await this.followService.getFollowers(req.user.id));
   }
 
   /** Get my followings */
@@ -28,8 +32,8 @@ export class FollowController {
   @UseGuards(SmartAuthGuard)
   async getMyFollowings(
     @Request() req: { user: User },
-  ): Promise<User[] | null> {
-    return await this.followService.getFollowings(req.user.id);
+  ): Promise<ResponsePublicUser[]> {
+    return toPublicUsers(await this.followService.getFollowings(req.user.id));
   }
 
   @Post(':id/follow')
