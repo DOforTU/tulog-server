@@ -76,10 +76,20 @@ export class CreateLocalUserDto {
 
   /** Name (required) */
   @IsString()
+  @MinLength(2)
+  @MaxLength(30)
+  @Matches(/^[^\s]+(?:\s[^\s]+)?$/, {
+    message: 'Name must contain at most one space, and not at the start or end',
+  })
   name: string;
 
   /** User nickname (required)*/
   @IsString()
+  @MinLength(4)
+  @MaxLength(20)
+  @Matches(/^[^\s]+$/, {
+    message: 'Nickname must not contain spaces',
+  })
   nickname: string;
 }
 
@@ -106,7 +116,7 @@ export class LoginDto {
   // @Matches(/^[^\s]+$/, {
   //   message: 'Password must not contain spaces',
   // })
-  // @IsString()
+  @IsString()
   password: string;
 }
 

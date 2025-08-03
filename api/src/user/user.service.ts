@@ -211,6 +211,10 @@ export class UserService {
     return this.userRepository.findIncludingDeletedByEmail(email);
   }
 
+  async findIncludingNoActiveByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findIncludingNoActiveByEmail(email);
+  }
+
   /** Find user by nickname (including no active users) */
   async findIncludingNoActiveByNickname(
     nickname: string,

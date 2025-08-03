@@ -114,6 +114,12 @@ export class UserRepository {
     });
   }
 
+  async findIncludingNoActiveByEmail(email: string): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { email, deletedAt: IsNull() },
+    });
+  }
+
   async findIncludingNoActiveByNickname(
     nickname: string,
   ): Promise<User | null> {
