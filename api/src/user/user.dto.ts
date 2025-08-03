@@ -89,24 +89,24 @@ export class LoginDto {
   email: string;
 
   /** Password (required) */
-  @MinLength(8)
-  @MaxLength(20)
-  @Matches(/(?=.*[A-Z])/, {
-    message: 'Must contain at least 1 uppercase letter',
-  })
-  @Matches(/(?=.*[a-z])/, {
-    message: 'Must contain at least 1 lowercase letter',
-  })
-  @Matches(/(?=.*\d)/, {
-    message: 'Must contain at least 1 number',
-  })
-  @Matches(/(?=.*[!@#$%^&*()\-_=+{}[\]|\\:;"'<>,.?/`~])/, {
-    message: 'Must contain at least 1 special character',
-  })
-  @Matches(/^[^\s]+$/, {
-    message: 'Password must not contain spaces',
-  })
-  @IsString()
+  // @MinLength(8)
+  // @MaxLength(20)
+  // @Matches(/(?=.*[A-Z])/, {
+  //   message: 'Must contain at least 1 uppercase letter',
+  // })
+  // @Matches(/(?=.*[a-z])/, {
+  //   message: 'Must contain at least 1 lowercase letter',
+  // })
+  // @Matches(/(?=.*\d)/, {
+  //   message: 'Must contain at least 1 number',
+  // })
+  // @Matches(/(?=.*[!@#$%^&*()\-_=+{}[\]|\\:;"'<>,.?/`~])/, {
+  //   message: 'Must contain at least 1 special character',
+  // })
+  // @Matches(/^[^\s]+$/, {
+  //   message: 'Password must not contain spaces',
+  // })
+  // @IsString()
   password: string;
 }
 
