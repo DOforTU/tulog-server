@@ -1,6 +1,6 @@
-## 함수명 명명 규칙
+# 함수명 명명 규칙
 
-### find & get 차이
+## find & get 차이
 
 > User로 예시
 
@@ -22,7 +22,7 @@ async getUserById(id: number): Promise<User>:
 
 위 예시를 보면 `findById`의 경우 Null일 수도 있음. 하지만 `Service` 계층에서 예외처리를 하여 해당 함수는 무조건 `User`를 반환함.
 
-### Repository 계층 함수 명명 규칙
+## Repository 계층 함수 명명 규칙
 
 `Repository`계층은 보통 같은 모듈의 `Service`에서만 불러오기 때문에 다음과 같이 명사를 제거한다.
 
@@ -65,7 +65,7 @@ VSCode에서는 자동 JSDoc을 생성해주니 잘 활용하면 좋음.
 /** + Enter
 ```
 
-### Service 계층 함수 명명 규칙
+## Service 계층 함수 명명 규칙
 
 > `get()`: 데이터를 무조건 반환하거나, 없을 경우 예외를 throw
 
@@ -112,7 +112,7 @@ isTeamLeader(userId: number, teamId: number): Promise<boolean>
 isPostVisibleToUser(userId: number, postId: number): Promise<boolean>
 ```
 
-### Controller 계층 함수 명명 규칙
+## Controller 계층 함수 명명 규칙
 
 > 컨트롤러도 서비스처럼 **동사+명사+By+요소**로 구성됨
 
