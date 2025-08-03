@@ -3,6 +3,7 @@ import { ChangeVisibilityDto, CreateTeamDto } from './team.dto';
 import { Team } from './team.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, IsNull, Repository } from 'typeorm';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class TeamRepository {
@@ -11,9 +12,10 @@ export class TeamRepository {
   ) {}
 
   // 팀 생성 로직
-  async createTeam(teamDto: CreateTeamDto): Promise<Team> {
+  async createTeam(teamDto: CreateTeamDto, user: User): Promise<Team> {
     // 팀 생성 로직을 호출
     // 팀 생성 성공 여부를 반환
+
     const team = this.teamRepository.create(teamDto as DeepPartial<Team>);
     return await this.teamRepository.save(team);
   }

@@ -2,6 +2,7 @@ import { Auth } from 'src/auth/auth.entity';
 import { UserBlock } from 'src/block/user-block.entity';
 import { Common } from 'src/common/entity/common.entity';
 import { Follow } from 'src/follow/follow.entity';
+import { Teammember } from 'src/teammember/teammember.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -82,4 +83,8 @@ export class User extends Common {
 
   @OneToMany(() => UserBlock, (userBlcok) => userBlcok.blocker)
   blocked: UserBlock[];
+
+  /** Teammember in Team*/
+  @OneToMany(() => Teammember, (teammember) => teammember.user)
+  teammembers: Teammember[];
 }
