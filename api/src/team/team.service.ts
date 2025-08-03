@@ -11,12 +11,14 @@ import { TeamRepository } from './team.repository';
 import { UserService } from 'src/user/user.service';
 import { User } from 'src/user/user.entity';
 import { NotFoundError } from 'rxjs';
+import { Teammember } from 'src/teammember/teammember.entity';
+import { TeammemberService } from 'src/teammember/teammember.service';
 
 @Injectable()
 export class TeamService {
   constructor(
     private readonly teamRepository: TeamRepository,
-    private readonly userservice: UserService,
+    private readonly teamemberService: TeammemberService,
   ) {}
 
   /** Create a Team
@@ -37,19 +39,25 @@ export class TeamService {
       teamDto.teamName,
     );
     if (existingTeam) {
-      throw new ConflictException('이미 존재하는 팀 이름입니다.');
+      throw new ConflictException('The team name already exist.');
     }
 
-    const existingTeamsCount =
-      await this.teamRepository.countTeamsByLeaderId(leaderId);
+    const leaderTeamsCount =
+      await this.teamemberService.countTeamsByLeaderId(leaderId);
 
-    if (existingTeamsCount > 3) {
+    if (leaderTeamsCount > 3) {
       throw new ConflictException(
         '한 사용자는 최대 3개의 팀만 생성할 수 있습니다.',
       );
     }
+    const team = await this.teamRepository.createTeam(teamDto, user);
+    await this.teammemberRepository.save({
+      userId: user.id,
+      teamId: team.teamId,
+      role: 'leader',
+    });
 
-    return await this.teamRepository.createTeam(teamDto);
+    return team;
   }
 
   /**  팀 리스트 조회

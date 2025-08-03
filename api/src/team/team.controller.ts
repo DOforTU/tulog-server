@@ -39,6 +39,8 @@ export class TeamController {
     return await this.teamService.findAllTeams(req.user);
   }
 
+  @Get(':id/members')
+
   // 팀 아이디로 상세 조회 로직
   @Get(':id')
   @UseGuards(SmartAuthGuard)

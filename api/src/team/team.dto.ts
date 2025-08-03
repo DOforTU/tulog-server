@@ -21,8 +21,8 @@ export class CreateTeamDto {
   @IsString()
   teamName: string;
 
-  //@IsString()
-  //leaderId: string;
+  @IsString()
+  introduction: string;
 
   @IsEnum(TeamVisibility)
   visibility: TeamVisibility;
