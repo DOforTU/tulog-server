@@ -1,36 +1,33 @@
 # Authentication
 
-> ⚠️ 모든 에러 응답은 아래와 같음:  
+> ⚠️ All error responses follow a consistent structure:
 > `{success: false, statusCode, message (string array), error, timestamp, path}`
 
 ## Google OAuth Login
 
 ### Start Google OAuth Login
 
-> auth/auth.controller.ts  
+> auth/auth.controller.ts
 > **`GET /api/auth/google`**
 
--   사용자를 Google 로그인 화면으로 리디렉션한다.
+-   Redirects user to Google for authentication.
 
 ### Google OAuth Callback
 
-> auth/auth.controller.ts  
+> auth/auth.controller.ts
 > **`GET /api/auth/google/callback`**
 
--   Google 로그인 후 콜백을 처리하고, JWT 토큰을 발급한 뒤 프론트엔드로 리디렉션한다.
--   **Response**: 토큰은 `HttpOnly` 쿠키에 저장되며 프론트엔드 URL로 리디렉션된다. JSON 응답은 없다.
-
----
+-   Handles Google callback, issues JWT tokens, and redirects to frontend.
+-   **Response**: Redirects to frontend URL with tokens stored in `HttpOnly` cookies. No JSON body is returned.
 
 ## Local Login
 
 ### Sign Up (Local Account)
 
-> auth/auth.controller.ts  
+> auth/auth.controller.ts
 > **`POST /api/auth/signup`**
 
--   로컬 계정 정보를 통해 새 사용자를 등록한다.
-
+-   Registers a new user with local credentials.
 -   **Request Body**:
 
 ```json
@@ -69,19 +66,16 @@
 }
 ```
 
--   **예외 체크리스트 (✅ 또는 ❌):**
-    -   이미 가입된 이메일로 요청한 경우 → 409 Conflict ✅
-    -   이미 사용 중인 닉네임으로 요청한 경우 → 409 Conflict ✅
-
----
+-   **Exception Checklist**(✅ OR ❌):
+    -   Email Conflict ✅
+    -   Nickname Conflict ✅
 
 ### Login (Local Account)
 
-> auth/auth.controller.ts  
+> auth/auth.controller.ts
 > **`POST /api/auth/login`**
 
--   로컬 계정으로 로그인한다.
-
+-   Registers a new user with local credentials.
 -   **Request Body**:
 
 ```json
@@ -126,21 +120,19 @@
 }
 ```
 
--   **예외 체크리스트 (✅ 또는 ❌):**
-    -   존재하지 않는 이메일로 로그인 시도 → 400 Bad Request ✅
-    -   잘못된 비밀번호로 로그인 시도 → 400 Bad Request ✅
-    -   OAuth 사용자 이메일로 로컬 로그인 시도 → 400 Bad Request ✅
+-   **Exception Checklist**(✅ OR ❌):
 
----
+    -   Wrong email ✅
+    -   Wrong password ✅
+    -   No local user try to local login ✅
 
 ### Send Email Verification Code
 
-> auth/auth.controller.ts  
+> auth/auth.controller.ts
 > **`POST /api/auth/send-email-code`**
 
 -   **Request Body**: `{ email }`
--   해당 이메일 주소로 인증 코드를 전송한다.
-
+-   Sends a verification code to the provided email address.
 -   **Success Response**:
 
 ```json
@@ -161,27 +153,24 @@
 
 ```
 
--   **예외 체크리스트 (✅ 또는 ❌):**
-    -   존재하지 않는 이메일로 요청한 경우 (가입된 사용자만 가능) → 404 Not Found ❌
-    -   OAuth 계정의 이메일로 요청한 경우 (로컬 사용자만 가능) → 409 Conflict ❌
+-   **Exception Checklist**(✅ OR ❌):
 
----
+    -   Email not registered(Only when user exists ) ❌
+    -   Email is oauth email(Only local email user) ❌
 
 ## Token Management
 
 ### Refresh Access Token
 
-> auth/auth.controller.ts  
-> **`POST /api/auth/refresh`**
+> auth/auth.controller.ts
 
--   `HttpOnly` 쿠키에 있는 refresh token이 필요하다.
--   유효한 경우 새로운 access token을 발급한다.
-
----
+-   `POST /api/auth/refresh`
+-   Requires refresh token in HttpOnly cookie.
+-   Issues a new access token if the refresh token is valid.
 
 ### Logout
 
-> auth/auth.controller.ts  
-> **`POST /api/auth/logout`**
+> auth/auth.controller.ts
 
--   인증 관련 쿠키를 제거하고 로그아웃 처리한다.
+-   `POST /api/auth/logout`
+-   Clears authentication cookies and logs out the user.
