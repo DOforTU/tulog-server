@@ -10,6 +10,12 @@ import {
   Column,
 } from 'typeorm';
 
+export enum TeamRole {
+  Leader = 'leader',
+  Member = 'member',
+  // 다른 역할 추가 가능
+}
+
 /**
  * Teammember Entity
  */
@@ -20,6 +26,13 @@ export class Teammember {
 
   @PrimaryColumn()
   teamId: number;
+
+  @Column({
+    type: 'enum',
+    enum: TeamRole,
+    default: TeamRole.Member,
+  })
+  role: TeamRole;
 
   /** Creation timestamp */
   @CreateDateColumn()

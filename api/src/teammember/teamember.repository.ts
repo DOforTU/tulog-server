@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Teammember } from './teammember.entity';
-import { Team } from 'src/team/team.entity';
+import { Teammember, TeamRole } from './teammember.entity';
 
 @Injectable()
 export class TeammemberRepository {
@@ -15,11 +14,34 @@ export class TeammemberRepository {
   async addTeamMember(
     userId: number,
     teamId: number,
-    role: 'leader' | 'member',
-  ): Promise<Teammember[]> {
+    role: string,
+  ): Promise<Teammember> {
     const addTeamMember = await this.teamemberRepository.findOne({
       where: { userId, teamId },
     });
-    return await this.teamemberRepository.save(addTeamMember);
+    // 3. 새 멤버 엔티티 생성
+    const newMember = this.teamemberRepository.create({
+      userId: userId,
+      teamId: teamId,
+      role: TeamRole.Leader,
+    });
+
+    // 4. 저장 후 반환
+    return await this.teamemberRepository.save(newMember);
+  }
+
+  async findByTeamMember(
+    userId: number,
+    teamId: number,
+  ): Promise<Teammember | null> {
+    return await this.teamemberRepository.findOne({
+      where: { userId, teamId },
+    });
+  }
+
+  async countTeamsByLeaderId(leaderId: number) {
+    return await this.teamemberRepository.count({
+      where: { userId: leaderId, role: TeamRole.Leader },
+    });
   }
 }

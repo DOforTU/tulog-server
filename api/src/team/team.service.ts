@@ -13,11 +13,13 @@ import { User } from 'src/user/user.entity';
 import { NotFoundError } from 'rxjs';
 import { Teammember } from 'src/teammember/teammember.entity';
 import { TeammemberService } from 'src/teammember/teammember.service';
+import { TeammemberRepository } from 'src/teammember/teamember.repository';
 
 @Injectable()
 export class TeamService {
   constructor(
     private readonly teamRepository: TeamRepository,
+    private readonly teammemberRepository: TeammemberRepository,
     private readonly teamemberService: TeammemberService,
   ) {}
 
@@ -45,17 +47,13 @@ export class TeamService {
     const leaderTeamsCount =
       await this.teamemberService.countTeamsByLeaderId(leaderId);
 
-    if (leaderTeamsCount > 3) {
+    if (leaderTeamsCount >= 3) {
       throw new ConflictException(
         '한 사용자는 최대 3개의 팀만 생성할 수 있습니다.',
       );
     }
     const team = await this.teamRepository.createTeam(teamDto, user);
-    await this.teammemberRepository.save({
-      userId: user.id,
-      teamId: team.teamId,
-      role: 'leader',
-    });
+    await this.teamemberService.addTeamMember(user.id, team.teamId, 'leader');
 
     return team;
   }
