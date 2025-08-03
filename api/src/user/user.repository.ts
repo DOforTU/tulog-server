@@ -85,21 +85,17 @@ export class UserRepository {
     });
   }
 
-  /** Find active user by email with password (for login and update pw) */
+  /** Find active user by email with password (for login and update pw, only id, email, password, nickname, role, isActive) */
   async findWithPasswordByEmail(email: string): Promise<User | null> {
     return await this.userRepository.findOne({
       where: { email, deletedAt: IsNull() },
       select: [
         'id',
         'email',
-        'name',
         'nickname',
         'password', // include password for login and update pw
         'role',
-        'profilePicture',
         'isActive',
-        'createdAt',
-        'updatedAt',
       ],
     });
   }

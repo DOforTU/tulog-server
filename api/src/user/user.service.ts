@@ -102,7 +102,7 @@ export class UserService {
   }
 
   /** Get user by nickname(throws exception) */
-  async getUserByNickname(nickname: string): Promise<User | null> {
+  async getUserByNickname(nickname: string): Promise<User> {
     const user = await this.userRepository.findByNickname(nickname);
     if (!user) {
       throw new NotFoundException(`User with nickname ${nickname} not found`);

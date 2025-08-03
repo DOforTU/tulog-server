@@ -8,6 +8,7 @@ import {
   Matches,
 } from 'class-validator';
 import { Match } from 'src/common/decorator/match.decorator';
+import { UserRole } from './user.entity';
 
 /**
  * User creation DTO
@@ -167,8 +168,21 @@ export class UpdatePasswordDto {
   newPassword: string;
 }
 
-export class ResponseUserDto {
-  email: string;
+export class ResponsePublicUser {
+  id: number;
   nickname: string;
+  profilePicture: string;
   isActive: boolean;
+}
+
+export class ResponseMyUser {
+  id: number;
+  email: string;
+  name: string;
+  nickname: string;
+  profilePicture: string;
+  role: UserRole;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }

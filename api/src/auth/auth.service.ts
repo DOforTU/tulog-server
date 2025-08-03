@@ -381,7 +381,6 @@ export class AuthService {
     return { email: user.email };
   }
 
-
   // ===== User Management Methods =====
 
   //** login user */
