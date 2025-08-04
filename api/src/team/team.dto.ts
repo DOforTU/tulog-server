@@ -30,6 +30,9 @@ export class CreateTeamDto {
   @Max(10)
   @Min(1)
   maxMember: number;
+
+  @IsString()
+  mainImage: string;
 }
 
 export class UpdateTeamInfoDto {

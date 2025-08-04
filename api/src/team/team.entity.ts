@@ -31,6 +31,9 @@ export class Team extends Common {
   })
   visibility: TeamVisibility;
 
+  @Column()
+  mainImage: string;
+
   /** Teammember in Team*/
   @OneToMany(() => TeamMember, (teamMember) => teamMember.team)
   teamMembers: TeamMember[];

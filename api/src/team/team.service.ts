@@ -13,6 +13,7 @@ import {
 } from 'src/team-member/team-member.entity';
 import { TeamMemberService } from 'src/team-member/team-member.service';
 import { TeamRepository } from './team.repository';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class TeamService {
@@ -20,6 +21,7 @@ export class TeamService {
     private readonly teamMemberService: TeamMemberService,
     private readonly teamRepository: TeamRepository,
     private readonly dataSource: DataSource,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -51,6 +53,7 @@ export class TeamService {
         inroduction: createTeamDto.introduction,
         visibility: createTeamDto.visibility,
         maxMember: createTeamDto.maxMember,
+        mainImage: `${this.configService.get('TEAM_DEFAULT_IMAGE_URL')}`,
       });
 
       // create auth record
