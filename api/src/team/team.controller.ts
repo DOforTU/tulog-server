@@ -33,10 +33,10 @@ export class TeamController {
     @Param('id') id: number,
     @Request() req: { user: User },
   ): Promise<Team> {
-    return await this.teamService.updateTemaInfo(
+    return await this.teamService.updateTeamInfo(
       updateTeamInfoDto,
       id,
-      req.user,
+      req.user.id,
     );
   }
 }
