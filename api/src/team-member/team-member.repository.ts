@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { TeamMember } from './team-member.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Team } from 'src/team/team.entity';
 
 @Injectable()
 export class TeamMemberRepository {

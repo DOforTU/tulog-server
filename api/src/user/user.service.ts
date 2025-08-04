@@ -54,7 +54,6 @@ export class UserService {
         throw new ConflictException('nickname already exists');
       }
     }
-
     const updatedUser = await this.userRepository.update(id, updateUserDto);
     if (!updatedUser) {
       throw new NotFoundException(`Failed to update user with ID ${id}`);
