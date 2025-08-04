@@ -1,10 +1,12 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { Team } from './team.entity';
-import { CreateTeamDto } from './team.dto';
+import { CreateTeamDto, UpdateTeamInfoDto } from './team.dto';
 import { DataSource } from 'typeorm';
 import {
   TeamMember,
@@ -12,6 +14,7 @@ import {
 } from 'src/team-member/team-member.entity';
 import { TeamMemberService } from 'src/team-member/team-member.service';
 import { TeamRepository } from './team.repository';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class TeamService {
@@ -76,6 +79,37 @@ export class TeamService {
     }
   }
 
+  /**
+   * 팀이 존재하는지
+   * 팀 이름 중복인지
+   * 리더인지 아닌지
+   *
+   */
+  async updateTemaInfo(
+    updateTeamInfoDto: UpdateTeamInfoDto,
+    teamId: number,
+    user: User,
+  ): Promise<Team> {
+    const team = await this.teamRepository.findById(teamId);
+    if (!team) {
+      throw new NotFoundException("You can't not find the team.");
+    }
+    const updatedTeam = await this.teamRepository.updateTeam(
+      teamId,
+      updateTeamInfoDto,
+    );
+    //const isTeamLeader =
+    //  await this.teamMemberService.findTeamLeaderByTeam(teamId);
+    //if (isTeamLeader) {
+    //  throw new ForbiddenException('You are not the team leader.');
+    //}
+    if (!updatedTeam) {
+      throw new NotFoundException('Failed to update.');
+    }
+    return updatedTeam;
+  }
+
+  //---------------common function-------------------------------------
   async existName(name: string): Promise<boolean> {
     const existingTeam = await this.teamRepository.findByName(name);
     if (existingTeam) {

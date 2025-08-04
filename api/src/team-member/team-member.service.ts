@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { TeamMemberStatus } from './team-member.entity';
+import { TeamMember, TeamMemberStatus } from './team-member.entity';
 import { TeamMemberRepository } from './team-member.repository';
+import { Team } from 'src/team/team.entity';
 
 @Injectable()
 export class TeamMemberService {
@@ -21,5 +22,17 @@ export class TeamMemberService {
       (teamMember) => teamMember.status === TeamMemberStatus.JOINED,
     );
     return filteredTeams.length;
+  }
+
+  async findTeamLeaderByTeam(team: TeamMember) {
+    const teamMembers = this.teamMemberRepository.findByMemeberId(
+      team.memberId,
+    );
+    if (!teamMembers) return 0;
+
+    const isLeader = teamMembers.filter(
+      (teamMember) => teamMember.isLeader === isLeader.true,
+    );
+    return isLeader;
   }
 }

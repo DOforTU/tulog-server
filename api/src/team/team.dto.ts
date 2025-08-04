@@ -35,6 +35,28 @@ export class CreateTeamDto {
   maxMember: number;
 }
 
+export class UpdateTeamInfoDto {
+  @IsOptional()
+  @MinLength(4)
+  @MaxLength(20)
+  @IsString()
+  name: string;
+
+  @IsOptional()
+  @IsString()
+  introduction: string;
+
+  @IsOptional()
+  @IsEnum(TeamVisibility)
+  visibility?: TeamVisibility;
+
+  @IsOptional()
+  @IsNumber()
+  @Max(10)
+  @Min(1)
+  maxMember: number;
+}
+
 // DTO for reporting a team
 export class ReportTeamDto {
   @IsString()
