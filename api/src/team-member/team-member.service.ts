@@ -2,10 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { TeamMember, TeamMemberStatus } from './team-member.entity';
 import { TeamMemberRepository } from './team-member.repository';
 import { Team } from 'src/team/team.entity';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { TeamMemberStatus } from './team-member.entity';
+import { TeamMemberRepository } from './team-member.repository';
+import { UserService } from 'src/user/user.service';
+import { TeamWithStatus } from './team-member.dto';
+
 
 @Injectable()
 export class TeamMemberService {
-  constructor(private readonly teamMemberRepository: TeamMemberRepository) {}
+  constructor(
+    private readonly teamMemberRepository: TeamMemberRepository,
+    private readonly userService: UserService,
+  ) {}
 
   /**
    * 유저가 속한 팀이 몇개있는지 확인
@@ -14,7 +23,7 @@ export class TeamMemberService {
    */
   async countTeamsByMemberId(memberId: number): Promise<number> {
     const teamMembers =
-      await this.teamMemberRepository.findByMemeberId(memberId);
+      await this.teamMemberRepository.findByMemberId(memberId);
 
     if (!teamMembers) return 0;
 
@@ -23,6 +32,7 @@ export class TeamMemberService {
     );
     return filteredTeams.length;
   }
+
 
   async findTeamLeaderByTeam(team: TeamMember) {
     const teamMembers = this.teamMemberRepository.findByMemeberId(
@@ -34,5 +44,82 @@ export class TeamMemberService {
       (teamMember) => teamMember.isLeader === isLeader.true,
     );
     return isLeader;
+
+  async getJoinedTeamsByMemberId(memberId: number): Promise<TeamWithStatus[]> {
+    // check if user exists
+    await this.userService.getUserById(memberId);
+
+    const teamMembers =
+      await this.teamMemberRepository.findTeamsByMemberId(memberId);
+
+    // If no teams found, throw an exception
+    if (!teamMembers || teamMembers.length === 0) {
+      throw new NotFoundException(`${memberId} does not have any teams`);
+    }
+
+    return teamMembers
+      .filter((tm) => tm.status === TeamMemberStatus.JOINED)
+      .map((tm) => ({
+        team: tm.team,
+        status: TeamMemberStatus.JOINED,
+      }));
+  }
+
+  async getInvitedTeamsByMemberId(memberId: number): Promise<TeamWithStatus[]> {
+    // check if user exists
+    await this.userService.getUserById(memberId);
+
+    const teamMembers =
+      await this.teamMemberRepository.findTeamsByMemberId(memberId);
+
+    // If no teams found, throw an exception
+    if (!teamMembers || teamMembers.length === 0) {
+      throw new NotFoundException(`${memberId} does not have any teams`);
+    }
+
+    return teamMembers
+      .filter((tm) => tm.status === TeamMemberStatus.INVITED)
+      .map((tm) => ({
+        team: tm.team,
+        status: TeamMemberStatus.INVITED,
+      }));
+  }
+
+  async getPendingTeamsByMemberId(memberId: number): Promise<TeamWithStatus[]> {
+    // check if user exists
+    await this.userService.getUserById(memberId);
+
+    const teamMembers =
+      await this.teamMemberRepository.findTeamsByMemberId(memberId);
+
+    // If no teams found, throw an exception
+    if (!teamMembers || teamMembers.length === 0) {
+      throw new NotFoundException(`${memberId} does not have any teams`);
+    }
+
+    return teamMembers
+      .filter((tm) => tm.status === TeamMemberStatus.PENDING)
+      .map((tm) => ({
+        team: tm.team,
+        status: TeamMemberStatus.PENDING,
+      }));
+  }
+
+  async getAllTeamsByMemberId(memberId: number): Promise<TeamWithStatus[]> {
+    // check if user exists
+    await this.userService.getUserById(memberId);
+
+    const teamMembers =
+      await this.teamMemberRepository.findTeamsByMemberId(memberId);
+
+    // If no teams found, throw an exception
+    if (!teamMembers || teamMembers.length === 0) {
+      throw new NotFoundException(`${memberId} does not have any teams`);
+    }
+
+    return teamMembers.map((tm) => ({
+      team: tm.team,
+      status: tm.status,
+    }));
   }
 }

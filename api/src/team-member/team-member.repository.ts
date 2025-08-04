@@ -10,7 +10,15 @@ export class TeamMemberRepository {
     private readonly teamMemberRepository: Repository<TeamMember>,
   ) {}
 
-  async findByMemeberId(memberId: number): Promise<TeamMember[] | null> {
+  async findByMemberId(memberId: number): Promise<TeamMember[] | null> {
     return await this.teamMemberRepository.find({ where: { memberId } });
+  }
+
+  async findTeamsByMemberId(memberId: number): Promise<TeamMember[] | null> {
+    return await this.teamMemberRepository
+      .createQueryBuilder('teamMember')
+      .leftJoinAndSelect('teamMember.team', 'team')
+      .where('teamMember.memberId = :memberId', { memberId })
+      .getMany();
   }
 }
