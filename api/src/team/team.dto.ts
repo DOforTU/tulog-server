@@ -37,7 +37,7 @@ export class UpdateTeamInfoDto {
   @MinLength(4)
   @MaxLength(20)
   @IsString()
-  name: string;
+  name?: string;
 
   @IsOptional()
   @IsString()
@@ -51,7 +51,7 @@ export class UpdateTeamInfoDto {
   @IsNumber()
   @Max(10)
   @Min(1)
-  maxMember: number;
+  maxMember?: number;
 }
 
 // DTO for reporting a team

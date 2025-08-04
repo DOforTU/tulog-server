@@ -1,13 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { TeamMember, TeamMemberStatus } from './team-member.entity';
-import { TeamMemberRepository } from './team-member.repository';
-import { Team } from 'src/team/team.entity';
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { TeamMemberStatus } from './team-member.entity';
-import { TeamMemberRepository } from './team-member.repository';
 import { UserService } from 'src/user/user.service';
 import { TeamWithStatus } from './team-member.dto';
-
+import { TeamMemberRepository } from './team-member.repository';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { TeamMemberStatus } from './team-member.entity';
 
 @Injectable()
 export class TeamMemberService {
@@ -32,18 +27,6 @@ export class TeamMemberService {
     );
     return filteredTeams.length;
   }
-
-
-  async findTeamLeaderByTeam(team: TeamMember) {
-    const teamMembers = this.teamMemberRepository.findByMemeberId(
-      team.memberId,
-    );
-    if (!teamMembers) return 0;
-
-    const isLeader = teamMembers.filter(
-      (teamMember) => teamMember.isLeader === isLeader.true,
-    );
-    return isLeader;
 
   async getJoinedTeamsByMemberId(memberId: number): Promise<TeamWithStatus[]> {
     // check if user exists

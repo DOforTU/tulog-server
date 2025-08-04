@@ -1,6 +1,5 @@
 import {
   ConflictException,
-  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -14,7 +13,6 @@ import {
 } from 'src/team-member/team-member.entity';
 import { TeamMemberService } from 'src/team-member/team-member.service';
 import { TeamRepository } from './team.repository';
-import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class TeamService {
@@ -85,10 +83,10 @@ export class TeamService {
    * 리더인지 아닌지
    *
    */
-  async updateTemaInfo(
+  async updateTeamInfo(
     updateTeamInfoDto: UpdateTeamInfoDto,
     teamId: number,
-    user: User,
+    userId: number, // TODO: 리더인지 확인하는 용도
   ): Promise<Team> {
     const team = await this.teamRepository.findById(teamId);
     if (!team) {
