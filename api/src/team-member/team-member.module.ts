@@ -4,9 +4,10 @@ import { TeamMemberController } from './team-member.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TeamMember } from './team-member.entity';
 import { TeamMemberRepository } from './team-member.repository';
+import { UserModule } from 'src/user/user.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([TeamMember])],
+  imports: [TypeOrmModule.forFeature([TeamMember]), UserModule],
   providers: [TeamMemberService, TeamMemberRepository],
   controllers: [TeamMemberController],
   exports: [TeamMemberService, TeamMemberRepository],
