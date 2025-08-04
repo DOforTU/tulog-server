@@ -1,31 +1,28 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  Unique,
-  PrimaryColumn,
-  OneToMany,
-  JoinColumn,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { Common } from 'src/common/entity/common.entity';
-import { Teammember } from 'src/teammember/teammember.entity';
+import { TeamMember } from 'src/team-member/team-member.entity';
+import { Max, Min } from 'class-validator';
 
 export enum TeamVisibility {
   ONLY_INVITE = 'ONLY_INVITE',
+  INVITE_AND_REQUEST = 'INVITE_AND_REQUEST',
 }
 
 @Entity('team')
-@Unique(['teamName'])
-@Unique(['leaderId'])
 export class Team extends Common {
-  @PrimaryColumn()
-  teamId: number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column()
-  teamName: string;
+  @Column({ unique: true })
+  name: string;
 
-  @Column()
-  leaderId: number;
+  @Column({ nullable: true })
+  introduction: string;
+
+  @Column({ default: 10 })
+  @Max(10)
+  @Min(1)
+  maxMember: number;
 
   @Column({
     type: 'enum',
@@ -34,17 +31,7 @@ export class Team extends Common {
   })
   visibility: TeamVisibility;
 
-  @Column({ type: 'varchar', nullable: true })
-  invitedMember: string;
-
-  @Column({
-    type: 'enum',
-    enum: ['JOINED', 'INVITED', 'PENDING'],
-    default: 'JOINED',
-  })
-  status: 'JOINED' | 'INVITED' | 'PENDING';
-
   /** Teammember in Team*/
-  @OneToMany(() => Teammember, (teammember) => teammember.team)
-  teammember: Teammember[];
+  @OneToMany(() => TeamMember, (teamMember) => teamMember.team)
+  teamMembers: TeamMember[];
 }

@@ -10,29 +10,25 @@ import {
   Column,
 } from 'typeorm';
 
-export enum TeamRole {
-  Leader = 'leader',
-  Member = 'member',
-  // 다른 역할 추가 가능
+export enum TeamMemberStatus {
+  JOINED = 'JOINED',
+  INVITED = 'INVITED',
+  PENDING = 'PENDING',
 }
 
 /**
  * Teammember Entity
  */
-@Entity('teammember')
-export class Teammember {
+@Entity('team_member')
+export class TeamMember {
   @PrimaryColumn()
-  userId: number;
+  memberId: number;
 
   @PrimaryColumn()
   teamId: number;
 
-  @Column({
-    type: 'enum',
-    enum: TeamRole,
-    default: TeamRole.Member,
-  })
-  role: TeamRole;
+  @Column({ default: true })
+  isLeader: boolean;
 
   /** Creation timestamp */
   @CreateDateColumn()
@@ -40,16 +36,16 @@ export class Teammember {
 
   @Column({
     type: 'enum',
-    enum: ['JOINED'],
-    default: 'JOINED',
+    enum: TeamMemberStatus,
+    default: TeamMemberStatus.JOINED,
   })
-  status: 'JOINED';
+  status: TeamMemberStatus;
 
-  @ManyToOne(() => User, (user) => user.teammembers)
-  @JoinColumn({ name: 'userId' })
+  @ManyToOne(() => User, (user) => user.teamMembers)
+  @JoinColumn({ name: 'memberId' })
   user: User;
 
-  @ManyToOne(() => User, (user) => user.followers)
+  @ManyToOne(() => Team, (team) => team.teamMembers)
   @JoinColumn({ name: 'teamId' })
   team: Team;
 }

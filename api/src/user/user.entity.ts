@@ -2,7 +2,7 @@ import { Auth } from 'src/auth/auth.entity';
 import { UserBlock } from 'src/block/user-block.entity';
 import { Common } from 'src/common/entity/common.entity';
 import { Follow } from 'src/follow/follow.entity';
-import { Teammember } from 'src/teammember/teammember.entity';
+import { TeamMember } from 'src/team-member/team-member.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -85,6 +85,6 @@ export class User extends Common {
   blocked: UserBlock[];
 
   /** Teammember in Team*/
-  @OneToMany(() => Teammember, (teammember) => teammember.user)
-  teammembers: Teammember[];
+  @OneToMany(() => TeamMember, (teamMember) => teamMember.user)
+  teamMembers: TeamMember[];
 }
