@@ -56,13 +56,17 @@ export class FollowController {
 
   /** Get users who follow me */
   @Get(':id/followers')
-  async getFollowers(@Param('id') id: number): Promise<User[] | null> {
-    return await this.followService.getFollowers(id);
+  async getFollowers(
+    @Param('id') id: number,
+  ): Promise<ResponsePublicUser[] | null> {
+    return toPublicUsers(await this.followService.getFollowers(id));
   }
 
   /** Get users I follow */
   @Get(':id/followings')
-  async getFollowings(@Param('id') id: number): Promise<User[] | null> {
-    return await this.followService.getFollowings(id);
+  async getFollowings(
+    @Param('id') id: number,
+  ): Promise<ResponsePublicUser[] | null> {
+    return toPublicUsers(await this.followService.getFollowings(id));
   }
 }
