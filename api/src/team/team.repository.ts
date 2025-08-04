@@ -10,7 +10,7 @@ export class TeamRepository {
     private readonly teamRepository: Repository<Team>,
   ) {}
 
-  async findByTeamName(name: string): Promise<Team | null> {
+  async findByName(name: string): Promise<Team | null> {
     return await this.teamRepository.findOne({ where: { name } });
   }
 }
