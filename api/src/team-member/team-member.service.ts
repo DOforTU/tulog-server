@@ -105,4 +105,17 @@ export class TeamMemberService {
       status: tm.status,
     }));
   }
+
+  /**
+   * 유저가 이 팀에 소속되어있는지 확인
+   * 팀이 존재하는지 (아이디로 조회)
+   * 팀원이 1명만 있을 경우, 팀이 자동 삭제
+   * 팀장이 나가면 다른 팀원에게 리더 위임이 선행되어야함
+   *
+   * 먼저 예외 생각하지 않고 팀에서 팀맴버가 삭제되는것만 생각 (팀을 나가는거니까)
+   */
+  async leaveTeam(teamId: number, memberId: number): Promise<boolean> {
+    await this.teamMemberRepository.leaveTeam(teamId, memberId);
+    return true;
+  }
 }

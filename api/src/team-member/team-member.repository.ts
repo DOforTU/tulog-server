@@ -21,4 +21,9 @@ export class TeamMemberRepository {
       .where('teamMember.memberId = :memberId', { memberId })
       .getMany();
   }
+
+  async leaveTeam(teamId: number, memberId: number): Promise<boolean> {
+    await this.teamMemberRepository.delete({ teamId, memberId });
+    return true;
+  }
 }
