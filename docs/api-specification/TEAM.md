@@ -187,7 +187,7 @@
 ### Leave Team
 
 > team/team-member.controller.ts  
-> **`PATCH /api/teams/:id/leave`**
+> **`DELETE /api/teams/:id/leave`**
 
 -   사용자가 팀을 탈퇴한다.
 -   팀원이 1명만 남을 경우 팀은 자동 삭제된다.

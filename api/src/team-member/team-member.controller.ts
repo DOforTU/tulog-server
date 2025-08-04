@@ -1,12 +1,23 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Query,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { TeamMemberService } from './team-member.service';
 import { TeamWithStatus } from './team-member.dto';
+import { SmartAuthGuard } from 'src/auth/jwt';
+import { User } from 'src/user/user.entity';
 
-@Controller('users')
+@Controller()
 export class TeamMemberController {
   constructor(private readonly teamMemberService: TeamMemberService) {}
 
-  @Get(':id/teams')
+  @Get('users/:id/teams')
   async getTeamsByMemberId(
     @Param('id') id: number,
     @Query('status') status?: string,
@@ -21,5 +32,14 @@ export class TeamMemberController {
       default:
         return await this.teamMemberService.getAllTeamsByMemberId(id);
     }
+  }
+
+  @Delete('teams/:id/leave')
+  @UseGuards(SmartAuthGuard)
+  async leaveTeam(
+    @Param('id') id: number,
+    @Request() req: { user: User },
+  ): Promise<boolean> {
+    return await this.teamMemberService.leaveTeam(id, req.user.id);
   }
 }

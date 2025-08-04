@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -88,22 +89,27 @@ export class TeamService {
    */
   async updateTeamInfo(
     updateTeamInfoDto: UpdateTeamInfoDto,
+    userId: number,
     teamId: number,
-    userId: number, // TODO: 리더인지 확인하는 용도
   ): Promise<Team> {
     const team = await this.teamRepository.findById(teamId);
     if (!team) {
       throw new NotFoundException("You can't not find the team.");
     }
+
+    const teamMember = await this.teamMemberService.findTeamMemberByPrimaryKey(
+      userId,
+      teamId,
+    );
+    if (!teamMember || (teamMember && teamMember.isLeader == false)) {
+      throw new BadRequestException(`You can not update teamId ${teamId}`);
+    }
+
     const updatedTeam = await this.teamRepository.updateTeam(
       teamId,
       updateTeamInfoDto,
     );
-    //const isTeamLeader =
-    //  await this.teamMemberService.findTeamLeaderByTeam(teamId);
-    //if (isTeamLeader) {
-    //  throw new ForbiddenException('You are not the team leader.');
-    //}
+
     if (!updatedTeam) {
       throw new NotFoundException('Failed to update.');
     }

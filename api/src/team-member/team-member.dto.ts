@@ -4,4 +4,5 @@ import { TeamMemberStatus } from './team-member.entity';
 export class TeamWithStatus {
   team: Team;
   status: TeamMemberStatus;
+  isLeader: boolean;
 }

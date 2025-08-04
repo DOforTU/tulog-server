@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { TeamMember } from './team-member.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Team } from 'src/team/team.entity';
 
 @Injectable()
 export class TeamMemberRepository {
@@ -14,11 +15,27 @@ export class TeamMemberRepository {
     return await this.teamMemberRepository.find({ where: { memberId } });
   }
 
-  async findTeamsByMemberId(memberId: number): Promise<TeamMember[] | null> {
+  async findWithTeamsByMemberId(
+    memberId: number,
+  ): Promise<TeamMember[] | null> {
     return await this.teamMemberRepository
       .createQueryBuilder('teamMember')
       .leftJoinAndSelect('teamMember.team', 'team')
       .where('teamMember.memberId = :memberId', { memberId })
       .getMany();
+  }
+
+  async findOneByPrimaryKey(
+    memberId: number,
+    teamId: number,
+  ): Promise<TeamMember | null> {
+    return await this.teamMemberRepository.findOne({
+      where: { memberId, teamId },
+    });
+  }
+
+  async leaveTeam(teamId: number, memberId: number): Promise<boolean> {
+    await this.teamMemberRepository.delete({ teamId, memberId });
+    return true;
   }
 }
