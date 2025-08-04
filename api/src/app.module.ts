@@ -12,14 +12,13 @@ import { LoggingMiddleware } from './common/middleware/logging.middleware';
 import { SecurityMiddleware } from './common/middleware/security.middleware';
 import { Auth } from './auth/auth.entity';
 import { FollowModule } from './follow/follow.module';
-import { TeamController } from './team/team.controller';
-import { TeamService } from './team/team.service';
-import { TeamModule } from './team/team.module';
 import { Follow } from './follow/follow.entity';
 import { Team } from './team/team.entity';
 import { UserBlcokModule } from './block/user-block.module';
 import { UserBlock } from './block/user-block.entity';
-import { TeammemberController } from './teammember/teammember.controller';
+import { TeamMember } from './team-member/team-member.entity';
+import { TeamModule } from './team/team.module';
+import { TeamMemberModule } from './team-member/team-member.module';
 
 @Module({
   imports: [
@@ -42,7 +41,7 @@ import { TeammemberController } from './teammember/teammember.controller';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         schema: configService.get('DB_SCHEMA'),
-        entities: [User, Auth, Follow, Team, UserBlock],
+        entities: [User, Auth, Follow, Team, UserBlock, TeamMember],
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
       }),
@@ -53,9 +52,10 @@ import { TeammemberController } from './teammember/teammember.controller';
     FollowModule,
     TeamModule,
     UserBlcokModule,
+    TeamMemberModule,
   ],
-  controllers: [AppController, TeamController, TeammemberController],
-  providers: [AppService, TeamService],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

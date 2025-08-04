@@ -5,31 +5,34 @@ import {
   MinLength,
   MaxLength,
   Matches,
+  isNumber,
+  isString,
+  IsNumber,
+  Max,
+  Min,
 } from 'class-validator';
 import { TeamVisibility } from './team.entity';
 
 export class CreateTeamDto {
-  //@IsString()
-  //teamId: string;
-
   /** Tema Name (required) */
-  @MinLength(5)
+  @MinLength(4)
   @MaxLength(20)
-  @Matches(/(?=.*[A-Z\uac00-\ud7af])/, {
-    message: 'Must contain at least 5 letter',
-  })
   @IsString()
-  teamName: string;
-
-  //@IsString()
-  //leaderId: string;
-
-  @IsEnum(TeamVisibility)
-  visibility: TeamVisibility;
+  name: string;
 
   @IsOptional()
   @IsString()
-  invitedMember?: string[];
+  introduction: string;
+
+  @IsOptional()
+  @IsEnum(TeamVisibility)
+  visibility?: TeamVisibility;
+
+  @IsOptional()
+  @IsNumber()
+  @Max(10)
+  @Min(1)
+  maxMember: number;
 }
 
 // DTO for reporting a team

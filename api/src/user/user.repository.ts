@@ -49,7 +49,7 @@ export class UserRepository {
     await this.userRepository.update(id, {
       password: hashedNewPassword,
     });
-    return await this.findById(id);
+    return await this.findIncludingNoActiveById(id);
   }
 
   /** Soft delete user */
@@ -111,6 +111,18 @@ export class UserRepository {
   async findByNickname(nickname: string): Promise<User | null> {
     return await this.userRepository.findOne({
       where: { nickname, deletedAt: IsNull(), isActive: true },
+    });
+  }
+
+  async findIncludingNoActiveById(id: number): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { id, deletedAt: IsNull() },
+    });
+  }
+
+  async findIncludingNoActiveByEmail(email: string): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { email, deletedAt: IsNull() },
     });
   }
 

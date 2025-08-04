@@ -251,15 +251,16 @@ export class AuthService {
 
   async signup(dto: CreateLocalUserDto): Promise<{ email: string }> {
     // Check if user already exists
-    const existingUser = await this.userService.findByEmail(dto.email);
+    const existingUser = await this.userService.findIncludingNoActiveByEmail(
+      dto.email,
+    );
     if (existingUser) {
       throw new ConflictException('Email already exists.');
     }
 
     // Check same nickname
-    const existingUserNickname = await this.userService.findByNickname(
-      dto.nickname,
-    );
+    const existingUserNickname =
+      await this.userService.findIncludingNoActiveByNickname(dto.nickname);
     if (existingUserNickname) {
       throw new ConflictException('Nickname already exists.');
     }

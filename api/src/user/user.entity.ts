@@ -1,8 +1,8 @@
-import { IsString, Matches, MaxLength, MinLength } from 'class-validator';
 import { Auth } from 'src/auth/auth.entity';
 import { UserBlock } from 'src/block/user-block.entity';
 import { Common } from 'src/common/entity/common.entity';
 import { Follow } from 'src/follow/follow.entity';
+import { TeamMember } from 'src/team-member/team-member.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -43,42 +43,14 @@ export class User extends Common {
 
   /** User real name (firstName + lastName from Google login) */
   @Column()
-  @MinLength(2)
-  @MaxLength(30)
-  @Matches(/^[^\s]+(?:\s[^\s]+)?$/, {
-    message: 'Name must contain at most one space, and not at the start or end',
-  })
   name: string;
 
   /** User nickname (default is email prefix) */
   @Column()
-  @MinLength(4)
-  @MaxLength(20)
-  @Matches(/^[^\s]+$/, {
-    message: 'Nickname must not contain spaces',
-  })
   nickname: string;
 
   /** Password (used for LOCAL login) */
   @Column({ select: false, nullable: true })
-  @MinLength(8)
-  @MaxLength(20)
-  @Matches(/(?=.*[A-Z])/, {
-    message: 'Must contain at least 1 uppercase letter',
-  })
-  @Matches(/(?=.*[a-z])/, {
-    message: 'Must contain at least 1 lowercase letter',
-  })
-  @Matches(/(?=.*\d)/, {
-    message: 'Must contain at least 1 number',
-  })
-  @Matches(/(?=.*[!@#$%^&*()\-_=+{}[\]|\\:;"'<>,.?/`~])/, {
-    message: 'Must contain at least 1 special character',
-  })
-  @Matches(/^[^\s]+$/, {
-    message: 'Password must not contain spaces',
-  })
-  @IsString()
   password: string;
 
   /** User role (default: regular user) */
@@ -111,4 +83,8 @@ export class User extends Common {
 
   @OneToMany(() => UserBlock, (userBlcok) => userBlcok.blocker)
   blocked: UserBlock[];
+
+  /** Teammember in Team*/
+  @OneToMany(() => TeamMember, (teamMember) => teamMember.user)
+  teamMembers: TeamMember[];
 }
