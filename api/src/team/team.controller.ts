@@ -30,13 +30,13 @@ export class TeamController {
   @UseGuards(SmartAuthGuard)
   async updateTemaInfo(
     @Body() updateTeamInfoDto: UpdateTeamInfoDto,
-    @Param('id') id: number,
     @Request() req: { user: User },
+    @Param('id') id: number,
   ): Promise<Team> {
     return await this.teamService.updateTeamInfo(
       updateTeamInfoDto,
-      id,
       req.user.id,
+      id,
     );
   }
 }
