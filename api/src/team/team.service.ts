@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Team } from './team.entity';
-import { CreateTeamDto, UpdateTeamInfoDto } from './team.dto';
+import { CreateTeamDto, PublicTeam, UpdateTeamInfoDto } from './team.dto';
 import { DataSource } from 'typeorm';
 import {
   TeamMember,
@@ -15,6 +15,9 @@ import {
 import { TeamMemberService } from 'src/team-member/team-member.service';
 import { TeamRepository } from './team.repository';
 import { ConfigService } from '@nestjs/config';
+import { toPublicUsers } from 'src/common/helper/to-public-user';
+import { User } from 'src/user/user.entity';
+import { ResponsePublicUser } from 'src/user/user.dto';
 
 @Injectable()
 export class TeamService {
@@ -82,6 +85,37 @@ export class TeamService {
   }
 
   /**
+   * 팀을 가져오고 속해있는 맴버 정보 가져옴
+   */
+  async getTeamWithMembersById(id: number): Promise<PublicTeam | null> {
+    const teamWithMembers =
+      await this.teamRepository.getTeamWithMembersById(id);
+    if (!teamWithMembers) {
+      throw new NotFoundException('You can not found this team');
+    }
+
+    // 팀멤버의 유저만 추출
+    const users: User[] = teamWithMembers.teamMembers.map((tm) => tm.user);
+    const publicUsers: ResponsePublicUser[] = toPublicUsers(users);
+
+    const updatedTeamMembers = teamWithMembers.teamMembers.map(
+      (member, index) => ({
+        ...member,
+        user: publicUsers[index],
+      }),
+    );
+
+    return {
+      ...teamWithMembers,
+      teamMembers: updatedTeamMembers,
+    };
+  }
+
+  async getTeamByName(name: string): Promise<Team | null> {
+    return await this.teamRepository.findTeamByName(name);
+  }
+
+  /**
    * 팀이 존재하는지
    * 팀 이름 중복인지
    * 리더인지 아닌지
@@ -123,5 +157,9 @@ export class TeamService {
       throw new ConflictException('The team name already exist');
     }
     return !!existingTeam;
+  }
+
+  async leaveTeam(teamId: number, memberId: number): Promise<boolean> {
+    return await this.teamMemberService.leaveTeam(teamId, memberId);
   }
 }

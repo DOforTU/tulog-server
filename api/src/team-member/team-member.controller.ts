@@ -12,11 +12,11 @@ import { TeamWithStatus } from './team-member.dto';
 import { SmartAuthGuard } from 'src/auth/jwt';
 import { User } from 'src/user/user.entity';
 
-@Controller()
+@Controller('users')
 export class TeamMemberController {
   constructor(private readonly teamMemberService: TeamMemberService) {}
 
-  @Get('users/:id/teams')
+  @Get(':id/teams')
   async getTeamsByMemberId(
     @Param('id') id: number,
     @Query('status') status?: string,
@@ -31,14 +31,5 @@ export class TeamMemberController {
       default:
         return await this.teamMemberService.getAllTeamsByMemberId(id);
     }
-  }
-
-  @Delete('teams/:id/leave')
-  @UseGuards(SmartAuthGuard)
-  async leaveTeam(
-    @Param('id') id: number,
-    @Request() req: { user: User },
-  ): Promise<boolean> {
-    return await this.teamMemberService.leaveTeam(id, req.user.id);
   }
 }
