@@ -4,9 +4,11 @@ import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import * as cookieParser from 'cookie-parser';
+import { join } from 'path';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Add cookie parser middleware
   app.use(cookieParser());
@@ -28,6 +30,11 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+
+  // uploads static files configuration
+  app.useStaticAssets(join(__dirname, '..', '..', 'uploads'), {
+    prefix: '/uploads',
+  });
 
   // Global filter configuration (error handling)
   app.useGlobalFilters(new AllExceptionsFilter());

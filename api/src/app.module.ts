@@ -19,6 +19,7 @@ import { UserBlock } from './block/user-block.entity';
 import { TeamMember } from './team-member/team-member.entity';
 import { TeamModule } from './team/team.module';
 import { TeamMemberModule } from './team-member/team-member.module';
+import { FileModule } from './file/file.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { TeamMemberModule } from './team-member/team-member.module';
       }),
       inject: [ConfigService],
     }),
+    FileModule,
     UserModule,
     AuthModule,
     FollowModule,

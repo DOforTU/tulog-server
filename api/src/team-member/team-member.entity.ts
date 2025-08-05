@@ -6,7 +6,6 @@ import {
   JoinColumn,
   PrimaryColumn,
   CreateDateColumn,
-  OneToMany,
   Column,
 } from 'typeorm';
 

@@ -4,9 +4,6 @@ import {
   IsOptional,
   MinLength,
   MaxLength,
-  Matches,
-  isNumber,
-  isString,
   IsNumber,
   Max,
   Min,
@@ -33,6 +30,31 @@ export class CreateTeamDto {
   @Max(10)
   @Min(1)
   maxMember: number;
+
+  @IsString()
+  mainImage: string;
+}
+
+export class UpdateTeamInfoDto {
+  @IsOptional()
+  @MinLength(4)
+  @MaxLength(20)
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  introduction: string;
+
+  @IsOptional()
+  @IsEnum(TeamVisibility)
+  visibility?: TeamVisibility;
+
+  @IsOptional()
+  @IsNumber()
+  @Max(10)
+  @Min(1)
+  maxMember?: number;
 }
 
 // DTO for reporting a team

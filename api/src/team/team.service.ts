@@ -1,10 +1,12 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { Team } from './team.entity';
-import { CreateTeamDto } from './team.dto';
+import { CreateTeamDto, UpdateTeamInfoDto } from './team.dto';
 import { DataSource } from 'typeorm';
 import {
   TeamMember,
@@ -12,6 +14,7 @@ import {
 } from 'src/team-member/team-member.entity';
 import { TeamMemberService } from 'src/team-member/team-member.service';
 import { TeamRepository } from './team.repository';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class TeamService {
@@ -19,6 +22,7 @@ export class TeamService {
     private readonly teamMemberService: TeamMemberService,
     private readonly teamRepository: TeamRepository,
     private readonly dataSource: DataSource,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -50,6 +54,7 @@ export class TeamService {
         inroduction: createTeamDto.introduction,
         visibility: createTeamDto.visibility,
         maxMember: createTeamDto.maxMember,
+        mainImage: `${this.configService.get('TEAM_DEFAULT_IMAGE_URL')}`,
       });
 
       // create auth record
@@ -76,6 +81,42 @@ export class TeamService {
     }
   }
 
+  /**
+   * 팀이 존재하는지
+   * 팀 이름 중복인지
+   * 리더인지 아닌지
+   *
+   */
+  async updateTeamInfo(
+    updateTeamInfoDto: UpdateTeamInfoDto,
+    userId: number,
+    teamId: number,
+  ): Promise<Team> {
+    const team = await this.teamRepository.findById(teamId);
+    if (!team) {
+      throw new NotFoundException("You can't not find the team.");
+    }
+
+    const teamMember = await this.teamMemberService.findTeamMemberByPrimaryKey(
+      userId,
+      teamId,
+    );
+    if (!teamMember || (teamMember && teamMember.isLeader == false)) {
+      throw new BadRequestException(`You can not update teamId ${teamId}`);
+    }
+
+    const updatedTeam = await this.teamRepository.updateTeam(
+      teamId,
+      updateTeamInfoDto,
+    );
+
+    if (!updatedTeam) {
+      throw new NotFoundException('Failed to update.');
+    }
+    return updatedTeam;
+  }
+
+  //---------------common function-------------------------------------
   async existName(name: string): Promise<boolean> {
     const existingTeam = await this.teamRepository.findByName(name);
     if (existingTeam) {
