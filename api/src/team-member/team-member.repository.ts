@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
-import { TeamMember } from './team-member.entity';
+import { TeamMember, TeamMemberStatus } from './team-member.entity';
 import { Team } from 'src/team/team.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -46,6 +46,15 @@ export class TeamMemberRepository {
   async leaveTeam(teamId: number, memberId: number): Promise<boolean> {
     await this.teamMemberRepository.delete({ teamId, memberId });
     return true;
+  }
+
+  async joinTeam(memberId: number, teamId: number): Promise<TeamMember> {
+    const teamMember = this.teamMemberRepository.create({
+      memberId,
+      teamId,
+      status: TeamMemberStatus.PENDING,
+    });
+    return await this.teamMemberRepository.save(teamMember);
   }
 
   async softDeleteTeam(teamId: number) {
