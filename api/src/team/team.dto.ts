@@ -7,6 +7,7 @@ import {
   IsNumber,
   Max,
   Min,
+  Matches,
 } from 'class-validator';
 import { Team, TeamVisibility } from './team.entity';
 import { ResponsePublicUser } from 'src/user/user.dto';
@@ -16,6 +17,9 @@ export class CreateTeamDto {
   @MinLength(4)
   @MaxLength(20)
   @IsString()
+  @Matches(/^[^\s]+$/, {
+    message: 'Team name must not contain spaces',
+  })
   name: string;
 
   @IsOptional()

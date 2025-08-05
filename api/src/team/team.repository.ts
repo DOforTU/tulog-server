@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { Team } from './team.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UpdateTeamInfoDto } from './team.dto';
@@ -12,11 +12,15 @@ export class TeamRepository {
   ) {}
 
   async findByName(name: string): Promise<Team | null> {
-    return await this.teamRepository.findOne({ where: { name } });
+    return await this.teamRepository.findOne({
+      where: { name, deletedAt: IsNull() },
+    });
   }
 
   async findById(teamId: number): Promise<Team | null> {
-    return await this.teamRepository.findOne({ where: { id: teamId } });
+    return await this.teamRepository.findOne({
+      where: { id: teamId, deletedAt: IsNull() },
+    });
   }
 
   async findTeamWithMembersById(id: number): Promise<Team | null> {
@@ -25,11 +29,18 @@ export class TeamRepository {
       .leftJoinAndSelect('team.teamMembers', 'teamMember')
       .leftJoinAndSelect('teamMember.user', 'user')
       .where('team.id = :id', { id })
+      .andWhere('team.deletedAt IS NULL')
       .getOne();
   }
 
-  async findTeamByName(name: string): Promise<Team | null> {
-    return await this.teamRepository.findOne({ where: { name } });
+  async findTeamWithMembersByName(name: string): Promise<Team | null> {
+    return await this.teamRepository
+      .createQueryBuilder('team')
+      .leftJoinAndSelect('team.teamMembers', 'teamMember')
+      .leftJoinAndSelect('teamMember.user', 'user')
+      .where('team.name = :name', { name })
+      .andWhere('team.deletedAt IS NULL')
+      .getOne();
   }
 
   async updateTeam(
