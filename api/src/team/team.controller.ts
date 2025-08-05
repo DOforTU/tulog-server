@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   Param,
   Patch,
@@ -58,14 +57,5 @@ export class TeamController {
       req.user.id,
       id,
     );
-  }
-
-  @Delete(':id/leave')
-  @UseGuards(SmartAuthGuard)
-  async leaveTeam(
-    @Param('id') id: number,
-    @Request() req: { user: User },
-  ): Promise<boolean> {
-    return await this.teamService.leaveTeam(id, req.user.id);
   }
 }
