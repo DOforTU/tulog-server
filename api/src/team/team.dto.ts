@@ -8,7 +8,8 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { TeamVisibility } from './team.entity';
+import { Team, TeamVisibility } from './team.entity';
+import { ResponsePublicUser } from 'src/user/user.dto';
 
 export class CreateTeamDto {
   /** Tema Name (required) */
@@ -32,6 +33,7 @@ export class CreateTeamDto {
   maxMember: number;
 
   @IsString()
+  @IsOptional()
   mainImage: string;
 }
 
@@ -55,6 +57,25 @@ export class UpdateTeamInfoDto {
   @Max(10)
   @Min(1)
   maxMember?: number;
+}
+
+export class PublicTeamMember {
+  memberId: number;
+  teamId: number;
+  isLeader: boolean;
+  createdAt: Date;
+  team: Team;
+  user: ResponsePublicUser; // 공개용 유저 타입
+}
+
+export class PublicTeam {
+  id: number;
+  name: string;
+  introduction: string;
+  mainImage: string;
+  maxMember: number;
+  visibility: TeamVisibility;
+  teamMembers: PublicTeamMember[];
 }
 
 // DTO for reporting a team
