@@ -19,7 +19,7 @@ export class TeamRepository {
     return await this.teamRepository.findOne({ where: { id: teamId } });
   }
 
-  async getTeamWithMembersById(id: number): Promise<Team | null> {
+  async findTeamWithMembersById(id: number): Promise<Team | null> {
     return await this.teamRepository
       .createQueryBuilder('team')
       .leftJoinAndSelect('team.teamMembers', 'teamMember')
