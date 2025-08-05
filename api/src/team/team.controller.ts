@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   Param,
   Patch,
@@ -34,14 +33,16 @@ export class TeamController {
    * 팀 아이디로 팀을 찾고 그 안에 맴버와 그 맴버 정보 가져옴
    */
   @Get(':id')
-  async getTeamWithMembersById(@Param('id') id: number): Promise<PublicTeam> {
-    return this.teamService.getTeamWithMembersById(id);
+  async getTeamById(@Param('id') id: number): Promise<Team> {
+    return await this.teamService.getTeamById(id);
   }
 
   // 팀 이름으로 팀 정보만
   @Get('name/:name')
-  async getTeamByName(@Param('name') name: string): Promise<Team> {
-    return await this.teamService.getTeamByName(name);
+  async getTeamWithMembersByName(
+    @Param('name') name: string,
+  ): Promise<PublicTeam> {
+    return await this.teamService.getTeamWithMembersByName(name);
   }
 
   @Patch(':id')
@@ -56,14 +57,5 @@ export class TeamController {
       req.user.id,
       id,
     );
-  }
-
-  @Delete(':id/leave')
-  @UseGuards(SmartAuthGuard)
-  async leaveTeam(
-    @Param('id') id: number,
-    @Request() req: { user: User },
-  ): Promise<boolean> {
-    return await this.teamService.leaveTeam(id, req.user.id);
   }
 }

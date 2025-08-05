@@ -129,11 +129,21 @@ export class UpdateUserDto {
   /** Username (optional) */
   @IsOptional()
   @IsString()
+  @MinLength(2)
+  @MaxLength(30)
+  @Matches(/^[^\s]+(?:\s[^\s]+)?$/, {
+    message: 'Name must contain at most one space, and not at the start or end',
+  })
   name?: string;
 
   /** User nickname (optional) */
   @IsOptional()
   @IsString()
+  @MinLength(4)
+  @MaxLength(20)
+  @Matches(/^[^\s]+$/, {
+    message: 'Nickname must not contain spaces',
+  })
   nickname?: string;
 
   /** Profile picture URL (optional) */
