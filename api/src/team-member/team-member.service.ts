@@ -114,6 +114,14 @@ export class TeamMemberService {
     }));
   }
 
+  async joinTeam(memberId: number, teamId: number): Promise<TeamMember> {
+    const teamMember = await this.findTeamMemberByPrimaryKey(memberId, teamId);
+    if (teamMember) {
+      throw new ConflictException('You are already a member of this team.');
+    }
+    return await this.teamMemberRepository.joinTeam(memberId, teamId);
+  }
+
   async findTeamMemberByPrimaryKey(
     memberId: number,
     teamId: number,

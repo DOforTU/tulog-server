@@ -26,7 +26,7 @@ export class TeamMember {
   @PrimaryColumn()
   teamId: number;
 
-  @Column({ default: true })
+  @Column({ default: false })
   isLeader: boolean;
 
   /** Creation timestamp */
