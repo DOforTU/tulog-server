@@ -125,35 +125,41 @@ export class TeamMemberService {
   }
 
   /**
-   * 팀원이 1명만 있을 경우, 팀이 자동 삭제
-   * 팀장이 나가면 다른 팀원에게 리더 위임이 선행되어야함
-   *
-   * 먼저 예외 생각하지 않고 팀에서 팀맴버가 삭제되는것만 생각 (팀을 나가는거니까)
-   *
-   * teamid로 TeamMember[]를 가져옴 -> TeamMber[]의 count가 1일 때 leaveTeam + Team softDelete (쿼리 러너 사용)
-   * count가 1보다 크면서, 나가는 사람이 리더일 경우
-   * throw new exception (`리더 선임을 먼저 하세요`)
-   * count가 1보다 크면서, 나가는 사람이 리더가 아닐 경우
-   * leaveTeam만 함
+   * 팀 탈퇴 로직
+   * 1. 팀원이 1명뿐이면 팀을 삭제
+   * 2. 리더가 탈퇴하려면 다른 멤버에게 리더십 위임 필요
+   * 3. 일반 멤버는 자유롭게 탈퇴 가능
    */
   async leaveTeam(teamId: number, memberId: number): Promise<boolean> {
     const teamMembers =
       await this.teamMemberRepository.findWithTeamsByTeamId(teamId);
-    if (teamMembers?.length == 1) {
-      await this.teamMemberRepository.leaveTeam(teamId, memberId);
-      await this.teamMemberRepository.softDeleteTeam(teamId);
-      return true;
-    }
 
-    // 나는 왜 아래 로직을 수행해야하는지 잘 이해가 안감 teamId로 해당 맴버를 가져와서 리더인지 판별하는건데 이거를 왜 조건문을 활용하지?
+    // 팀이 존재하지 않거나 멤버가 없는 경우
+    if (!teamMembers || teamMembers.length === 0) {
+      throw new NotFoundException('팀을 찾을 수 없습니다.');
+    }
+    // 탈퇴하려는 멤버가 팀에 있는지 확인
     const leavingMember = teamMembers.find((m) => m.memberId === memberId);
     if (!leavingMember) {
       throw new NotFoundException('해당 멤버가 팀에 존재하지 않습니다.');
     }
 
-    if (teamMembers?.length > 1 && leavingMember.isLeader === true) {
-      throw new ConflictException(`You must grant to other member`);
+    // 팀원이 1명뿐인 경우: 팀 삭제
+    if (teamMembers.length === 1) {
+      // TODO: transaction 처리 필요
+      await this.teamMemberRepository.leaveTeam(teamId, memberId);
+      await this.teamMemberRepository.softDeleteTeam(teamId);
+      return true;
     }
+
+    // 팀원이 여러 명이고 리더가 탈퇴하려는 경우: 리더십 위임 필요
+    if (leavingMember.isLeader) {
+      throw new ConflictException(
+        '팀장은 다른 멤버에게 리더십을 위임한 후 탈퇴할 수 있습니다.',
+      );
+    }
+
+    // 일반 멤버 탈퇴
     await this.teamMemberRepository.leaveTeam(teamId, memberId);
     return true;
   }

@@ -3,7 +3,6 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Query,
   Request,
   UseGuards,

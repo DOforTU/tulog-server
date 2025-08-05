@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { TeamMember } from './team-member.entity';
+import { Team } from 'src/team/team.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
@@ -8,6 +9,7 @@ export class TeamMemberRepository {
   constructor(
     @InjectRepository(TeamMember)
     private readonly teamMemberRepository: Repository<TeamMember>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async findByMemberId(memberId: number): Promise<TeamMember[] | null> {
@@ -47,12 +49,13 @@ export class TeamMemberRepository {
   }
 
   async softDeleteTeam(teamId: number) {
-    //await this.teamMemberRepository.softDelete(teamId); 이렇게 작성했는데 맞나? teamId를 기준으로 해당 팀을 삭제
-    // 아래와 같이 쿼리 빌더 사용 -> 근데 우리가 데이터 베이스에서 팀을 softdelete해서 정보는 남겨둔다고 해서 teammember가 해당 teamId에 속한 정보 다 삭제
-    await this.teamMemberRepository
+    // Team 엔티티 자체를 soft delete
+    // DataSource의 쿼리 빌더를 사용하여 직접 Team 테이블에 접근
+    await this.dataSource
       .createQueryBuilder()
-      .softDelete()
-      .where('teamId = :teamId', { teamId })
+      .update(Team)
+      .set({ deletedAt: () => 'CURRENT_TIMESTAMP' })
+      .where('id = :teamId', { teamId })
       .execute();
   }
 }
