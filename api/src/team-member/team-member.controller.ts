@@ -43,6 +43,20 @@ export class TeamMemberController {
   }
 
   /**
+   * Invite a team
+   *
+   */
+  @Post(':id/invite')
+  @UseGuards(SmartAuthGuard)
+  async inviteTeam(
+    @Request() req: { user: User },
+    @Param('id') id: number,
+    @Query('userId') userId: number, //이거 왜 사용하는거지?
+  ): Promise<TeamMember> {
+    return await this.teamMemberService.inviteTeam(req.user.id, id, userId);
+  }
+
+  /**
    * leave a team
    * @param req Request object containing user information
    * @param id Team ID: the ID of the team to leave
