@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { TeamMember, TeamMemberStatus } from './team-member.entity';
+import { Team } from 'src/team/team.entity';
 
 @Injectable()
 export class TeamMemberService {
@@ -132,6 +133,29 @@ export class TeamMemberService {
       status: tm.status,
       isLeader: tm.isLeader,
     }));
+  }
+
+  /**
+   * Invite a team
+   * 팀장인지 확인하기
+   * 초대하려는 사용자가 존재하는지
+   * 이미 팀에 존재하는 사용자인지
+   */
+  async inviteTeam(
+    leaderId: number,
+    teamId: number,
+    userId: number,
+  ): Promise<boolean> {
+    const leader = await this.getTeamMemberByPrimaryKey(leaderId, teamId);
+    if (!leader.isLeader) {
+      throw new ConflictException('You are not authorized to invite members.');
+    }
+
+    // Check if the user exists
+    await this.getTeamMemberByPrimaryKey(userId, teamId);
+
+    // Proceed to invite the user from the team
+    return await this.teamMemberRepository.inviteTeam(teamId, userId);
   }
 
   /**
