@@ -52,7 +52,7 @@ export class TeamMemberController {
     @Request() req: { user: User },
     @Param('id') id: number,
     @Query('userId') userId: number, //이거 왜 사용하는거지?
-  ): Promise<boolean> {
+  ): Promise<TeamMember> {
     return await this.teamMemberService.inviteTeam(req.user.id, id, userId);
   }
 

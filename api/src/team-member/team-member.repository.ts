@@ -48,13 +48,13 @@ export class TeamMemberRepository {
     return true;
   }
 
-  async inviteTeam(teamId: number, memberId: number): Promise<boolean> {
-    await this.teamMemberRepository.create({
+  async inviteTeam(teamId: number, memberId: number): Promise<TeamMember> {
+    const teamMember = await this.teamMemberRepository.create({
       teamId,
       memberId,
       status: TeamMemberStatus.INVITED,
     });
-    return true;
+    return await this.teamMemberRepository.save(teamMember);
   }
 
   async joinTeam(memberId: number, teamId: number): Promise<TeamMember> {

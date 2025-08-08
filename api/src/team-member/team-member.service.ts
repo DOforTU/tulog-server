@@ -145,7 +145,7 @@ export class TeamMemberService {
     leaderId: number,
     teamId: number,
     userId: number,
-  ): Promise<boolean> {
+  ): Promise<TeamMember> {
     const leader = await this.getTeamMemberByPrimaryKey(leaderId, teamId);
     if (!leader.isLeader) {
       throw new ConflictException('You are not authorized to invite members.');
