@@ -35,11 +35,11 @@ export class TeamMemberRepository {
   }
 
   async findOneByPrimaryKey(
-    memberId: number,
     teamId: number,
+    memberId: number,
   ): Promise<TeamMember | null> {
     return await this.teamMemberRepository.findOne({
-      where: { memberId, teamId },
+      where: { teamId, memberId },
     });
   }
 
@@ -49,7 +49,7 @@ export class TeamMemberRepository {
   }
 
   async inviteTeam(teamId: number, memberId: number): Promise<TeamMember> {
-    const teamMember = await this.teamMemberRepository.create({
+    const teamMember = this.teamMemberRepository.create({
       teamId,
       memberId,
       status: TeamMemberStatus.INVITED,
@@ -57,10 +57,10 @@ export class TeamMemberRepository {
     return await this.teamMemberRepository.save(teamMember);
   }
 
-  async joinTeam(memberId: number, teamId: number): Promise<TeamMember> {
+  async joinTeam(teamId: number, memberId: number): Promise<TeamMember> {
     const teamMember = this.teamMemberRepository.create({
-      memberId,
       teamId,
+      memberId,
       status: TeamMemberStatus.PENDING,
     });
     return await this.teamMemberRepository.save(teamMember);

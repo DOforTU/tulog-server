@@ -11,7 +11,7 @@ import { FollowService } from './follow.service';
 import { User } from 'src/user/user.entity';
 import { Follow } from './follow.entity';
 import { SmartAuthGuard } from 'src/auth/jwt';
-import { ResponsePublicUser } from 'src/user/user.dto';
+import { PublicUser } from 'src/user/user.dto';
 import { toPublicUsers } from 'src/common/helper/to-public-user';
 
 @Controller('users')
@@ -21,18 +21,14 @@ export class FollowController {
   /** Get my followers */
   @Get('me/followers')
   @UseGuards(SmartAuthGuard)
-  async getMyFollowers(
-    @Request() req: { user: User },
-  ): Promise<ResponsePublicUser[]> {
+  async getMyFollowers(@Request() req: { user: User }): Promise<PublicUser[]> {
     return toPublicUsers(await this.followService.getFollowers(req.user.id));
   }
 
   /** Get my followings */
   @Get('me/followings')
   @UseGuards(SmartAuthGuard)
-  async getMyFollowings(
-    @Request() req: { user: User },
-  ): Promise<ResponsePublicUser[]> {
+  async getMyFollowings(@Request() req: { user: User }): Promise<PublicUser[]> {
     return toPublicUsers(await this.followService.getFollowings(req.user.id));
   }
 
@@ -56,17 +52,13 @@ export class FollowController {
 
   /** Get users who follow me */
   @Get(':id/followers')
-  async getFollowers(
-    @Param('id') id: number,
-  ): Promise<ResponsePublicUser[] | null> {
+  async getFollowers(@Param('id') id: number): Promise<PublicUser[] | null> {
     return toPublicUsers(await this.followService.getFollowers(id));
   }
 
   /** Get users I follow */
   @Get(':id/followings')
-  async getFollowings(
-    @Param('id') id: number,
-  ): Promise<ResponsePublicUser[] | null> {
+  async getFollowings(@Param('id') id: number): Promise<PublicUser[] | null> {
     return toPublicUsers(await this.followService.getFollowings(id));
   }
 }

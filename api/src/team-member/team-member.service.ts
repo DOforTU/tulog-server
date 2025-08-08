@@ -7,7 +7,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { TeamMember, TeamMemberStatus } from './team-member.entity';
-import { Team } from 'src/team/team.entity';
 
 @Injectable()
 export class TeamMemberService {
@@ -136,26 +135,27 @@ export class TeamMemberService {
   }
 
   /**
-   * Invite a team
-   * 팀장인지 확인하기
-   * 초대하려는 사용자가 존재하는지
-   * 이미 팀에 존재하는 사용자인지
+   * Invite a team member
+   * @param leaderId Leader ID: the ID of the user who is inviting the member
+   * @param teamId Team ID: the ID of the team to invite the member to
+   * @param memberId Member ID: the ID of the member to invite
+   * @returns The created TeamMember entity
    */
   async inviteTeam(
     leaderId: number,
     teamId: number,
-    userId: number,
+    memberId: number,
   ): Promise<TeamMember> {
     const leader = await this.getTeamMemberByPrimaryKey(leaderId, teamId);
     if (!leader.isLeader) {
-      throw new ConflictException('You are not authorized to invite members.');
+      throw new ConflictException('Only team leaders can invite members.');
     }
 
     // Check if the user exists
-    await this.getTeamMemberByPrimaryKey(userId, teamId);
+    await this.getTeamMemberByPrimaryKey(memberId, teamId);
 
     // Proceed to invite the user from the team
-    return await this.teamMemberRepository.inviteTeam(teamId, userId);
+    return await this.teamMemberRepository.inviteTeam(teamId, memberId);
   }
 
   /**
@@ -164,12 +164,12 @@ export class TeamMemberService {
    * @param teamId Team ID: the ID of the team to join
    * @returns The created TeamMember entity
    */
-  async joinTeam(memberId: number, teamId: number): Promise<TeamMember> {
-    const teamMember = await this.findTeamMemberByPrimaryKey(memberId, teamId);
+  async joinTeam(teamId: number, memberId: number): Promise<TeamMember> {
+    const teamMember = await this.findTeamMemberByPrimaryKey(teamId, memberId);
     if (teamMember) {
       throw new ConflictException('You are already a member of this team.');
     }
-    return await this.teamMemberRepository.joinTeam(memberId, teamId);
+    return await this.teamMemberRepository.joinTeam(teamId, memberId);
   }
 
   /**
@@ -179,12 +179,12 @@ export class TeamMemberService {
    * @returns The found TeamMember entity or null if not found
    */
   async findTeamMemberByPrimaryKey(
-    memberId: number,
     teamId: number,
+    memberId: number,
   ): Promise<TeamMember | null> {
     return await this.teamMemberRepository.findOneByPrimaryKey(
-      memberId,
       teamId,
+      memberId,
     );
   }
 
@@ -254,12 +254,12 @@ export class TeamMemberService {
   }
 
   async getTeamMemberByPrimaryKey(
-    memberId: number,
     teamId: number,
+    memberId: number,
   ): Promise<TeamMember> {
     const teamMember = await this.teamMemberRepository.findOneByPrimaryKey(
-      memberId,
       teamId,
+      memberId,
     );
 
     if (!teamMember) {

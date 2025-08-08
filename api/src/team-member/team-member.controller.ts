@@ -1,7 +1,6 @@
 import {
   Controller,
   Delete,
-  Get,
   Param,
   Post,
   Query,
@@ -9,51 +8,33 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { TeamMemberService } from './team-member.service';
-import { TeamWithStatus } from './team-member.dto';
 import { SmartAuthGuard } from 'src/auth/jwt';
 import { User } from 'src/user/user.entity';
 import { TeamMember } from './team-member.entity';
 
-@Controller('teams')
+@Controller('teams/:teamId/members')
 export class TeamMemberController {
   constructor(private readonly teamMemberService: TeamMemberService) {}
 
   /**
-   * get all teams that a user is part of
-   * @param userId User ID: the ID of the user whose teams are to be fetched
-   * @param status Status: optional filter for team status (joined, invited, pending)
-   * @returns An array of TeamWithStatus objects representing the teams
+   * Invite a team member
+   * @param req Request object containing user information
+   * @param teamId Team ID: the ID of the team to invite the member to
+   * @param memberId Member ID: the ID of the member to invite
+   * @returns The created TeamMember entity
    */
-  @Get('get/from')
-  async getTeamsByMemberId(
-    @Query('userId') userId: string,
-    @Query('status') status?: string,
-  ): Promise<TeamWithStatus[]> {
-    const id = parseInt(userId, 10);
-    switch (status) {
-      case 'joined':
-        return await this.teamMemberService.getJoinedTeamsByMemberId(id);
-      case 'invited':
-        return await this.teamMemberService.getInvitedTeamsByMemberId(id);
-      case 'pending':
-        return await this.teamMemberService.getPendingTeamsByMemberId(id);
-      default:
-        return await this.teamMemberService.getAllTeamsByMemberId(id);
-    }
-  }
-
-  /**
-   * Invite a team
-   *
-   */
-  @Post(':id/invite')
+  @Post(':memberId/invite')
   @UseGuards(SmartAuthGuard)
   async inviteTeam(
     @Request() req: { user: User },
-    @Param('id') id: number,
-    @Query('userId') userId: number, //이거 왜 사용하는거지?
+    @Param('teamId') teamId: number,
+    @Param('memberId') memberId: number,
   ): Promise<TeamMember> {
-    return await this.teamMemberService.inviteTeam(req.user.id, id, userId);
+    return await this.teamMemberService.inviteTeam(
+      req.user.id, // Leader ID
+      teamId,
+      memberId,
+    );
   }
 
   /**

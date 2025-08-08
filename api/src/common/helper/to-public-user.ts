@@ -1,8 +1,8 @@
-import { ResponsePublicUser } from 'src/user/user.dto';
+import { PublicUser } from 'src/user/user.dto';
 import { User } from 'src/user/user.entity';
 
 /** Return public user */
-export function toPublicUser(user: User): ResponsePublicUser {
+export function toPublicUser(user: User): PublicUser {
   return {
     id: user.id,
     nickname: user.nickname,
@@ -12,7 +12,7 @@ export function toPublicUser(user: User): ResponsePublicUser {
 }
 
 /** Return array of public users */
-export function toPublicUsers(users: User[]): ResponsePublicUser[] {
+export function toPublicUsers(users: User[]): PublicUser[] {
   return users.map((user) => ({
     id: user.id,
     nickname: user.nickname,
