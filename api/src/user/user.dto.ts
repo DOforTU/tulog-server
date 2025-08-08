@@ -9,6 +9,7 @@ import {
 } from 'class-validator';
 import { Match } from 'src/common/decorator/match.decorator';
 import { UserRole } from './user.entity';
+import { TeamWithStatus } from 'src/team-member/team-member.dto';
 
 /**
  * User creation DTO
@@ -188,14 +189,14 @@ export class UpdatePasswordDto {
   newPassword: string;
 }
 
-export class ResponsePublicUser {
+export class PublicUser {
   id: number;
   nickname: string;
   profilePicture: string;
   isActive: boolean;
 }
 
-export class ResponseMyUser {
+export class MyUser {
   id: number;
   email: string;
   name: string;
@@ -205,4 +206,14 @@ export class ResponseMyUser {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export class UserDetails {
+  id: number;
+  nickname: string;
+  profilePicture: string;
+  isActive: boolean;
+  teams: TeamWithStatus[];
+  followers: PublicUser[];
+  following: PublicUser[];
 }

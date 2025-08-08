@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './user.entity';
-import { ResponsePublicUser, UpdateUserDto } from './user.dto';
+import { PublicUser, UserDetails, UpdateUserDto } from './user.dto';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
 import { SmartAuthGuard } from 'src/auth/jwt';
 import { toPublicUser } from 'src/common/helper/to-public-user';
@@ -40,16 +40,28 @@ export class UserController {
   @Get(':id')
   async getUserById(
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<ResponsePublicUser> {
+  ): Promise<PublicUser> {
     return toPublicUser(await this.userService.getUserById(id));
   }
 
+  /**
+   * Get user details including teams, followers, and following
+   * @param id User ID: the ID of the user whose details are to be fetched
+   * @returns UserDetails object with teams, followers, and following arrays (empty arrays if no data)
+   */
+  @Get(':id/details')
+  async getUserDetailsById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<UserDetails> {
+    return await this.userService.getUserDetailsById(id);
+  }
+
   /** Get user by id or nickname (query) */
-  @Get()
+  @Get('search')
   async getUserByIdOrNickname(
     @Query('id') id?: string,
     @Query('nickname') nickname?: string,
-  ): Promise<ResponsePublicUser | null> {
+  ): Promise<PublicUser | null> {
     if (id) {
       const idNum = Number(id);
       if (!isNaN(idNum)) {
@@ -85,28 +97,28 @@ export class UserController {
   @Get('nickname/:nickname')
   async getUserByNickname(
     @Param('nickname') nickname: string,
-  ): Promise<ResponsePublicUser | null> {
+  ): Promise<PublicUser | null> {
     return toPublicUser(await this.userService.getUserByNickname(nickname));
   }
 
   // ===== Admin Only APIs =====
 
   /** Get all active users */
-  @Get()
+  @Get('all')
   @UseGuards(AdminGuard)
   async getAllUsers(): Promise<User[]> {
     return this.userService.getAllUsers();
   }
 
   /** Get deleted users list */
-  @Get('deleted')
+  @Get('admin/deleted')
   @UseGuards(AdminGuard)
   async getDeletedUsers(): Promise<User[]> {
     return this.userService.getDeletedUsers();
   }
 
   /** Get active user count */
-  @Get('count')
+  @Get('stats/count')
   @UseGuards(AdminGuard)
   async getCount(): Promise<{ count: number }> {
     const count = await this.userService.getUserCount();

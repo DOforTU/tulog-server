@@ -16,9 +16,9 @@ export class TeamMemberService {
   ) {}
 
   /**
-   * 유저가 속한 팀이 몇개있는지 확인
-   * join인 팀만 추출
-   * 레파지토리에서는 팀 인스턴스를 모두 가져와서 판별
+   * get the number of teams a user is part of
+   * @param memberId Member ID: the ID of the user whose team count is to be fetched
+   * @returns The number of teams the user is part of
    */
   async countTeamsByMemberId(memberId: number): Promise<number> {
     const teamMembers =
@@ -32,6 +32,11 @@ export class TeamMemberService {
     return filteredTeams.length;
   }
 
+  /**
+   * get all teams that a user is part of
+   * @param memberId Member ID: the ID of the user whose teams are to be fetched
+   * @returns An array of TeamWithStatus objects representing the teams
+   */
   async getJoinedTeamsByMemberId(memberId: number): Promise<TeamWithStatus[]> {
     // check if user exists
     await this.userService.getUserById(memberId);
@@ -53,6 +58,11 @@ export class TeamMemberService {
       }));
   }
 
+  /**
+   * get all teams that a user is invited to
+   * @param memberId Member ID: the ID of the user whose invited teams are to be fetched
+   * @returns An array of TeamWithStatus objects representing the teams
+   */
   async getInvitedTeamsByMemberId(memberId: number): Promise<TeamWithStatus[]> {
     // check if user exists
     await this.userService.getUserById(memberId);
@@ -74,6 +84,11 @@ export class TeamMemberService {
       }));
   }
 
+  /**
+   * get all teams that a user is pending to join
+   * @param memberId Member ID: the ID of the user whose pending teams are to be fetched
+   * @returns An array of TeamWithStatus objects representing the teams
+   */
   async getPendingTeamsByMemberId(memberId: number): Promise<TeamWithStatus[]> {
     // check if user exists
     await this.userService.getUserById(memberId);
@@ -95,6 +110,11 @@ export class TeamMemberService {
       }));
   }
 
+  /**
+   * get all teams that a user is part of
+   * @param memberId Member ID: the ID of the user whose teams are to be fetched
+   * @returns An array of TeamWithStatus objects representing the teams
+   */
   async getAllTeamsByMemberId(memberId: number): Promise<TeamWithStatus[]> {
     // check if user exists
     await this.userService.getUserById(memberId);
@@ -114,29 +134,65 @@ export class TeamMemberService {
     }));
   }
 
-  async joinTeam(memberId: number, teamId: number): Promise<TeamMember> {
-    const teamMember = await this.findTeamMemberByPrimaryKey(memberId, teamId);
+  /**
+   * Invite a team member
+   * @param leaderId Leader ID: the ID of the user who is inviting the member
+   * @param teamId Team ID: the ID of the team to invite the member to
+   * @param memberId Member ID: the ID of the member to invite
+   * @returns The created TeamMember entity
+   */
+  async inviteTeam(
+    leaderId: number,
+    teamId: number,
+    memberId: number,
+  ): Promise<TeamMember> {
+    const leader = await this.getTeamMemberByPrimaryKey(leaderId, teamId);
+    if (!leader.isLeader) {
+      throw new ConflictException('Only team leaders can invite members.');
+    }
+
+    // Check if the user exists
+    await this.getTeamMemberByPrimaryKey(memberId, teamId);
+
+    // Proceed to invite the user from the team
+    return await this.teamMemberRepository.inviteTeam(teamId, memberId);
+  }
+
+  /**
+   * Join a team
+   * @param memberId Member ID: the ID of the user who wants to join the team
+   * @param teamId Team ID: the ID of the team to join
+   * @returns The created TeamMember entity
+   */
+  async joinTeam(teamId: number, memberId: number): Promise<TeamMember> {
+    const teamMember = await this.findTeamMemberByPrimaryKey(teamId, memberId);
     if (teamMember) {
       throw new ConflictException('You are already a member of this team.');
     }
-    return await this.teamMemberRepository.joinTeam(memberId, teamId);
+    return await this.teamMemberRepository.joinTeam(teamId, memberId);
   }
 
+  /**
+   * find a team member by primary key
+   * @param memberId
+   * @param teamId
+   * @returns The found TeamMember entity or null if not found
+   */
   async findTeamMemberByPrimaryKey(
-    memberId: number,
     teamId: number,
+    memberId: number,
   ): Promise<TeamMember | null> {
     return await this.teamMemberRepository.findOneByPrimaryKey(
-      memberId,
       teamId,
+      memberId,
     );
   }
 
   /**
-   * 팀 탈퇴 로직
-   * 1. 팀원이 1명뿐이면 팀을 삭제
-   * 2. 리더가 탈퇴하려면 다른 멤버에게 리더십 위임 필요
-   * 3. 일반 멤버는 자유롭게 탈퇴 가능
+   * Leave a team
+   * @param teamId Team ID: the ID of the team to leave
+   * @param memberId Member ID: the ID of the user who wants to leave the team
+   * @returns A boolean indicating whether the leave operation was successful
    */
   async leaveTeam(teamId: number, memberId: number): Promise<boolean> {
     const teamMembers =
@@ -170,5 +226,47 @@ export class TeamMemberService {
     // 일반 멤버 탈퇴
     await this.teamMemberRepository.leaveTeam(teamId, memberId);
     return true;
+  }
+
+  /**
+   * Kick a team member
+   * @param requesterId Requester ID: the ID of the user for checking leader status
+   * @param teamId Team ID: the ID of the team from which the member will be kicked
+   * @param userId User ID: the ID of the user to be kicked from the team
+   * @return A boolean indicating whether the kick operation was successful
+   */
+  async kickTeamMember(
+    leaderId: number,
+    teamId: number,
+    userId: number,
+  ): Promise<boolean> {
+    // Check if the requester is a leader of the team
+    const leader = await this.getTeamMemberByPrimaryKey(leaderId, teamId);
+    if (!leader.isLeader) {
+      throw new ConflictException('You are not authorized to kick members.');
+    }
+
+    // Check if the user to be kicked is part of the team
+    await this.getTeamMemberByPrimaryKey(userId, teamId);
+
+    // Proceed to kick the user from the team
+    return await this.teamMemberRepository.leaveTeam(teamId, userId);
+  }
+
+  async getTeamMemberByPrimaryKey(
+    teamId: number,
+    memberId: number,
+  ): Promise<TeamMember> {
+    const teamMember = await this.teamMemberRepository.findOneByPrimaryKey(
+      teamId,
+      memberId,
+    );
+
+    if (!teamMember) {
+      throw new NotFoundException(
+        `Team member with memberId ${memberId} and teamId ${teamId} not found.`,
+      );
+    }
+    return teamMember;
   }
 }

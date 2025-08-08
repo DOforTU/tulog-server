@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import { User } from './user.entity';
-import { UpdateUserDto } from './user.dto';
+import { UpdateUserDto, UserDetails } from './user.dto';
 
 /**
  * User Business Logic Service
@@ -107,6 +107,50 @@ export class UserService {
       throw new NotFoundException(`User with nickname ${nickname} not found`);
     }
     return user;
+  }
+
+  /** Get user details including teams, followers, and following */
+  async getUserDetailsById(id: number): Promise<UserDetails> {
+    const user = await this.userRepository.findUserDetailsById(id);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    // Transform teams data
+    const teams =
+      user.teamMembers?.map((teamMember) => ({
+        team: teamMember.team,
+        status: teamMember.status,
+        isLeader: teamMember.isLeader,
+      })) || [];
+
+    // Transform followers data
+    const followers =
+      user.followers?.map((followerRel) => ({
+        id: followerRel.follower.id,
+        nickname: followerRel.follower.nickname,
+        profilePicture: followerRel.follower.profilePicture,
+        isActive: followerRel.follower.isActive,
+      })) || [];
+
+    // Transform following data
+    const following =
+      user.followings?.map((followingRel) => ({
+        id: followingRel.following.id,
+        nickname: followingRel.following.nickname,
+        profilePicture: followingRel.following.profilePicture,
+        isActive: followingRel.following.isActive,
+      })) || [];
+
+    return {
+      id: user.id,
+      nickname: user.nickname,
+      profilePicture: user.profilePicture,
+      isActive: user.isActive,
+      teams,
+      followers,
+      following,
+    };
   }
 
   /** Get deleted users list */

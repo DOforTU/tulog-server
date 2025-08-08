@@ -17,7 +17,7 @@ import { TeamRepository } from './team.repository';
 import { ConfigService } from '@nestjs/config';
 import { toPublicUsers } from 'src/common/helper/to-public-user';
 import { User } from 'src/user/user.entity';
-import { ResponsePublicUser } from 'src/user/user.dto';
+import { PublicUser } from 'src/user/user.dto';
 
 @Injectable()
 export class TeamService {
@@ -97,7 +97,7 @@ export class TeamService {
 
     // 팀멤버의 유저만 추출
     const users: User[] = teamWithMembers.teamMembers.map((tm) => tm.user); // tm은 팀 맴버를 말하고 그 안에 user를 추출
-    const publicUsers: ResponsePublicUser[] = toPublicUsers(users); // 추출한 user정보를 pulic화해서 다시 선언
+    const publicUsers: PublicUser[] = toPublicUsers(users); // 추출한 user정보를 pulic화해서 다시 선언
 
     const updatedTeamMembers = teamWithMembers.teamMembers.map(
       (member, index) => ({
@@ -122,7 +122,7 @@ export class TeamService {
 
     // 팀멤버의 유저만 추출
     const users: User[] = teamWithMembers.teamMembers.map((tm) => tm.user); // tm은 팀 맴버를 말하고 그 안에 user를 추출
-    const publicUsers: ResponsePublicUser[] = toPublicUsers(users); // 추출한 user정보를 pulic화해서 다시 선언
+    const publicUsers: PublicUser[] = toPublicUsers(users); // 추출한 user정보를 pulic화해서 다시 선언
 
     const updatedTeamMembers = teamWithMembers.teamMembers.map(
       (member, index) => ({

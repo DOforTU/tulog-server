@@ -10,7 +10,7 @@ import {
   Matches,
 } from 'class-validator';
 import { Team, TeamVisibility } from './team.entity';
-import { ResponsePublicUser } from 'src/user/user.dto';
+import { PublicUser } from 'src/user/user.dto';
 
 export class CreateTeamDto {
   /** Tema Name (required) */
@@ -69,7 +69,7 @@ export class PublicTeamMember {
   isLeader: boolean;
   createdAt: Date;
   team: Team;
-  user: ResponsePublicUser; // 공개용 유저 타입
+  user: PublicUser; // 공개용 유저 타입
 }
 
 export class PublicTeam {

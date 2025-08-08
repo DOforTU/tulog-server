@@ -208,6 +208,29 @@ export class UserRepository {
       .getOne();
   }
 
+  /** Find user with all details for UserDetails DTO */
+  async findUserDetailsById(id: number): Promise<User | null> {
+    return await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.teamMembers', 'teamMember')
+      .leftJoinAndSelect('teamMember.team', 'team')
+      .leftJoinAndSelect('user.followers', 'followerRel')
+      .leftJoinAndSelect('followerRel.follower', 'followerUser')
+      .leftJoinAndSelect('user.followings', 'followingRel')
+      .leftJoinAndSelect('followingRel.following', 'followingUser')
+      .where('user.id = :id', { id })
+      .andWhere('user.deletedAt IS NULL AND user.isActive = true')
+      //  andWhere conditions to ensure no deleted or inactive teams, followers, and followings
+      .andWhere('(team.deletedAt IS NULL OR team.id IS NULL)')
+      .andWhere(
+        '(followerUser.deletedAt IS NULL AND followerUser.isActive = true OR followerUser.id IS NULL)',
+      )
+      .andWhere(
+        '(followingUser.deletedAt IS NULL AND followingUser.isActive = true OR followingUser.id IS NULL)',
+      )
+      .getOne();
+  }
+
   // ===== Special Operations - Data Access =====
 
   /** Permanently delete user */
