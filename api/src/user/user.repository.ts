@@ -223,6 +223,12 @@ export class UserRepository {
       //  andWhere conditions to ensure no deleted or inactive teams, followers, and followings
       .andWhere('(team.deletedAt IS NULL OR team.id IS NULL)')
       .andWhere(
+        '(teamMember.status = :joinedStatus OR teamMember.status IS NULL)',
+        {
+          joinedStatus: 'JOINED',
+        },
+      )
+      .andWhere(
         '(followerUser.deletedAt IS NULL AND followerUser.isActive = true OR followerUser.id IS NULL)',
       )
       .andWhere(

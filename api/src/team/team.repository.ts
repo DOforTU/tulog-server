@@ -30,6 +30,15 @@ export class TeamRepository {
       .leftJoinAndSelect('teamMember.user', 'user')
       .where('team.id = :id', { id })
       .andWhere('team.deletedAt IS NULL')
+      .andWhere(
+        '(teamMember.status = :joinedStatus OR teamMember.status IS NULL)',
+        {
+          joinedStatus: 'JOINED',
+        },
+      )
+      .andWhere(
+        '(user.deletedAt IS NULL AND user.isActive = true OR user.id IS NULL)',
+      )
       .getOne();
   }
 
@@ -40,6 +49,15 @@ export class TeamRepository {
       .leftJoinAndSelect('teamMember.user', 'user')
       .where('team.name = :name', { name })
       .andWhere('team.deletedAt IS NULL')
+      .andWhere(
+        '(teamMember.status = :joinedStatus OR teamMember.status IS NULL)',
+        {
+          joinedStatus: 'JOINED',
+        },
+      )
+      .andWhere(
+        '(user.deletedAt IS NULL AND user.isActive = true OR user.id IS NULL)',
+      )
       .getOne();
   }
 
