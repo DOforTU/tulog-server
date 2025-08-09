@@ -31,6 +31,17 @@ export class UserRepository {
   }
 
   /**
+   * Find user by ID (ONLY not-deleted)
+   * @param id User ID
+   * @returns User entity or null
+   */
+  async findWithNoActiveById(id: number): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { id, deletedAt: IsNull() },
+    });
+  }
+
+  /**
    * Update user information
    * @param id
    * @param updateUserDto

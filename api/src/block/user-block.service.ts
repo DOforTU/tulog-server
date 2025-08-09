@@ -45,7 +45,7 @@ export class UserBlockService {
     await this.userService.getUserById(userId);
 
     // user will be null, when no blocked user exist
-    const user = await this.userService.findWithBlockedById(userId);
+    const user = await this.userService.findUserWithBlockedById(userId);
     if (!user) {
       return [];
     }

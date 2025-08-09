@@ -94,7 +94,7 @@ export class AuthService {
     const { id: oauthId, email, firstName, lastName, picture } = googleUser;
 
     // 1. Check if user exists by email
-    const user = await this.userService.findByEmail(email);
+    const user = await this.userService.findUserByEmail(email);
     let auth: Auth | null = null;
 
     // 1-1. If user does not exist, create one
@@ -114,7 +114,7 @@ export class AuthService {
 
         while (attempt < MAX_ATTEMPTS) {
           const existing =
-            await this.userService.findIncludingNoActiveByNickname(
+            await this.userService.findUserIncludingNoActiveByNickname(
               randomNickname,
             );
           if (!existing) break;
@@ -223,7 +223,7 @@ export class AuthService {
       }
 
       // Retrieve user information
-      const user = await this.userService.findById(decodedToken.sub);
+      const user = await this.userService.findUserById(decodedToken.sub);
       if (!user) {
         return {
           success: false,
@@ -251,16 +251,15 @@ export class AuthService {
 
   async signup(dto: CreateLocalUserDto): Promise<{ email: string }> {
     // Check if user already exists
-    const existingUser = await this.userService.findIncludingNoActiveByEmail(
-      dto.email,
-    );
+    const existingUser =
+      await this.userService.findUserIncludingNoActiveByEmail(dto.email);
     if (existingUser) {
       throw new ConflictException('Email already exists.');
     }
 
     // Check same nickname
     const existingUserNickname =
-      await this.userService.findIncludingNoActiveByNickname(dto.nickname);
+      await this.userService.findUserIncludingNoActiveByNickname(dto.nickname);
     if (existingUserNickname) {
       throw new ConflictException('Nickname already exists.');
     }
@@ -363,7 +362,7 @@ export class AuthService {
     }
 
     // Find user
-    const user = await this.userService.findByEmail(email);
+    const user = await this.userService.findUserByEmail(email);
     if (!user) {
       throw new BadRequestException('User not found.');
     }
@@ -388,7 +387,7 @@ export class AuthService {
   async login(loginDto: LoginDto, res: Response): Promise<User> {
     try {
       // Check if user exists (with password for comparison)
-      const user = await this.userService.findWithPasswordByEmail(
+      const user = await this.userService.findUserWithPasswordByEmail(
         loginDto.email,
       );
       if (!user) {
@@ -429,7 +428,7 @@ export class AuthService {
 
   /** Retrieve user by ID */
   async findUserById(userId: number): Promise<User | null> {
-    return await this.userService.findById(userId);
+    return await this.userService.findUserById(userId);
   }
 
   /** Update user password */
@@ -446,7 +445,7 @@ export class AuthService {
     }
 
     // Validate user existence and get user with password
-    const userWithPW = await this.userService.findWithPasswordByEmail(
+    const userWithPW = await this.userService.findUserWithPasswordByEmail(
       user.email,
     );
     if (!userWithPW) {

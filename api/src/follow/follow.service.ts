@@ -71,7 +71,7 @@ export class FollowService {
     await this.userService.getUserById(userId);
 
     // user will be null, when no followers exist
-    const user = await this.userService.findByIdWithFollowers(userId);
+    const user = await this.userService.findUserByIdWithFollowers(userId);
     if (!user) {
       // so return []
       return [];
@@ -86,7 +86,7 @@ export class FollowService {
     await this.userService.getUserById(userId);
 
     // user will be null, when no followings exist
-    const user = await this.userService.findByIdWithFollowings(userId);
+    const user = await this.userService.findUserByIdWithFollowings(userId);
     if (!user) {
       // so return []
       return [];
