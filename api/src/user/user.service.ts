@@ -113,8 +113,8 @@ export class UserService {
     return user;
   }
 
-  async getUserWithNoActiveById(id: number): Promise<User> {
-    const user = await this.userRepository.findWithNoActiveById(id);
+  async findIncludingNoActiveById(id: number): Promise<User> {
+    const user = await this.userRepository.findIncludingNoActiveById(id);
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
@@ -128,7 +128,7 @@ export class UserService {
    */
   async activateUser(id: number): Promise<User> {
     // Check user existence
-    const existingUser = await this.getUserWithNoActiveById(id);
+    const existingUser = await this.findIncludingNoActiveById(id);
 
     // Business logic: Check if already active
     if (existingUser.isActive) {

@@ -17,15 +17,7 @@ export class UserRepository {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  // ===== Basic CRUD - Data Access =====
-
-  /**
-   * Common method
-   */
-
-  //private async findUser(id: number): Promise<User | null> {
-  //  return await this.userRepository.findOne({ where });
-  //}
+  // ===== User Retrieval =====
 
   /**
    * Find user by ID (ONLY not-deleted & active)
@@ -42,32 +34,21 @@ export class UserRepository {
     });
   }
 
+  /**
+   * Find user by ID (including no-active)
+   * @param id User ID
+   * @returns User entity or null
+   */
   async findIncludingNoActiveById(id: number): Promise<User | null> {
     return await this.userRepository.findOne({
       where: { id, deletedAt: IsNull() },
     });
   }
 
-  //async findIncludingNoActiveById(id: number): Promise<User | null> {
-  //  return await this.userRepository.findOne({
-  //    where: { id, deletedAt: IsNull() },
-  //  });
-  //}
-
   /**
-   * Find user by ID (ONLY not-deleted)
-   * @param id User ID
-   * @returns User entity or null
+   * Find all users (admin only)
+   * @returns Array of user entities
    */
-  async findWithNoActiveById(id: number): Promise<User | null> {
-    return await this.userRepository.findOne({
-      where: { id, deletedAt: IsNull() },
-    });
-  }
-
-  // ===== Conditional Queries - Data Access =====
-
-  /** Find all active users (admin only) */
   async findAll(): Promise<User[]> {
     return await this.userRepository.find({
       where: { deletedAt: IsNull() },
@@ -75,28 +56,44 @@ export class UserRepository {
     });
   }
 
-  /** Find active user by email (can get no isActive user)*/
+  /**
+   * Find user by email (can get no isActive user)
+   * @param email User email
+   * @returns User entity or null
+   */
   async findByEmail(email: string): Promise<User | null> {
     return await this.userRepository.findOne({
       where: { email, deletedAt: IsNull() },
     });
   }
 
-  /** Find active user by sub (used in JWT validation) */
+  /**
+   * Find user by sub (used in JWT validation)
+   * @param sub User sub
+   * @returns User entity or null
+   */
   async findBySub(sub: number): Promise<User | null> {
     return await this.userRepository.findOne({
       where: { id: sub, deletedAt: IsNull() },
     });
   }
 
-  /** Find active user include no-active by name (ONLY not-deleted) */
+  /**
+   * Find user by name (ONLY not-deleted)
+   * @param name User name
+   * @returns User entity or null
+   */
   async findByName(name: string): Promise<User | null> {
     return await this.userRepository.findOne({
       where: { name, deletedAt: IsNull() },
     });
   }
 
-  /** Find active user include no-active by nickname (ONLY not-deleted & isActive) */
+  /**
+   * Find user by nickname (ONLY not-deleted & isActive)
+   * @param nickname User nickname
+   * @returns User entity or null
+   */
   async findByNickname(nickname: string): Promise<User | null> {
     return await this.userRepository.findOne({
       where: { nickname, deletedAt: IsNull(), isActive: true },
@@ -110,7 +107,11 @@ export class UserRepository {
     });
   }
 
-  /** Find No active user include other info by Nickname */
+  /**
+   * Find No active user include other info by nickname
+   * @param nickname User nickname
+   * @returns User entity or null
+   */
   async findIncludingNoActiveByNickname(
     nickname: string,
   ): Promise<User | null> {
@@ -119,21 +120,32 @@ export class UserRepository {
     });
   }
 
-  /** Find user by email (including deleted users) */
+  /**
+   * Find user by email (including deleted users)
+   * @param email User email
+   * @returns User entity or null
+   */
   async findIncludingDeletedByEmail(email: string): Promise<User | null> {
     return await this.userRepository.findOne({
       where: { email },
     });
   }
 
-  /** Find all deleted users */
+  /**
+   * Find all deleted users
+   * @returns Array of user entities
+   */
   async findDeleted(): Promise<User[]> {
     return await this.userRepository.find({
       where: { deletedAt: Not(IsNull()) },
     });
   }
 
-  /** Find deleted user by ID */
+  /**
+   * Find deleted user by ID
+   * @param id User ID
+   * @returns User entity or null
+   */
   async findDeletedById(id: number): Promise<User | null> {
     return await this.userRepository.findOne({
       where: { id, deletedAt: Not(IsNull()) },
@@ -141,7 +153,11 @@ export class UserRepository {
     });
   }
 
-  /** Find User with password include no-active user */
+  /**
+   * Find user by ID (including no-active)
+   * @param id User ID
+   * @returns User entity or null
+   */
   async findByIdWithPassword(id: number): Promise<User | null> {
     return await this.userRepository.findOne({
       where: { id, deletedAt: IsNull() },
@@ -149,7 +165,11 @@ export class UserRepository {
     });
   }
 
-  /** Find active user by email with password (for login and update pw, only id, email, password, nickname, role, isActive) */
+  /**
+   * Find user by email (for login and update pw: with password)
+   * @param email User email
+   * @returns User entity or null
+   */
   async findByEmailWithPassword(email: string): Promise<User | null> {
     return await this.userRepository.findOne({
       where: { email, deletedAt: IsNull() },
@@ -164,7 +184,11 @@ export class UserRepository {
     });
   }
 
-  /** Find User with Followers */
+  /**
+   * Find user with followers
+   * @param id User ID
+   * @returns User entity or null
+   */
   async findByIdWithFollowers(id: number): Promise<User | null> {
     const user = await this.userRepository
       .createQueryBuilder('user')
@@ -180,7 +204,11 @@ export class UserRepository {
     return user;
   }
 
-  /** Find user with Followings */
+  /**
+   * Find user with followings
+   * @param id User ID
+   * @returns User entity or null
+   */
   async findByIdWithFollowings(id: number): Promise<User | null> {
     return await this.userRepository
       .createQueryBuilder('user')
@@ -194,7 +222,11 @@ export class UserRepository {
       .getOne();
   }
 
-  /** Find user with Blocked  */
+  /**
+   * Find user with blocked users
+   * @param id User ID
+   * @returns User entity or null
+   */
   async findWithBlockedById(id: number): Promise<User | null> {
     return await this.userRepository
       .createQueryBuilder('user')
@@ -208,7 +240,11 @@ export class UserRepository {
       .getOne();
   }
 
-  /** Find user with all details for UserDetails DTO */
+  /**
+   * Find user by ID (UserDetails DTO)
+   * @param id User ID
+   * @returns User entity or null
+   */
   async findUserDetailsById(id: number): Promise<User | null> {
     return await this.userRepository
       .createQueryBuilder('user')
@@ -237,24 +273,7 @@ export class UserRepository {
       .getOne();
   }
 
-  // ===== Utility Methods =====
-
-  /** Check if user exists (active users only) */
-  async exists(id: number): Promise<boolean> {
-    const count = await this.userRepository.count({
-      where: { id, deletedAt: IsNull() },
-    });
-    return count > 0;
-  }
-
-  /** Count active users */
-  async count(): Promise<number> {
-    return await this.userRepository.count({
-      where: { deletedAt: IsNull() },
-    });
-  }
-
-  // ===== Special Operations - Update and Delete =====
+  // ===== Update and Delete =====
   /**
    * Update user information
    * @param id
@@ -301,5 +320,22 @@ export class UserRepository {
       .where('id = :id', { id })
       .execute();
     return (result.affected ?? 0) > 0;
+  }
+
+  // ===== Utility Methods =====
+
+  /** Check if user exists (active users only) */
+  async exists(id: number): Promise<boolean> {
+    const count = await this.userRepository.count({
+      where: { id, deletedAt: IsNull() },
+    });
+    return count > 0;
+  }
+
+  /** Count active users */
+  async count(): Promise<number> {
+    return await this.userRepository.count({
+      where: { deletedAt: IsNull() },
+    });
   }
 }
