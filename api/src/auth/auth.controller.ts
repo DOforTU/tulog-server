@@ -8,6 +8,7 @@ import {
   Patch,
   Body,
   Request,
+  UseFilters,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService, AuthResult } from './auth.service';
@@ -20,6 +21,7 @@ import {
   UpdatePasswordDto,
 } from 'src/user/user.dto';
 import { JwtAuthGuard } from './jwt/jwt-auth.guard';
+import { GoogleAuthExceptionFilter } from './filters/google-auth-exception.filter';
 
 /** Cookie type definition */
 interface AuthCookies {
@@ -120,6 +122,7 @@ export class AuthController {
   /** Handle Google OAuth callback */
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
+  @UseFilters(GoogleAuthExceptionFilter)
   googleAuthRedirect(@Req() req: AuthenticatedRequest, @Res() res: Response) {
     // Use AuthResult already validated by Google Strategy
     const { user } = req.user;
