@@ -284,9 +284,3 @@ export class UserRepository {
     });
   }
 }
-
-// TODO: Add user search functionality (search by name, email, nickname)
-// TODO: Add pagination support
-// TODO: Add user role-based query functionality
-// TODO: Add recent login time update functionality
-// TODO: Add user activity log functionality
