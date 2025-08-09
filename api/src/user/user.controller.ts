@@ -64,7 +64,7 @@ export class UserController {
   }
 
   /** Get user by id or nickname (query) */
-  @Get('search')
+  @Get('search/id-or-nickname')
   async getUserByIdOrNickname(
     @Query('id') id?: string,
     @Query('nickname') nickname?: string,
