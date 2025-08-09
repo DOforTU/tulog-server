@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { TeamMember, TeamMemberStatus } from './team-member.entity';
-import { Team } from 'src/team/team.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
@@ -9,7 +8,6 @@ export class TeamMemberRepository {
   constructor(
     @InjectRepository(TeamMember)
     private readonly teamMemberRepository: Repository<TeamMember>,
-    private readonly dataSource: DataSource,
   ) {}
 
   async findByMemberId(memberId: number): Promise<TeamMember[] | null> {
@@ -64,16 +62,5 @@ export class TeamMemberRepository {
       status: TeamMemberStatus.PENDING,
     });
     return await this.teamMemberRepository.save(teamMember);
-  }
-
-  async softDeleteTeam(teamId: number) {
-    // Team 엔티티 자체를 soft delete
-    // DataSource의 쿼리 빌더를 사용하여 직접 Team 테이블에 접근
-    await this.dataSource
-      .createQueryBuilder()
-      .update(Team)
-      .set({ deletedAt: () => 'CURRENT_TIMESTAMP' })
-      .where('id = :teamId', { teamId })
-      .execute();
   }
 }

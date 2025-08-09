@@ -6,6 +6,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import { TeamMember, TeamMemberStatus } from './team-member.entity';
 
 @Injectable()
@@ -13,6 +14,7 @@ export class TeamMemberService {
   constructor(
     private readonly teamMemberRepository: TeamMemberRepository,
     private readonly userService: UserService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -198,32 +200,55 @@ export class TeamMemberService {
     const teamMembers =
       await this.teamMemberRepository.findWithTeamsByTeamId(teamId);
 
-    // 팀이 존재하지 않거나 멤버가 없는 경우
+    // If no teams found, throw an exception
     if (!teamMembers || teamMembers.length === 0) {
       throw new NotFoundException('팀을 찾을 수 없습니다.');
     }
-    // 탈퇴하려는 멤버가 팀에 있는지 확인
+
+    // check if leaving member is part of the team members
     const leavingMember = teamMembers.find((m) => m.memberId === memberId);
     if (!leavingMember) {
       throw new NotFoundException('해당 멤버가 팀에 존재하지 않습니다.');
     }
 
-    // 팀원이 1명뿐인 경우: 팀 삭제
+    // If only one team member exists: delete team after leaving (transaction)
     if (teamMembers.length === 1) {
-      // TODO: transaction 처리 필요
-      await this.teamMemberRepository.leaveTeam(teamId, memberId);
-      await this.teamMemberRepository.softDeleteTeam(teamId);
-      return true;
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      try {
+        // 1. delete team member
+        await queryRunner.query(
+          'DELETE FROM "server_api"."team_member" WHERE "teamId" = $1 AND "memberId" = $2',
+          [teamId, memberId],
+        );
+
+        // 2. soft delete team
+        await queryRunner.query(
+          'UPDATE "server_api"."team" SET "deletedAt" = NOW() WHERE "id" = $1',
+          [teamId],
+        );
+
+        await queryRunner.commitTransaction();
+        return true;
+      } catch (error) {
+        await queryRunner.rollbackTransaction();
+        throw new Error(
+          `Failed to leave team and delete team: ${error.message}`,
+        );
+      } finally {
+        await queryRunner.release();
+      }
     }
 
-    // 팀원이 여러 명이고 리더가 탈퇴하려는 경우: 리더십 위임 필요
+    // If multiple team members exist and the leader is leaving: leadership transfer is required
     if (leavingMember.isLeader) {
       throw new ConflictException(
-        '팀장은 다른 멤버에게 리더십을 위임한 후 탈퇴할 수 있습니다.',
+        'You must transfer leadership to another member before leaving the team.',
       );
     }
 
-    // 일반 멤버 탈퇴
     await this.teamMemberRepository.leaveTeam(teamId, memberId);
     return true;
   }
