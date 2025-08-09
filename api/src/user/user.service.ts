@@ -102,7 +102,7 @@ export class UserService {
    * @returns Number of active users
    */
   async getUserCount(): Promise<number> {
-    return this.userRepository.count();
+    return this.userRepository.countUsers();
   }
 
   async getDeletedUserById(id: number): Promise<User> {
@@ -113,8 +113,8 @@ export class UserService {
     return user;
   }
 
-  async findIncludingNoActiveById(id: number): Promise<User> {
-    const user = await this.userRepository.findIncludingNoActiveById(id);
+  async findByIdIncludingInactive(id: number): Promise<User> {
+    const user = await this.userRepository.findByIdIncludingInactive(id);
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
@@ -128,14 +128,14 @@ export class UserService {
    */
   async activateUser(id: number): Promise<User> {
     // Check user existence
-    const existingUser = await this.findIncludingNoActiveById(id);
+    const existingUser = await this.findByIdIncludingInactive(id);
 
     // Business logic: Check if already active
     if (existingUser.isActive) {
       throw new Error(`User with ID ${id} is already active`);
     }
 
-    const updatedUser = await this.userRepository.update(id, {
+    const updatedUser = await this.userRepository.updateUser(id, {
       isActive: true,
     });
     if (!updatedUser) {
@@ -170,11 +170,11 @@ export class UserService {
    * @returns User entity or null
    */
   async findUserByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findByEmail(email);
+    return await this.userRepository.findByEmail(email);
   }
 
   async findUserDetailsById(id: number): Promise<User | null> {
-    return await this.userRepository.findUserDetailsById(id);
+    return await this.userRepository.findByIdWithDetails(id);
   }
 
   /**
@@ -183,7 +183,7 @@ export class UserService {
    * @returns User entity or null
    */
   async findUserWithPasswordByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findByEmailWithPassword(email);
+    return await this.userRepository.findByEmailWithPassword(email);
   }
 
   /**
@@ -192,7 +192,7 @@ export class UserService {
    * @returns User entity or null
    */
   async findUserByNickname(nickname: string): Promise<User | null> {
-    return this.userRepository.findByNickname(nickname);
+    return await this.userRepository.findByNickname(nickname);
   }
 
   /**
@@ -201,7 +201,7 @@ export class UserService {
    * @returns User entity or null
    */
   async findUserBySub(sub: number): Promise<User | null> {
-    return this.userRepository.findBySub(sub);
+    return await this.userRepository.findBySub(sub);
   }
 
   /**
@@ -210,7 +210,7 @@ export class UserService {
    * @returns User entity or null
    */
   async findUserIncludingDeletedByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findIncludingDeletedByEmail(email);
+    return await this.userRepository.findByEmailIncludingDeleted(email);
   }
 
   /**
@@ -219,7 +219,7 @@ export class UserService {
    * @returns User entity or null
    */
   async findUserIncludingNoActiveByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findIncludingNoActiveByEmail(email);
+    return await this.userRepository.findByEmailIncludingInactive(email);
   }
 
   /**
@@ -230,7 +230,7 @@ export class UserService {
   async findUserIncludingNoActiveByNickname(
     nickname: string,
   ): Promise<User | null> {
-    return await this.userRepository.findIncludingNoActiveByNickname(nickname);
+    return await this.userRepository.findByNicknameIncludingInactive(nickname);
   }
 
   /**
@@ -257,7 +257,7 @@ export class UserService {
    * @returns User entity or null
    */
   async findUserWithBlockedById(id: number): Promise<User | null> {
-    return this.userRepository.findWithBlockedById(id);
+    return await this.userRepository.findByIdWithBlocked(id);
   }
 
   /**
@@ -265,7 +265,7 @@ export class UserService {
    * @returns Array of deleted user entities
    */
   async findDeletedUsers(): Promise<User[]> {
-    return this.userRepository.findDeleted();
+    return await this.userRepository.findAllDeleted();
   }
 
   // ===== Special Operations - Update and Delete =====
@@ -275,7 +275,7 @@ export class UserService {
     // Check user existence
     await this.getUserById(id);
 
-    const deleted = await this.userRepository.delete(id);
+    const deleted = await this.userRepository.softDeleteById(id);
     if (!deleted) {
       throw new Error(`Failed to delete user with ID ${id}`);
     }
@@ -307,7 +307,7 @@ export class UserService {
         throw new ConflictException('nickname already exists');
       }
     }
-    const updatedUser = await this.userRepository.update(id, updateUserDto);
+    const updatedUser = await this.userRepository.updateUser(id, updateUserDto);
     if (!updatedUser) {
       throw new NotFoundException(`Failed to update user with ID ${id}`);
     }
@@ -326,7 +326,7 @@ export class UserService {
     await this.getUserById(id);
 
     // Business logic: Update user password
-    const updatedUser = await this.userRepository.updatePassword(
+    const updatedUser = await this.userRepository.updatePasswordById(
       id,
       hashedNewPassword,
     );
@@ -346,7 +346,7 @@ export class UserService {
     // Business logic: Check user existence (including deleted users)
     await this.getDeletedUserById(id);
 
-    const deleted = await this.userRepository.hardDelete(id);
+    const deleted = await this.userRepository.hardDeleteById(id);
     if (!deleted) {
       throw new Error(`Failed to permanently delete user with ID ${id}`);
     }
@@ -361,7 +361,7 @@ export class UserService {
     // Check deleted user existence
     await this.getDeletedUserById(id);
 
-    const restored = await this.userRepository.restore(id);
+    const restored = await this.userRepository.restoreById(id);
     if (!restored) {
       throw new Error(`Failed to restore user with ID ${id}`);
     }
