@@ -20,15 +20,39 @@ export class UserRepository {
   // ===== Basic CRUD - Data Access =====
 
   /**
+   * Common method
+   */
+
+  //private async findUser(id: number): Promise<User | null> {
+  //  return await this.userRepository.findOne({ where });
+  //}
+
+  /**
    * Find user by ID (ONLY not-deleted & active)
    * @param id
    * @returns
    */
   async findById(id: number): Promise<User | null> {
     return await this.userRepository.findOne({
-      where: { id, deletedAt: IsNull(), isActive: true },
+      where: {
+        id,
+        deletedAt: IsNull(),
+        isActive: true,
+      },
     });
   }
+
+  async findIncludingNoActiveById(id: number): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { id, deletedAt: IsNull() },
+    });
+  }
+
+  //async findIncludingNoActiveById(id: number): Promise<User | null> {
+  //  return await this.userRepository.findOne({
+  //    where: { id, deletedAt: IsNull() },
+  //  });
+  //}
 
   /**
    * Find user by ID (ONLY not-deleted)
@@ -39,37 +63,6 @@ export class UserRepository {
     return await this.userRepository.findOne({
       where: { id, deletedAt: IsNull() },
     });
-  }
-
-  /**
-   * Update user information
-   * @param id
-   * @param updateUserDto
-   * @returns
-   */
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<User | null> {
-    await this.userRepository.update(id, updateUserDto);
-    return await this.findById(id);
-  }
-
-  /** Update user Password */
-  async updatePassword(
-    id: number,
-    hashedNewPassword: string,
-  ): Promise<User | null> {
-    await this.userRepository.update(id, {
-      password: hashedNewPassword,
-    });
-    return await this.findIncludingNoActiveById(id);
-  }
-
-  /** Soft delete user */
-  async delete(id: number): Promise<boolean> {
-    const result = await this.userRepository.update(id, {
-      isActive: false,
-      deletedAt: new Date(),
-    });
-    return (result.affected ?? 0) > 0;
   }
 
   // ===== Conditional Queries - Data Access =====
@@ -96,21 +89,6 @@ export class UserRepository {
     });
   }
 
-  /** Find active user by email with password (for login and update pw, only id, email, password, nickname, role, isActive) */
-  async findWithPasswordByEmail(email: string): Promise<User | null> {
-    return await this.userRepository.findOne({
-      where: { email, deletedAt: IsNull() },
-      select: [
-        'id',
-        'email',
-        'nickname',
-        'password', // include password for login and update pw
-        'role',
-        'isActive',
-      ],
-    });
-  }
-
   /** Find active user include no-active by name (ONLY not-deleted) */
   async findByName(name: string): Promise<User | null> {
     return await this.userRepository.findOne({
@@ -125,18 +103,14 @@ export class UserRepository {
     });
   }
 
-  async findIncludingNoActiveById(id: number): Promise<User | null> {
-    return await this.userRepository.findOne({
-      where: { id, deletedAt: IsNull() },
-    });
-  }
-
+  /** Find No active user include other info by email */
   async findIncludingNoActiveByEmail(email: string): Promise<User | null> {
     return await this.userRepository.findOne({
       where: { email, deletedAt: IsNull() },
     });
   }
 
+  /** Find No active user include other info by Nickname */
   async findIncludingNoActiveByNickname(
     nickname: string,
   ): Promise<User | null> {
@@ -172,6 +146,21 @@ export class UserRepository {
     return await this.userRepository.findOne({
       where: { id, deletedAt: IsNull() },
       select: ['id', 'email', 'password'],
+    });
+  }
+
+  /** Find active user by email with password (for login and update pw, only id, email, password, nickname, role, isActive) */
+  async findByEmailWithPassword(email: string): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { email, deletedAt: IsNull() },
+      select: [
+        'id',
+        'email',
+        'nickname',
+        'password', // include password for login and update pw
+        'role',
+        'isActive',
+      ],
     });
   }
 
@@ -248,7 +237,54 @@ export class UserRepository {
       .getOne();
   }
 
-  // ===== Special Operations - Data Access =====
+  // ===== Utility Methods =====
+
+  /** Check if user exists (active users only) */
+  async exists(id: number): Promise<boolean> {
+    const count = await this.userRepository.count({
+      where: { id, deletedAt: IsNull() },
+    });
+    return count > 0;
+  }
+
+  /** Count active users */
+  async count(): Promise<number> {
+    return await this.userRepository.count({
+      where: { deletedAt: IsNull() },
+    });
+  }
+
+  // ===== Special Operations - Update and Delete =====
+  /**
+   * Update user information
+   * @param id
+   * @param updateUserDto
+   * @returns
+   */
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<User | null> {
+    await this.userRepository.update(id, updateUserDto);
+    return await this.findById(id);
+  }
+
+  /** Update user Password */
+  async updatePassword(
+    id: number,
+    hashedNewPassword: string,
+  ): Promise<User | null> {
+    await this.userRepository.update(id, {
+      password: hashedNewPassword,
+    });
+    return await this.findIncludingNoActiveById(id);
+  }
+
+  /** Soft delete user */
+  async delete(id: number): Promise<boolean> {
+    const result = await this.userRepository.update(id, {
+      isActive: false,
+      deletedAt: new Date(),
+    });
+    return (result.affected ?? 0) > 0;
+  }
 
   /** Permanently delete user */
   async hardDelete(id: number): Promise<boolean> {
@@ -265,22 +301,5 @@ export class UserRepository {
       .where('id = :id', { id })
       .execute();
     return (result.affected ?? 0) > 0;
-  }
-
-  // ===== Utility Methods =====
-
-  /** Check if user exists (active users only) */
-  async exists(id: number): Promise<boolean> {
-    const count = await this.userRepository.count({
-      where: { id, deletedAt: IsNull() },
-    });
-    return count > 0;
-  }
-
-  /** Count active users */
-  async count(): Promise<number> {
-    return await this.userRepository.count({
-      where: { deletedAt: IsNull() },
-    });
   }
 }

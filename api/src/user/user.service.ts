@@ -95,74 +95,6 @@ export class UserService {
     };
   }
 
-  // ===== Update User Information =====
-
-  /**
-   * Update user information
-   * @param id User ID
-   * @param updateUserDto Update user data
-   * @returns Updated user entity
-   */
-  async updateUser(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-    // Check user existence
-    const existingUser = await this.getUserById(id);
-
-    // Business logic: Username duplication check (with other users)
-    if (
-      updateUserDto.nickname &&
-      updateUserDto.nickname !== existingUser.nickname
-    ) {
-      const userWithUsername = await this.findUserByNickname(
-        updateUserDto.nickname,
-      );
-      if (userWithUsername) {
-        throw new ConflictException('nickname already exists');
-      }
-    }
-    const updatedUser = await this.userRepository.update(id, updateUserDto);
-    if (!updatedUser) {
-      throw new NotFoundException(`Failed to update user with ID ${id}`);
-    }
-
-    return updatedUser;
-  }
-
-  /**
-   * Update user password
-   * @param id User ID
-   * @param hashedNewPassword New hashed password
-   * @returns Updated user entity
-   */
-  async updatePassword(id: number, hashedNewPassword: string): Promise<User> {
-    // Check user existence
-    await this.getUserById(id);
-
-    // Business logic: Update user password
-    const updatedUser = await this.userRepository.updatePassword(
-      id,
-      hashedNewPassword,
-    );
-
-    if (!updatedUser) {
-      throw new Error(`Failed to update password for user with ID ${id}`);
-    }
-
-    return updatedUser;
-  }
-
-  /** Soft delete user */
-  async deleteUser(id: number): Promise<boolean> {
-    // Check user existence
-    await this.getUserById(id);
-
-    const deleted = await this.userRepository.delete(id);
-    if (!deleted) {
-      throw new Error(`Failed to delete user with ID ${id}`);
-    }
-
-    return deleted;
-  }
-
   // ===== Admin Logic =====
 
   /**
@@ -187,42 +119,6 @@ export class UserService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
     return user;
-  }
-
-  /**
-   * Permanently delete user
-   * @param id User ID
-   */
-  async hardDeleteUser(id: number): Promise<void> {
-    // Business logic: Check user existence (including deleted users)
-    await this.getDeletedUserById(id);
-
-    const deleted = await this.userRepository.hardDelete(id);
-    if (!deleted) {
-      throw new Error(`Failed to permanently delete user with ID ${id}`);
-    }
-  }
-
-  /**
-   * Restore deleted user
-   * @param id User ID
-   * @returns Restored user entity
-   */
-  async restoreUser(id: number): Promise<User> {
-    // Check deleted user existence
-    await this.getDeletedUserById(id);
-
-    const restored = await this.userRepository.restore(id);
-    if (!restored) {
-      throw new Error(`Failed to restore user with ID ${id}`);
-    }
-
-    const restoredUser = await this.userRepository.findById(id);
-    if (!restoredUser) {
-      throw new Error(`Failed to retrieve restored user with ID ${id}`);
-    }
-
-    return restoredUser;
   }
 
   /**
@@ -287,7 +183,7 @@ export class UserService {
    * @returns User entity or null
    */
   async findUserWithPasswordByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findWithPasswordByEmail(email);
+    return this.userRepository.findByEmailWithPassword(email);
   }
 
   /**
@@ -370,5 +266,111 @@ export class UserService {
    */
   async findDeletedUsers(): Promise<User[]> {
     return this.userRepository.findDeleted();
+  }
+
+  // ===== Special Operations - Update and Delete =====
+
+  /** Soft delete user */
+  async deleteUser(id: number): Promise<boolean> {
+    // Check user existence
+    await this.getUserById(id);
+
+    const deleted = await this.userRepository.delete(id);
+    if (!deleted) {
+      throw new Error(`Failed to delete user with ID ${id}`);
+    }
+
+    return deleted;
+  }
+
+  // ===== Update User Information =====
+
+  /**
+   * Update user information
+   * @param id User ID
+   * @param updateUserDto Update user data
+   * @returns Updated user entity
+   */
+  async updateUser(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+    // Check user existence
+    const existingUser = await this.getUserById(id);
+
+    // Business logic: Username duplication check (with other users)
+    if (
+      updateUserDto.nickname &&
+      updateUserDto.nickname !== existingUser.nickname
+    ) {
+      const userWithUsername = await this.findUserByNickname(
+        updateUserDto.nickname,
+      );
+      if (userWithUsername) {
+        throw new ConflictException('nickname already exists');
+      }
+    }
+    const updatedUser = await this.userRepository.update(id, updateUserDto);
+    if (!updatedUser) {
+      throw new NotFoundException(`Failed to update user with ID ${id}`);
+    }
+
+    return updatedUser;
+  }
+
+  /**
+   * Update user password
+   * @param id User ID
+   * @param hashedNewPassword New hashed password
+   * @returns Updated user entity
+   */
+  async updatePassword(id: number, hashedNewPassword: string): Promise<User> {
+    // Check user existence
+    await this.getUserById(id);
+
+    // Business logic: Update user password
+    const updatedUser = await this.userRepository.updatePassword(
+      id,
+      hashedNewPassword,
+    );
+
+    if (!updatedUser) {
+      throw new Error(`Failed to update password for user with ID ${id}`);
+    }
+
+    return updatedUser;
+  }
+
+  /**
+   * Permanently delete user
+   * @param id User ID
+   */
+  async hardDeleteUser(id: number): Promise<void> {
+    // Business logic: Check user existence (including deleted users)
+    await this.getDeletedUserById(id);
+
+    const deleted = await this.userRepository.hardDelete(id);
+    if (!deleted) {
+      throw new Error(`Failed to permanently delete user with ID ${id}`);
+    }
+  }
+
+  /**
+   * Restore deleted user
+   * @param id User ID
+   * @returns Restored user entity
+   */
+  async restoreUser(id: number): Promise<User> {
+    // Check deleted user existence
+    await this.getDeletedUserById(id);
+
+    const restored = await this.userRepository.restore(id);
+    if (!restored) {
+      throw new Error(`Failed to restore user with ID ${id}`);
+    }
+
+    const restoredUser = await this.userRepository.findById(id);
+    if (!restoredUser) {
+      throw new Error(`Failed to retrieve restored user with ID ${id}`);
+    }
+
+    return restoredUser;
   }
 }
