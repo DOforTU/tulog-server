@@ -20,6 +20,7 @@ import { TeamMember } from './team-member/team-member.entity';
 import { TeamModule } from './team/team.module';
 import { TeamMemberModule } from './team-member/team-member.module';
 import { FileModule } from './file/file.module';
+import { PendingUser } from './auth/pending-user.entity';
 
 @Module({
   imports: [
@@ -42,7 +43,15 @@ import { FileModule } from './file/file.module';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         schema: configService.get('DB_SCHEMA'),
-        entities: [User, Auth, Follow, Team, UserBlock, TeamMember],
+        entities: [
+          User,
+          Auth,
+          Follow,
+          Team,
+          UserBlock,
+          TeamMember,
+          PendingUser,
+        ],
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
       }),

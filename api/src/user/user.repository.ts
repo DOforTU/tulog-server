@@ -314,15 +314,6 @@ export class UserRepository {
     return await this.findByIdIncludingInactive(id);
   }
 
-  /** Soft delete user */
-  async softDeleteById(id: number): Promise<boolean> {
-    const result = await this.userRepository.update(id, {
-      isActive: false,
-      deletedAt: new Date(),
-    });
-    return (result.affected ?? 0) > 0;
-  }
-
   /** Permanently delete user */
   async hardDeleteById(id: number): Promise<boolean> {
     const result = await this.userRepository.delete(id);

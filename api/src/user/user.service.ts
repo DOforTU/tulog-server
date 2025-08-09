@@ -2,7 +2,9 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import { UserRepository } from './user.repository';
 import { User } from './user.entity';
 import { UpdateUserDto, UserDetails } from './user.dto';
@@ -16,7 +18,10 @@ import { UpdateUserDto, UserDetails } from './user.dto';
  */
 @Injectable()
 export class UserService {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
   // ===== User Retrieval =====
 
@@ -273,14 +278,46 @@ export class UserService {
   /** Soft delete user */
   async deleteUser(id: number): Promise<boolean> {
     // Check user existence
-    await this.getUserById(id);
+    const user = await this.getUserDetailsById(id);
 
-    const deleted = await this.userRepository.softDeleteById(id);
-    if (!deleted) {
-      throw new Error(`Failed to delete user with ID ${id}`);
+    if (user.teams.length > 0) {
+      throw new ForbiddenException(
+        `You have to leave all teams before deleting your account.`,
+      );
     }
 
-    return deleted;
+    // Use transaction to delete user and related follow relationships
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Delete all follow relationships where user is follower
+      await queryRunner.query(
+        'DELETE FROM "server_api"."follow" WHERE "followerId" = $1',
+        [id],
+      );
+
+      // Delete all follow relationships where user is being followed
+      await queryRunner.query(
+        'DELETE FROM "server_api"."follow" WHERE "followingId" = $1',
+        [id],
+      );
+
+      // Soft delete the user
+      await queryRunner.query(
+        'UPDATE "server_api"."user" SET "deletedAt" = NOW() WHERE "id" = $1',
+        [id],
+      );
+
+      await queryRunner.commitTransaction();
+      return true;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw new Error(`Failed to delete user with ID ${id}: ${error.message}`);
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   // ===== Update User Information =====

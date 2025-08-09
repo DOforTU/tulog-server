@@ -10,12 +10,14 @@ import { UserModule } from '../user/user.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Auth } from './auth.entity';
 import { AuthRepository } from './auth.repository';
+import { PendingUser } from './pending-user.entity';
+import { PendingUserRepository } from './pending-user.repository';
 
 @Module({
   imports: [
     UserModule,
     PassportModule,
-    TypeOrmModule.forFeature([Auth]),
+    TypeOrmModule.forFeature([Auth, PendingUser]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -26,7 +28,13 @@ import { AuthRepository } from './auth.repository';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepository, GoogleStrategy, JwtAuthStrategy],
-  exports: [AuthService, AuthRepository],
+  providers: [
+    AuthService,
+    AuthRepository,
+    PendingUserRepository,
+    GoogleStrategy,
+    JwtAuthStrategy,
+  ],
+  exports: [AuthService, AuthRepository, PendingUserRepository],
 })
 export class AuthModule {}

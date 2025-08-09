@@ -78,8 +78,21 @@ export class AuthController {
   @Post('signup')
   async signup(
     @Body() signupDto: CreateLocalUserDto,
-  ): Promise<{ email: string }> {
-    return await this.authService.signup(signupDto);
+  ): Promise<{ email: string; message: string }> {
+    const result = await this.authService.signup(signupDto);
+    return {
+      ...result,
+      message: 'Verification code sent to your email. Please check your inbox.',
+    };
+  }
+
+  /** Complete signup after email verification */
+  @Post('complete-signup')
+  async completeSignup(
+    @Body('email') email: string,
+    @Body('code') code: string,
+  ): Promise<{ email: string; message: string }> {
+    return await this.authService.completeSignup(email, code);
   }
 
   @Post('login')
