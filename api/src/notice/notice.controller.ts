@@ -51,24 +51,17 @@ export class NoticeController {
     @Request() req: any,
     @Query() queryDto: QueryNoticeDto,
   ): Promise<{
-    status: number;
-    message: string;
-    data: {
-      notices: Notice[];
-      total: number;
-      page: number;
-      limit: number;
-      hasNext: boolean;
-    };
+    notices: Notice[];
+    total: number;
+    page: number;
+    limit: number;
+    hasNext: boolean;
   }> {
-    const userId = req.user.userId;
+    const userId: number = req.user.id;
+
     const result = await this.noticeService.getUserNotices(userId, queryDto);
 
-    return {
-      status: HttpStatus.OK,
-      message: 'Notices retrieved successfully',
-      data: result,
-    };
+    return result;
   }
 
   /**
@@ -76,19 +69,11 @@ export class NoticeController {
    * GET /notices/unread-count
    */
   @Get('unread-count')
-  async getUnreadCount(@Request() req: any): Promise<{
-    status: number;
-    message: string;
-    data: { count: number };
-  }> {
-    const userId = req.user.userId;
+  async getUnreadCount(@Request() req: any): Promise<{ count: number }> {
+    const userId: number = req.user.id;
     const result = await this.noticeService.getUnreadCount(userId);
 
-    return {
-      status: HttpStatus.OK,
-      message: 'Unread count retrieved successfully',
-      data: result,
-    };
+    return result;
   }
 
   /**
@@ -99,19 +84,11 @@ export class NoticeController {
   async markAsRead(
     @Request() req: any,
     @Param('id', ParseIntPipe) noticeId: number,
-  ): Promise<{
-    status: number;
-    message: string;
-    data: Notice;
-  }> {
-    const userId = req.user.userId;
+  ): Promise<Notice> {
+    const userId: number = req.user.id;
     const notice = await this.noticeService.markAsRead(userId, noticeId);
 
-    return {
-      status: HttpStatus.OK,
-      message: 'Notice marked as read',
-      data: notice,
-    };
+    return notice;
   }
 
   /**
@@ -119,19 +96,11 @@ export class NoticeController {
    * PATCH /notices/read-all
    */
   @Patch('read-all')
-  async markAllAsRead(@Request() req: any): Promise<{
-    status: number;
-    message: string;
-    data: { updatedCount: number };
-  }> {
-    const userId = req.user.userId;
+  async markAllAsRead(@Request() req: any): Promise<{ updatedCount: number }> {
+    const userId: number = req.user.id;
     const result = await this.noticeService.markAllAsRead(userId);
 
-    return {
-      status: HttpStatus.OK,
-      message: 'All notices marked as read',
-      data: result,
-    };
+    return result;
   }
 
   /**
@@ -142,16 +111,8 @@ export class NoticeController {
   async deleteNotice(
     @Request() req: any,
     @Param('id', ParseIntPipe) noticeId: number,
-  ): Promise<{
-    status: number;
-    message: string;
-  }> {
-    const userId = req.user.userId;
+  ): Promise<void> {
+    const userId: number = req.user.id;
     await this.noticeService.deleteNotice(userId, noticeId);
-
-    return {
-      status: HttpStatus.OK,
-      message: 'Notice deleted successfully',
-    };
   }
 }
