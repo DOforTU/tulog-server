@@ -78,6 +78,7 @@ export class UserService {
         nickname: followerRel.follower.nickname,
         profilePicture: followerRel.follower.profilePicture,
         isActive: followerRel.follower.isActive,
+        role: followerRel.follower.role,
       })) || [];
 
     // Transform following data
@@ -87,6 +88,53 @@ export class UserService {
         nickname: followingRel.following.nickname,
         profilePicture: followingRel.following.profilePicture,
         isActive: followingRel.following.isActive,
+        role: followingRel.following.role,
+      })) || [];
+
+    return {
+      id: user.id,
+      nickname: user.nickname,
+      profilePicture: user.profilePicture,
+      isActive: user.isActive,
+      teams,
+      followers,
+      following,
+    };
+  }
+
+  /** Get user details including teams, followers, and following */
+  async getUserDetailsByNickname(nickname: string): Promise<UserDetails> {
+    const user = await this.findUserDetailsByNickname(nickname);
+    if (!user) {
+      throw new NotFoundException(`User with nickname ${nickname} not found`);
+    }
+
+    // Transform teams data
+    const teams =
+      user.teamMembers?.map((teamMember) => ({
+        team: teamMember.team,
+        status: teamMember.status,
+        isLeader: teamMember.isLeader,
+      })) || [];
+
+    // Transform followers data
+    const followers =
+      user.followers?.map((followerRel) => ({
+        id: followerRel.follower.id,
+        nickname: followerRel.follower.nickname,
+        profilePicture: followerRel.follower.profilePicture,
+        isActive: followerRel.follower.isActive,
+        role: followerRel.follower.role,
+      })) || [];
+
+    // Transform following data
+    const following =
+      user.followings?.map((followingRel) => ({
+        id: followingRel.following.id,
+        nickname: followingRel.following.nickname,
+        profilePicture: followingRel.following.profilePicture,
+        isActive: followingRel.following.isActive,
+        role: followingRel.following.role,
       })) || [];
 
     return {
@@ -180,6 +228,10 @@ export class UserService {
 
   async findUserDetailsById(id: number): Promise<User | null> {
     return await this.userRepository.findByIdWithDetails(id);
+  }
+
+  async findUserDetailsByNickname(nickname: string): Promise<User | null> {
+    return await this.userRepository.findByNicknameWithDetails(nickname);
   }
 
   /**

@@ -63,6 +63,13 @@ export class UserController {
     return await this.userService.getUserDetailsById(id);
   }
 
+  @Get('nickname/:nickname/details')
+  async getUserDetailsByNickname(
+    @Param('nickname') nickname: string,
+  ): Promise<UserDetails> {
+    return await this.userService.getUserDetailsByNickname(nickname);
+  }
+
   /** Get user by id or nickname (query) */
   @Get('search/id-or-nickname')
   async getUserByIdOrNickname(

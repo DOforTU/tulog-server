@@ -288,6 +288,34 @@ export class UserRepository {
       .getOne();
   }
 
+  async findByNicknameWithDetails(nickname: string): Promise<User | null> {
+    return await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.teamMembers', 'teamMember')
+      .leftJoinAndSelect('teamMember.team', 'team')
+      .leftJoinAndSelect('user.followers', 'followerRel')
+      .leftJoinAndSelect('followerRel.follower', 'followerUser')
+      .leftJoinAndSelect('user.followings', 'followingRel')
+      .leftJoinAndSelect('followingRel.following', 'followingUser')
+      .where('user.nickname = :nickname', { nickname })
+      .andWhere('user.deletedAt IS NULL AND user.isActive = true')
+      //  andWhere conditions to ensure no deleted or inactive teams, followers, and followings
+      .andWhere('(team.deletedAt IS NULL OR team.id IS NULL)')
+      .andWhere(
+        '(teamMember.status = :joinedStatus OR teamMember.status IS NULL)',
+        {
+          joinedStatus: 'JOINED',
+        },
+      )
+      .andWhere(
+        '(followerUser.deletedAt IS NULL AND followerUser.isActive = true OR followerUser.id IS NULL)',
+      )
+      .andWhere(
+        '(followingUser.deletedAt IS NULL AND followingUser.isActive = true OR followingUser.id IS NULL)',
+      )
+      .getOne();
+  }
+
   // ===== Update and Delete =====
   /**
    * Update user information
