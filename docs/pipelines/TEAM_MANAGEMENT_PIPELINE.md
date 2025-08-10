@@ -101,20 +101,180 @@ async createTeam(userId: number, createTeamDto: CreateTeamDto): Promise<Team> {
 
 ## 👥 팀 구성원 관리 파이프라인
 
-### 구성원 초대 프로세스
+### 팀 초대 시스템 (Team Invitation)
 
 ```mermaid
 graph TD
-    A[구성원 초대 요청] --> B[리더 권한 확인]
+    A[팀 리더가 사용자 초대] --> B[리더 권한 확인]
     B --> C{리더인가?}
     C -->|NO| D[403 Error: Forbidden]
     C -->|YES| E[대상 사용자 확인]
-    E --> F[중복 멤버십 확인]
-    F --> G{이미 멤버인가?}
-    G -->|YES| H[409 Error: Already Member]
-    G -->|NO| I[구성원 추가]
-    I --> J[초대 완료]
+    E --> F[기존 멤버십 확인]
+    F --> G{이미 멤버/초대됨?}
+    G -->|YES| H[409 Error: Already Member/Invited]
+    G -->|NO| I[트랜잭션 시작]
+    I --> J[INVITED 상태로 팀멤버 생성]
+    J --> K[대상 사용자에게 알림 전송]
+    K --> L[트랜잭션 커밋]
+    L --> M[초대 완료]
 ```
+
+#### 초대 상세 구현
+
+```typescript
+async inviteToTeam(leaderId: number, teamId: number, memberId: number): Promise<TeamMember> {
+    return await this.dataSource.transaction(async (manager) => {
+        // 1. 리더 권한 확인
+        const isLeader = await this.isTeamLeader(teamId, leaderId);
+        if (!isLeader) {
+            throw new ConflictException('Only team leaders can invite members.');
+        }
+
+        // 2. 초대 대상 사용자 확인
+        const invitedUser = await this.userService.getUserById(memberId);
+
+        // 3. 기존 멤버십 확인
+        const existingMember = await this.teamMemberRepository.findOneByPrimaryKey(teamId, memberId);
+        if (existingMember) {
+            throw new ConflictException('User is already a team member or invited.');
+        }
+
+        // 4. INVITED 상태로 팀멤버 생성
+        const invitation = await this.teamMemberRepository.inviteTeam(teamId, memberId);
+
+        // 5. 초대 알림 전송
+        const team = await this.teamRepository.findById(teamId);
+        await this.noticeService.createTeamInviteNotice(
+            memberId,
+            teamId,
+            team.name,
+            'System'
+        );
+
+        return invitation;
+    });
+}
+```
+
+### 팀 참여 요청 시스템 (Team Join Request)
+
+```mermaid
+graph TD
+    A[사용자가 팀 참여 요청] --> B[사용자 인증 확인]
+    B --> C[팀 존재 확인]
+    C --> D[기존 멤버십 확인]
+    D --> E{이미 멤버/요청됨?}
+    E -->|YES| F[409 Error: Already Member/Requested]
+    E -->|NO| G[트랜잭션 시작]
+    G --> H[PENDING 상태로 팀멤버 생성]
+    H --> I[팀 리더에게 알림 전송]
+    I --> J[트랜잭션 커밋]
+    J --> K[참여 요청 완료]
+```
+
+#### 참여 요청 상세 구현
+
+```typescript
+async requestToTeam(memberId: number, teamId: number): Promise<TeamMember> {
+    return await this.dataSource.transaction(async (manager) => {
+        // 1. 팀 존재 확인
+        const team = await this.teamRepository.findById(teamId);
+        if (!team) {
+            throw new NotFoundException('Team not found.');
+        }
+
+        // 2. 기존 멤버십 확인
+        const existingMember = await this.teamMemberRepository.findOneByPrimaryKey(teamId, memberId);
+        if (existingMember) {
+            throw new ConflictException('Already a member or request pending.');
+        }
+
+        // 3. PENDING 상태로 팀멤버 생성
+        const newTeamMember = await this.teamMemberRepository.requestToTeam(teamId, memberId);
+
+        // 4. 팀 리더에게 알림 전송
+        const teamMembers = await this.teamMemberRepository.getTeamMembersByTeamId(teamId);
+        const leader = teamMembers.find((tm: TeamMember) => tm.isLeader);
+
+        if (leader) {
+            const requesterUser = await this.userService.getUserById(memberId);
+            await this.noticeService.createTeamJoinNotice(
+                Number((leader as any).memberId),
+                teamId,
+                team.name,
+                requesterUser.nickname,
+            );
+        }
+
+        return newTeamMember;
+    });
+}
+```
+
+### 알림 기반 팀 관리 액션
+
+#### 팀 초대 수락/거절
+
+```mermaid
+graph TD
+    A[초대 알림에서 액션] --> B{수락/거절?}
+    B -->|수락| C[초대 수락 프로세스]
+    B -->|거절| D[초대 거절 프로세스]
+
+    C --> E[INVITED → JOINED 상태 변경]
+    E --> F[팀 리더에게 가입 알림]
+    F --> G[수락 완료]
+
+    D --> H[INVITED 상태 팀멤버 삭제]
+    H --> I[거절 완료]
+```
+
+#### 팀 참여 요청 수락/거절 (리더만)
+
+```mermaid
+graph TD
+    A[참여 요청 알림에서 액션] --> B[리더 권한 확인]
+    B --> C{리더인가?}
+    C -->|NO| D[403 Error: Only Leader]
+    C -->|YES| E{수락/거절?}
+    E -->|수락| F[참여 요청 수락]
+    E -->|거절| G[참여 요청 거절]
+
+    F --> H[PENDING → JOINED 상태 변경]
+    H --> I[요청자에게 수락 알림]
+    I --> J[수락 완료]
+
+    G --> K[PENDING 상태 팀멤버 삭제]
+    K --> L[거절 완료]
+```
+
+### 팀멤버 상태 관리
+
+#### 상태 다이어그램
+
+```mermaid
+stateDiagram-v2
+    [*] --> INVITED : 팀 리더가 초대
+    [*] --> PENDING : 사용자가 참여 요청
+
+    INVITED --> JOINED : 초대 수락
+    INVITED --> [*] : 초대 거절
+
+    PENDING --> JOINED : 리더가 수락
+    PENDING --> [*] : 리더가 거절
+
+    JOINED --> [*] : 팀 탈퇴/추방
+```
+
+#### 상태별 설명
+
+| 상태      | 설명                      | 다음 가능한 액션                     |
+| --------- | ------------------------- | ------------------------------------ |
+| `INVITED` | 리더가 초대한 상태        | 수락(→JOINED), 거절(→삭제)           |
+| `PENDING` | 사용자가 참여 요청한 상태 | 리더 수락(→JOINED), 리더 거절(→삭제) |
+| `JOINED`  | 정식 팀원 상태            | 탈퇴, 추방                           |
+
+### 구성원 탈퇴 프로세스
 
 ### 구성원 탈퇴 프로세스
 
