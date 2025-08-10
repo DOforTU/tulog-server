@@ -41,6 +41,19 @@ export class TeamMemberRepository {
     });
   }
 
+  /**
+   * 팀 아이디로 팀 맴버를 가져온다 --> 팀 맴버로 역 조회를 하기 위함
+   *
+   */
+  async getTeamMembersByTeamId(teamId: number): Promise<TeamMember[]> {
+    return this.teamMemberRepository
+      .createQueryBuilder('teamMember')
+      .leftJoinAndSelect('teamMember.team', 'team')
+      .leftJoinAndSelect('teamMember.user', 'user')
+      .where('teamMember.teamId = :teamId', { teamId })
+      .getMany();
+  }
+
   async leaveTeam(teamId: number, memberId: number): Promise<boolean> {
     await this.teamMemberRepository.delete({ teamId, memberId });
     return true;
@@ -55,7 +68,7 @@ export class TeamMemberRepository {
     return await this.teamMemberRepository.save(teamMember);
   }
 
-  async joinTeam(teamId: number, memberId: number): Promise<TeamMember> {
+  async requestToTeam(teamId: number, memberId: number): Promise<TeamMember> {
     const teamMember = this.teamMemberRepository.create({
       teamId,
       memberId,

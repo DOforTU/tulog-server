@@ -201,14 +201,14 @@ export class TeamMemberService {
     }
 
     // 팀 인원이 max일 경우 요청 불가
-    const memberCount = teamMembers.length();
+    const memberCount = teamMembers.length;
     // 팀에 속한 팀 맴버중 한명이 속한 팀에서 최대 인원수를 구함
     const maxMember = teamMembers[0].team.maxMember;
     if (memberCount == maxMember) {
       throw new ConflictException('This team is already full.');
     }
 
-    return await this.teamMemberRepository.joinTeam(teamId, memberId);
+    return await this.teamMemberRepository.requestToTeam(teamId, memberId);
   }
 
   /**
