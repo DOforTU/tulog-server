@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { TeamMember, TeamMemberStatus } from './team-member.entity';
+import { TeamVisibility } from 'src/team/team.entity';
 
 @Injectable()
 export class TeamMemberService {
@@ -152,7 +153,9 @@ export class TeamMemberService {
     teamId: number,
     memberId: number,
   ): Promise<TeamMember> {
-    const leader = await this.getTeamMemberByPrimaryKey(leaderId, teamId);
+    await this.userService.getUserById(memberId); //get은 없으면 무조건 예외처리 find는 널이라도 반환
+
+    const leader = await this.getTeamMemberByPrimaryKey(teamId, leaderId);
     if (!leader.isLeader) {
       throw new ConflictException('Only team leaders can invite members.');
     }
@@ -164,37 +167,47 @@ export class TeamMemberService {
       throw new ConflictException('Already on the team.');
     }
 
-    const existingUser = await this.userService.findUserById(memberId);
-    if (!existingUser) {
-      throw new NotFoundException('Can not found a user.');
-    }
-
     const checkTeamLimit = await this.countTeamsByMemberId(memberId);
     if (checkTeamLimit > 3) {
-      throw new ConflictException('This have already on three teams.');
+      throw new ConflictException('This member has already on three teams.');
     }
-
-    // Check if the user exists
-    await this.getTeamMemberByPrimaryKey(memberId, teamId);
 
     // Proceed to invite the user from the team
     return await this.teamMemberRepository.inviteTeam(teamId, memberId);
   }
 
   /**
-   * Join a team
+   * Request a team
    * @param memberId Member ID: the ID of the user who wants to join the team
    * @param teamId Team ID: the ID of the team to join
    * @returns The created TeamMember entity
    * 요청하는 팀이(아이디) 존재하는지
    * 그 팀이 이미 인원이 다 찼는지
    * 내가 그 팀에 이미 존재하는지
+   * 팀 싱태가 초대만 가능한 경우 예외처리
    */
   async requestToTeam(teamId: number, memberId: number): Promise<TeamMember> {
+    // 팀 아이디로 팀맴버를 배열로 가져옴 --> 그 팀이 존재하는지 알 수 있음
+    const teamMembers =
+      await this.teamMemberRepository.getTeamMembersByTeamId(teamId);
+
+    const checkTeamVisibility = teamMembers[0].team.visibility;
+    if (checkTeamVisibility == TeamVisibility.ONLY_INVITE) {
+      throw new ConflictException('You can not invite that team.');
+    }
     const teamMember = await this.findTeamMemberByPrimaryKey(teamId, memberId);
     if (teamMember) {
       throw new ConflictException('You are already a member of this team.');
     }
+
+    // 팀 인원이 max일 경우 요청 불가
+    const memberCount = teamMembers.length();
+    // 팀에 속한 팀 맴버중 한명이 속한 팀에서 최대 인원수를 구함
+    const maxMember = teamMembers[0].team.maxMember;
+    if (memberCount == maxMember) {
+      throw new ConflictException('This team is already full.');
+    }
+
     return await this.teamMemberRepository.joinTeam(teamId, memberId);
   }
 
