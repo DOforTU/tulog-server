@@ -21,6 +21,8 @@ import { TeamModule } from './team/team.module';
 import { TeamMemberModule } from './team-member/team-member.module';
 import { FileModule } from './file/file.module';
 import { PendingUser } from './auth/pending-user.entity';
+import { NoticeModule } from './notice/notice.module';
+import { Notice } from './notice/notice.entity';
 
 @Module({
   imports: [
@@ -51,6 +53,7 @@ import { PendingUser } from './auth/pending-user.entity';
           UserBlock,
           TeamMember,
           PendingUser,
+          Notice,
         ],
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
@@ -64,6 +67,7 @@ import { PendingUser } from './auth/pending-user.entity';
     TeamModule,
     UserBlcokModule,
     TeamMemberModule,
+    NoticeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

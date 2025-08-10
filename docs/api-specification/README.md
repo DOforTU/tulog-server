@@ -23,6 +23,10 @@
 
 -   **[FILE.md](./FILE.md)** - 파일 업로드 API (프로필 이미지, 팀 이미지 업로드)
 
+### 🔔 알림 관리
+
+-   **[NOTICE.md](./NOTICE.md)** - 알림 API (알림 조회/읽음 처리/삭제)
+
 ---
 
 ## 🔗 기본 API 정보
@@ -129,12 +133,22 @@ http://localhost:8000/api
 
 -   `POST /api/files/upload` - 파일 업로드
 
+### 알림 (NOTICE)
+
+-   `POST /api/notices` - 알림 생성 (Admin/System Only)
+-   `GET /api/notices` - 알림 목록 조회 (페이징, 필터링)
+-   `GET /api/notices/unread-count` - 읽지 않은 알림 개수
+-   `PATCH /api/notices/:id/read` - 알림 읽음 처리
+-   `PATCH /api/notices/read-all` - 모든 알림 읽음 처리
+-   `DELETE /api/notices/:id` - 알림 삭제
+
 ---
 
 ## 📝 개발 노트
 
 ### 최근 업데이트 (2025-08-10)
 
+-   NOTICE.md 신규 추가 - 알림 시스템 API
 -   모든 controller 파일을 기반으로 API 명세서 업데이트
 -   새로운 엔드포인트 추가 및 기존 명세서 정확성 개선
 -   FILE.md 신규 추가
