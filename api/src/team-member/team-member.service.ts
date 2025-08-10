@@ -142,8 +142,12 @@ export class TeamMemberService {
    * @param teamId Team ID: the ID of the team to invite the member to
    * @param memberId Member ID: the ID of the member to invite
    * @returns The created TeamMember entity
+   * 예외 처리 : 초대 대상이 이미 그 팀에 존재하는지
+   * 초대 대상이 존재한지
+   * 초대 대상이 이미 팀 3개에 존재하는지
+   *
    */
-  async inviteTeam(
+  async inviteToTeam(
     leaderId: number,
     teamId: number,
     memberId: number,
@@ -151,6 +155,23 @@ export class TeamMemberService {
     const leader = await this.getTeamMemberByPrimaryKey(leaderId, teamId);
     if (!leader.isLeader) {
       throw new ConflictException('Only team leaders can invite members.');
+    }
+    const ifAlreadyExist = await this.teamMemberRepository.findOneByPrimaryKey(
+      teamId,
+      memberId,
+    );
+    if (ifAlreadyExist) {
+      throw new ConflictException('Already on the team.');
+    }
+
+    const existingUser = await this.userService.findUserById(memberId);
+    if (!existingUser) {
+      throw new NotFoundException('Can not found a user.');
+    }
+
+    const checkTeamLimit = await this.countTeamsByMemberId(memberId);
+    if (checkTeamLimit > 3) {
+      throw new ConflictException('This have already on three teams.');
     }
 
     // Check if the user exists
@@ -165,8 +186,11 @@ export class TeamMemberService {
    * @param memberId Member ID: the ID of the user who wants to join the team
    * @param teamId Team ID: the ID of the team to join
    * @returns The created TeamMember entity
+   * 요청하는 팀이(아이디) 존재하는지
+   * 그 팀이 이미 인원이 다 찼는지
+   * 내가 그 팀에 이미 존재하는지
    */
-  async joinTeam(teamId: number, memberId: number): Promise<TeamMember> {
+  async requestToTeam(teamId: number, memberId: number): Promise<TeamMember> {
     const teamMember = await this.findTeamMemberByPrimaryKey(teamId, memberId);
     if (teamMember) {
       throw new ConflictException('You are already a member of this team.');

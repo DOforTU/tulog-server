@@ -25,12 +25,12 @@ export class TeamMemberController {
    */
   @Post(':memberId/invite')
   @UseGuards(SmartAuthGuard)
-  async inviteTeam(
+  async inviteToTeam(
     @Request() req: { user: User },
     @Param('teamId') teamId: number,
     @Param('memberId') memberId: number,
   ): Promise<TeamMember> {
-    return await this.teamMemberService.inviteTeam(
+    return await this.teamMemberService.inviteToTeam(
       req.user.id, // Leader ID
       teamId,
       memberId,
@@ -60,11 +60,11 @@ export class TeamMemberController {
    */
   @Post(':id/join')
   @UseGuards(SmartAuthGuard)
-  async joinTeam(
+  async requestToTeam(
     @Request() req: { user: User },
     @Param('id') id: number,
   ): Promise<TeamMember> {
-    return await this.teamMemberService.joinTeam(req.user.id, id);
+    return await this.teamMemberService.requestToTeam(req.user.id, id);
   }
 
   /**
