@@ -144,10 +144,78 @@
 ### Get User by ID or Nickname (Query)
 
 > user/user.controller.ts  
-> **`GET /api/users?id={id}`** 또는 **`GET /api/users?nickname={nickname}`**
+> **`GET /api/users/search/id-or-nickname?id={id}`** 또는 **`GET /api/users/search/id-or-nickname?nickname={nickname}`**
 
 -   ID 또는 닉네임을 query parameter로 받아 사용자 정보를 조회한다.
 -   응답은 위 ID 또는 닉네임 조회와 동일하다.
+
+---
+
+### Get User Details by ID
+
+> user/user.controller.ts  
+> **`GET /api/users/:id/details`**
+
+-   주어진 사용자 ID에 해당하는 상세 정보를 반환한다. (팀, 팔로워, 팔로잉 정보 포함)
+
+-   **Success Response**:
+
+```json
+{
+    "success": true,
+    "data": {
+        "user": {
+            "id": 4,
+            "nickname": "dotu.standard",
+            "profilePicture": "https://example.com/image.jpg",
+            "isActive": true
+        },
+        "teams": [
+            {
+                "id": 1,
+                "name": "Team A",
+                "description": "Team description",
+                "image": "https://example.com/team-image.jpg"
+            }
+        ],
+        "followers": [
+            {
+                "id": 2,
+                "nickname": "follower1",
+                "profilePicture": "https://example.com/avatar.jpg",
+                "isActive": true
+            }
+        ],
+        "following": [
+            {
+                "id": 3,
+                "nickname": "following1",
+                "profilePicture": "https://example.com/avatar.jpg",
+                "isActive": true
+            }
+        ]
+    },
+    "timestamp": "2025-08-03T05:36:42.105Z",
+    "path": "/api/users/4/details"
+}
+```
+
+-   **Failure Response**:
+
+```json
+{
+    "success": false,
+    "statusCode": 404,
+    "message": ["User with ID 5000 not found"],
+    "error": "NOT_FOUND",
+    "timestamp": "2025-08-03T05:37:06.718Z",
+    "path": "/api/users/5000/details"
+}
+```
+
+-   **예외 체크리스트 (✅ 또는 ❌):**
+    -   존재하지 않는 ID로 조회한 경우 → 404 Not Found ✅
+    -   비활성화 또는 삭제된 사용자인 경우 → 404 Not Found ✅
 
 ---
 
@@ -307,10 +375,53 @@
 
 ---
 
+### Get All Users (Admin)
+
+> user/user.admin.controller.ts  
+> **`GET /api/admin/users/all`**
+
+-   관리자 권한이 필요하다.
+-   모든 활성 사용자 목록을 조회한다.
+
+---
+
+### Get Deleted Users List (Admin)
+
+> user/user.admin.controller.ts  
+> **`GET /api/admin/users/deleted`**
+
+-   관리자 권한이 필요하다.
+-   삭제된 사용자 목록을 조회한다.
+
+---
+
+### Get Active User Count (Admin)
+
+> user/user.admin.controller.ts  
+> **`GET /api/admin/users/stats/count`**
+
+-   관리자 권한이 필요하다.
+-   현재 활성화된 사용자 수를 반환한다.
+
+-   **Success Response**:
+
+```json
+{
+    "success": true,
+    "data": {
+        "count": 42
+    },
+    "timestamp": "2025-08-03T06:36:28.339Z",
+    "path": "/api/admin/users/stats/count"
+}
+```
+
+---
+
 ### Permanently Delete User (Admin)
 
-> user/user.controller.ts  
-> **`DELETE /api/users/:id/hard`**
+> user/user.admin.controller.ts  
+> **`DELETE /api/admin/users/:id/hard`**
 
 -   관리자 권한이 필요하다.
 -   지정된 ID의 사용자를 영구 삭제한다.
@@ -319,28 +430,8 @@
 
 ### Restore Deleted User (Admin)
 
-> user/user.controller.ts  
-> **`PATCH /api/users/:id/restore`**
+> user/user.admin.controller.ts  
+> **`PATCH /api/admin/users/:id/restore`**
 
 -   관리자 권한이 필요하다.
 -   소프트 삭제된 사용자를 복구한다.
-
----
-
-## User Statistics
-
-### Get Deleted Users List (Admin)
-
-> user/user.controller.ts  
-> **`GET /api/users/deleted`**
-
--   삭제된 사용자 목록을 조회한다.
-
----
-
-### Get Active User Count (Admin)
-
-> user/user.controller.ts  
-> **`GET /api/users/count`**
-
--   현재 활성화된 사용자 수를 반환한다.

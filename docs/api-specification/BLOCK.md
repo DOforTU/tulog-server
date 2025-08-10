@@ -56,7 +56,7 @@
 ### Get My Blocked Users
 
 > block/user-block.controller.ts  
-> **`GET /api/users/me/blocks`**
+> **`GET /api/users/users/me/blocks`**
 
 -   JWT 인증 & 활성화 인증이 필요하다.
 -   로그인한 사용자가 차단한 사용자 목록을 조회한다.
@@ -76,7 +76,7 @@
         }
     ],
     "timestamp": "2025-08-03T09:20:22.123Z",
-    "path": "/api/users/me/blocks"
+    "path": "/api/users/users/me/blocks"
 }
 ```
 
@@ -89,7 +89,7 @@
     "message": ["Unauthorized"],
     "error": "UNAUTHORIZED",
     "timestamp": "2025-08-03T09:21:01.001Z",
-    "path": "/api/users/me/blocks"
+    "path": "/api/users/users/me/blocks"
 }
 ```
 
@@ -101,7 +101,7 @@
 ### Unblock a User
 
 > block/user-block.controller.ts  
-> **`DELETE /api/users/:id/block`**
+> **`DELETE /api/users/users/:id/block`**
 
 -   JWT 인증 & 활성화 인증이 필요하다.
 -   지정된 사용자 ID에 대한 차단을 해제한다.
@@ -113,7 +113,7 @@
     "success": true,
     "data": true,
     "timestamp": "2025-08-03T09:22:55.847Z",
-    "path": "/api/users/3/block"
+    "path": "/api/users/users/3/block"
 }
 ```
 
@@ -126,7 +126,7 @@
     "message": ["Block record not found"],
     "error": "NOT_FOUND",
     "timestamp": "2025-08-03T09:23:41.963Z",
-    "path": "/api/users/3/block"
+    "path": "/api/users/users/3/block"
 }
 ```
 
