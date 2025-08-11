@@ -38,18 +38,23 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     profile: GoogleProfile,
     done: VerifyCallback,
   ): Promise<any> {
-    const { id, name, emails, photos } = profile;
+    try {
+      const { id, name, emails, photos } = profile;
 
-    const googleUser = {
-      id,
-      email: emails[0]?.value || '',
-      firstName: name?.givenName || '',
-      lastName: name?.familyName || '',
-      picture: photos[0]?.value || '',
-    };
+      const googleUser = {
+        id,
+        email: emails[0]?.value || '',
+        firstName: name?.givenName || '',
+        lastName: name?.familyName || '',
+        picture: photos[0]?.value || '',
+      };
 
-    const result = await this.authService.validateGoogleUser(googleUser);
+      const result = await this.authService.validateGoogleUser(googleUser);
 
-    done(null, result);
+      done(null, result);
+    } catch (error: any) {
+      // Pass error to the callback so it can be handled by the controller
+      done(error, false);
+    }
   }
 }

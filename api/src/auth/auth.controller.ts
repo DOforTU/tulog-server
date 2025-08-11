@@ -8,6 +8,7 @@ import {
   Patch,
   Body,
   Request,
+  UseFilters,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService, AuthResult } from './auth.service';
@@ -20,6 +21,7 @@ import {
   UpdatePasswordDto,
 } from 'src/user/user.dto';
 import { JwtAuthGuard } from './jwt/jwt-auth.guard';
+import { GoogleAuthExceptionFilter } from './filters/google-auth-exception.filter';
 
 /** Cookie type definition */
 interface AuthCookies {
@@ -78,8 +80,21 @@ export class AuthController {
   @Post('signup')
   async signup(
     @Body() signupDto: CreateLocalUserDto,
-  ): Promise<{ email: string }> {
-    return await this.authService.signup(signupDto);
+  ): Promise<{ email: string; message: string }> {
+    const result = await this.authService.signup(signupDto);
+    return {
+      ...result,
+      message: 'Verification code sent to your email. Please check your inbox.',
+    };
+  }
+
+  /** Complete signup after email verification */
+  @Post('complete-signup')
+  async completeSignup(
+    @Body('email') email: string,
+    @Body('code') code: string,
+  ): Promise<{ email: string; message: string }> {
+    return await this.authService.completeSignup(email, code);
   }
 
   @Post('login')
@@ -107,6 +122,7 @@ export class AuthController {
   /** Handle Google OAuth callback */
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
+  @UseFilters(GoogleAuthExceptionFilter)
   googleAuthRedirect(@Req() req: AuthenticatedRequest, @Res() res: Response) {
     // Use AuthResult already validated by Google Strategy
     const { user } = req.user;

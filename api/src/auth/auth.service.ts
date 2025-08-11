@@ -22,6 +22,7 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { plainToInstance } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
+import { PendingUserRepository } from './pending-user.repository';
 
 /** Google OAuth user information interface */
 export interface GoogleUser {
@@ -82,6 +83,7 @@ export class AuthService {
     private readonly authRepository: AuthRepository,
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
+    private readonly pendingUserRepository: PendingUserRepository,
     private dataSource: DataSource,
   ) {}
 
@@ -94,7 +96,7 @@ export class AuthService {
     const { id: oauthId, email, firstName, lastName, picture } = googleUser;
 
     // 1. Check if user exists by email
-    const user = await this.userService.findByEmail(email);
+    const user = await this.userService.findUserByEmail(email);
     let auth: Auth | null = null;
 
     // 1-1. If user does not exist, create one
@@ -114,7 +116,7 @@ export class AuthService {
 
         while (attempt < MAX_ATTEMPTS) {
           const existing =
-            await this.userService.findIncludingNoActiveByNickname(
+            await this.userService.findUserIncludingNoActiveByNickname(
               randomNickname,
             );
           if (!existing) break;
@@ -223,7 +225,7 @@ export class AuthService {
       }
 
       // Retrieve user information
-      const user = await this.userService.findById(decodedToken.sub);
+      const user = await this.userService.findUserById(decodedToken.sub);
       if (!user) {
         return {
           success: false,
@@ -251,66 +253,99 @@ export class AuthService {
 
   async signup(dto: CreateLocalUserDto): Promise<{ email: string }> {
     // Check if user already exists
-    const existingUser = await this.userService.findIncludingNoActiveByEmail(
-      dto.email,
-    );
+    const existingUser =
+      await this.userService.findUserIncludingNoActiveByEmail(dto.email);
     if (existingUser) {
       throw new ConflictException('Email already exists.');
     }
 
     // Check same nickname
     const existingUserNickname =
-      await this.userService.findIncludingNoActiveByNickname(dto.nickname);
+      await this.userService.findUserIncludingNoActiveByNickname(dto.nickname);
     if (existingUserNickname) {
       throw new ConflictException('Nickname already exists.');
+    }
+
+    // Check if there's already a pending registration for this email
+    const existingPending = await this.pendingUserRepository.findByEmail(
+      dto.email,
+    );
+    if (existingPending) {
+      // Remove old pending registration
+      await this.pendingUserRepository.remove(existingPending);
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    // Create user
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // Generate verification code
+    const verificationCode = this.generateCode();
+    const codeExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10분 후 만료
 
-    try {
-      // create new user with isActive: false (default)
-      const createdUser = await queryRunner.manager.save(User, {
-        email: dto.email,
-        password: hashedPassword,
-        name: dto.name,
-        nickname: dto.nickname,
-        profilePicture: `${this.configService.get('USER_DEFAULT_AVATAR_URL')}`,
-        // isActive: false (default)
-      });
+    // Save pending user data
+    await this.pendingUserRepository.create({
+      email: dto.email,
+      password: hashedPassword,
+      name: dto.name,
+      nickname: dto.nickname,
+      verificationCode,
+      codeExpiresAt,
+    });
 
-      // create auth record
-      await queryRunner.manager.save(Auth, {
-        provider: AuthProvider.LOCAL,
-        user: createdUser,
-      });
+    // Send verification email
+    await this.sendSignupVerificationCode(dto.email, verificationCode);
 
-      // commit transaction
-      await queryRunner.commitTransaction();
-
-      // 회원가입 성공 시 email만 반환
-      return { email: createdUser.email };
-    } catch (error: any) {
-      console.error('Local signup error:', error);
-      // if error occurs, rollback transaction
-      await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException(
-        'Failed Local signup registration',
-      );
-    } finally {
-      // release(): return connection to pool
-      await queryRunner.release();
-    }
+    return { email: dto.email };
   }
 
   // ===== Local Email Verification Methods =====
+
+  /** Send signup verification email */
+  private async sendSignupVerificationCode(
+    email: string,
+    code: string,
+  ): Promise<void> {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_OAUTH_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.GMAIL_OAUTH_USER,
+      to: email,
+      subject: 'Tulog 회원가입 인증코드',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>TULOG 회원가입 인증</h2>
+          <p>안녕하세요! TULOG에 가입해주셔서 감사합니다.</p>
+          <p>아래 인증코드를 입력하여 회원가입을 완료해주세요:</p>
+          <div style="background-color: #f4f4f4; padding: 20px; text-align: center; margin: 20px 0;">
+            <h3 style="color: #333; font-size: 24px; margin: 0;">${code}</h3>
+          </div>
+          <p>인증코드는 10분간 유효합니다.</p>
+          <p>감사합니다.<br>TULOG 팀</p>
+        </div>
+      `,
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log(
+        `Signup verification email sent to ${email} with code ${code}`,
+      );
+    } catch (error) {
+      console.error('Failed to send signup verification email:', error);
+      throw new InternalServerErrorException(
+        'Failed to send verification email',
+      );
+    }
+  }
+
   /**
-   * Email code storage
+   * Email code storage (기존 로그인 후 이메일 인증용)
    */
   private emailCodeStore = new Map<string, string>();
   /** code generation 6 digits */
@@ -363,7 +398,7 @@ export class AuthService {
     }
 
     // Find user
-    const user = await this.userService.findByEmail(email);
+    const user = await this.userService.findUserByEmail(email);
     if (!user) {
       throw new BadRequestException('User not found.');
     }
@@ -382,13 +417,91 @@ export class AuthService {
     return { email: user.email };
   }
 
+  /** Complete signup after email verification */
+  async completeSignup(
+    email: string,
+    code: string,
+  ): Promise<{ email: string; message: string }> {
+    // Find pending user
+    const pendingUser = await this.pendingUserRepository.findByEmailAndCode(
+      email,
+      code,
+    );
+
+    if (!pendingUser) {
+      throw new BadRequestException(
+        'Invalid verification code or email address.',
+      );
+    }
+
+    // Check if code is expired
+    if (pendingUser.codeExpiresAt < new Date()) {
+      // Remove expired pending user
+      await this.pendingUserRepository.remove(pendingUser);
+      throw new BadRequestException(
+        'Verification code has expired. Please register again.',
+      );
+    }
+
+    // Check if user already exists (double check)
+    const existingUser =
+      await this.userService.findUserIncludingNoActiveByEmail(email);
+    if (existingUser) {
+      // Remove pending user
+      await this.pendingUserRepository.remove(pendingUser);
+      throw new ConflictException('Email already exists.');
+    }
+
+    // Create actual user
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Create new user with isActive: true
+      const createdUser = await queryRunner.manager.save(User, {
+        email: pendingUser.email,
+        password: pendingUser.password,
+        name: pendingUser.name,
+        nickname: pendingUser.nickname,
+        profilePicture: `${this.configService.get('USER_DEFAULT_AVATAR_URL')}`,
+        isActive: true, // Activated from the start
+      });
+
+      // Create auth record
+      await queryRunner.manager.save(Auth, {
+        provider: AuthProvider.LOCAL,
+        user: createdUser,
+      });
+
+      // Remove pending user data
+      await this.pendingUserRepository.remove(pendingUser);
+
+      // Commit transaction
+      await queryRunner.commitTransaction();
+
+      return {
+        email: createdUser.email,
+        message: 'Account created successfully!',
+      };
+    } catch (error: any) {
+      console.error('Complete signup error:', error);
+      // If error occurs, rollback transaction
+      await queryRunner.rollbackTransaction();
+      throw new InternalServerErrorException('Failed to complete registration');
+    } finally {
+      // Release connection to pool
+      await queryRunner.release();
+    }
+  }
+
   // ===== User Management Methods =====
 
   //** login user */
   async login(loginDto: LoginDto, res: Response): Promise<User> {
     try {
       // Check if user exists (with password for comparison)
-      const user = await this.userService.findWithPasswordByEmail(
+      const user = await this.userService.findUserWithPasswordByEmail(
         loginDto.email,
       );
       if (!user) {
@@ -429,7 +542,7 @@ export class AuthService {
 
   /** Retrieve user by ID */
   async findUserById(userId: number): Promise<User | null> {
-    return await this.userService.findById(userId);
+    return await this.userService.findUserById(userId);
   }
 
   /** Update user password */
@@ -446,7 +559,7 @@ export class AuthService {
     }
 
     // Validate user existence and get user with password
-    const userWithPW = await this.userService.findWithPasswordByEmail(
+    const userWithPW = await this.userService.findUserWithPasswordByEmail(
       user.email,
     );
     if (!userWithPW) {

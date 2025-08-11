@@ -7,12 +7,15 @@ import { User } from 'src/user/user.entity';
 import { UserService } from 'src/user/user.service';
 import { UserBlockRepository } from './user-block.repository';
 import { UserBlock } from './user-block.entity';
+import { Follow } from 'src/follow/follow.entity';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class UserBlockService {
   constructor(
     private readonly userService: UserService,
     private readonly userBlockRepository: UserBlockRepository,
+    private readonly dataSource: DataSource,
   ) {}
 
   async blockUser(blockerId: number, blockedId: number): Promise<UserBlock> {
@@ -32,7 +35,45 @@ export class UserBlockService {
       throw new ConflictException('User is already blocked.');
     }
 
-    return await this.userBlockRepository.blockUser(blockerId, blockedId);
+    // Use transaction to ensure data consistency when blocking and removing follow relationships
+    return await this.dataSource.transaction(async (manager) => {
+      // 1. Create block relationship
+      const blockRelation =
+        await this.userBlockRepository.blockUserWithTransaction(
+          blockerId,
+          blockedId,
+          manager,
+        );
+
+      // 2. Remove existing follow relationships (both directions)
+      // Check if blocker follows blocked user and remove
+      const blockerFollowsBlocked = await manager
+        .getRepository(Follow)
+        .findOne({
+          where: { followerId: blockerId, followingId: blockedId },
+        });
+      if (blockerFollowsBlocked) {
+        await manager.getRepository(Follow).delete({
+          followerId: blockerId,
+          followingId: blockedId,
+        });
+      }
+
+      // Check if blocked user follows blocker and remove
+      const blockedFollowsBlocker = await manager
+        .getRepository(Follow)
+        .findOne({
+          where: { followerId: blockedId, followingId: blockerId },
+        });
+      if (blockedFollowsBlocker) {
+        await manager.getRepository(Follow).delete({
+          followerId: blockedId,
+          followingId: blockerId,
+        });
+      }
+
+      return blockRelation;
+    });
   }
 
   /** 차단한 유저들을 조회하려고 하는데
@@ -45,7 +86,7 @@ export class UserBlockService {
     await this.userService.getUserById(userId);
 
     // user will be null, when no blocked user exist
-    const user = await this.userService.findWithBlockedById(userId);
+    const user = await this.userService.findUserWithBlockedById(userId);
     if (!user) {
       return [];
     }

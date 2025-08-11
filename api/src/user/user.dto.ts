@@ -194,6 +194,7 @@ export class PublicUser {
   nickname: string;
   profilePicture: string;
   isActive: boolean;
+  role: UserRole;
 }
 
 export class MyUser {

@@ -17,53 +17,38 @@ export class UserRepository {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  // ===== Basic CRUD - Data Access =====
+  // ===== User Retrieval =====
 
   /**
-   * Find user by ID (ONLY not-deleted & active)
-   * @param id
-   * @returns
+   * Find user by ID (ONLY active & not-deleted)
+   * @param id User ID
+   * @returns User entity or null
    */
   async findById(id: number): Promise<User | null> {
     return await this.userRepository.findOne({
-      where: { id, deletedAt: IsNull(), isActive: true },
+      where: {
+        id,
+        deletedAt: IsNull(),
+        isActive: true,
+      },
     });
   }
 
   /**
-   * Update user information
-   * @param id
-   * @param updateUserDto
-   * @returns
+   * Find user by ID (including inactive users)
+   * @param id User ID
+   * @returns User entity or null
    */
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<User | null> {
-    await this.userRepository.update(id, updateUserDto);
-    return await this.findById(id);
-  }
-
-  /** Update user Password */
-  async updatePassword(
-    id: number,
-    hashedNewPassword: string,
-  ): Promise<User | null> {
-    await this.userRepository.update(id, {
-      password: hashedNewPassword,
+  async findByIdIncludingInactive(id: number): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { id, deletedAt: IsNull() },
     });
-    return await this.findIncludingNoActiveById(id);
   }
 
-  /** Soft delete user */
-  async delete(id: number): Promise<boolean> {
-    const result = await this.userRepository.update(id, {
-      isActive: false,
-      deletedAt: new Date(),
-    });
-    return (result.affected ?? 0) > 0;
-  }
-
-  // ===== Conditional Queries - Data Access =====
-
-  /** Find all active users (admin only) */
+  /**
+   * Find all users (admin only, active & not-deleted)
+   * @returns Array of user entities
+   */
   async findAll(): Promise<User[]> {
     return await this.userRepository.find({
       where: { deletedAt: IsNull() },
@@ -71,22 +56,136 @@ export class UserRepository {
     });
   }
 
-  /** Find active user by email (can get no isActive user)*/
+  /**
+   * Find user by email (ONLY active & not-deleted)
+   * @param email User email
+   * @returns User entity or null
+   */
   async findByEmail(email: string): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { email, deletedAt: IsNull(), isActive: true },
+    });
+  }
+
+  /**
+   * Find user by email (including inactive users)
+   * @param email User email
+   * @returns User entity or null
+   */
+  async findByEmailIncludingInactive(email: string): Promise<User | null> {
     return await this.userRepository.findOne({
       where: { email, deletedAt: IsNull() },
     });
   }
 
-  /** Find active user by sub (used in JWT validation) */
+  /**
+   * Find user by sub (used in JWT validation, ONLY active users)
+   * @param sub User sub
+   * @returns User entity or null
+   */
   async findBySub(sub: number): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { id: sub, deletedAt: IsNull(), isActive: true },
+    });
+  }
+
+  /**
+   * Find user by sub (used in JWT validation, including inactive users)
+   * @param sub User sub
+   * @returns User entity or null
+   */
+  async findBySubIncludingInactive(sub: number): Promise<User | null> {
     return await this.userRepository.findOne({
       where: { id: sub, deletedAt: IsNull() },
     });
   }
 
-  /** Find active user by email with password (for login and update pw, only id, email, password, nickname, role, isActive) */
-  async findWithPasswordByEmail(email: string): Promise<User | null> {
+  /**
+   * Find user by name (including inactive users)
+   * @param name User name
+   * @returns User entity or null
+   */
+  async findByNameIncludingInactive(name: string): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { name, deletedAt: IsNull() },
+    });
+  }
+
+  /**
+   * Find user by nickname (ONLY active & not-deleted)
+   * @param nickname User nickname
+   * @returns User entity or null
+   */
+  async findByNickname(nickname: string): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { nickname, deletedAt: IsNull(), isActive: true },
+    });
+  }
+
+  /**
+   * Find user by nickname (including inactive users)
+   * @param nickname User nickname
+   * @returns User entity or null
+   */
+  async findByNicknameIncludingInactive(
+    nickname: string,
+  ): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { nickname, deletedAt: IsNull() },
+    });
+  }
+
+  /**
+   * Find user by email (including deleted users)
+   * @param email User email
+   * @returns User entity or null
+   */
+  async findByEmailIncludingDeleted(email: string): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { email },
+    });
+  }
+
+  /**
+   * Find all deleted users (admin only)
+   * @returns Array of user entities
+   */
+  async findAllDeleted(): Promise<User[]> {
+    return await this.userRepository.find({
+      where: { deletedAt: Not(IsNull()) },
+    });
+  }
+
+  /**
+   * Find deleted user by ID
+   * @param id User ID
+   * @returns User entity or null
+   */
+  async findDeletedById(id: number): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { id, deletedAt: Not(IsNull()) },
+      withDeleted: true,
+    });
+  }
+
+  /**
+   * Find user by ID with password (including inactive users)
+   * @param id User ID
+   * @returns User entity with password or null
+   */
+  async findByIdWithPassword(id: number): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { id, deletedAt: IsNull() },
+      select: ['id', 'email', 'password'],
+    });
+  }
+
+  /**
+   * Find user by email with password (for login and update pw)
+   * @param email User email
+   * @returns User entity with password or null
+   */
+  async findByEmailWithPassword(email: string): Promise<User | null> {
     return await this.userRepository.findOne({
       where: { email, deletedAt: IsNull() },
       select: [
@@ -100,71 +199,11 @@ export class UserRepository {
     });
   }
 
-  /** Find active user include no-active by name (ONLY not-deleted) */
-  async findByName(name: string): Promise<User | null> {
-    return await this.userRepository.findOne({
-      where: { name, deletedAt: IsNull() },
-    });
-  }
-
-  /** Find active user include no-active by nickname (ONLY not-deleted & isActive) */
-  async findByNickname(nickname: string): Promise<User | null> {
-    return await this.userRepository.findOne({
-      where: { nickname, deletedAt: IsNull(), isActive: true },
-    });
-  }
-
-  async findIncludingNoActiveById(id: number): Promise<User | null> {
-    return await this.userRepository.findOne({
-      where: { id, deletedAt: IsNull() },
-    });
-  }
-
-  async findIncludingNoActiveByEmail(email: string): Promise<User | null> {
-    return await this.userRepository.findOne({
-      where: { email, deletedAt: IsNull() },
-    });
-  }
-
-  async findIncludingNoActiveByNickname(
-    nickname: string,
-  ): Promise<User | null> {
-    return await this.userRepository.findOne({
-      where: { nickname, deletedAt: IsNull() },
-    });
-  }
-
-  /** Find user by email (including deleted users) */
-  async findIncludingDeletedByEmail(email: string): Promise<User | null> {
-    return await this.userRepository.findOne({
-      where: { email },
-    });
-  }
-
-  /** Find all deleted users */
-  async findDeleted(): Promise<User[]> {
-    return await this.userRepository.find({
-      where: { deletedAt: Not(IsNull()) },
-    });
-  }
-
-  /** Find deleted user by ID */
-  async findDeletedById(id: number): Promise<User | null> {
-    return await this.userRepository.findOne({
-      where: { id, deletedAt: Not(IsNull()) },
-      withDeleted: true,
-    });
-  }
-
-  /** Find User with password include no-active user */
-  async findByIdWithPassword(id: number): Promise<User | null> {
-    return await this.userRepository.findOne({
-      where: { id, deletedAt: IsNull() },
-      select: ['id', 'email', 'password'],
-    });
-  }
-
-  /** Find User with Followers */
+  /**
+   * Find user by ID with followers (ONLY active users)
+   * @param id User ID
+   * @returns User entity with followers or null
+   */
   async findByIdWithFollowers(id: number): Promise<User | null> {
     const user = await this.userRepository
       .createQueryBuilder('user')
@@ -180,7 +219,11 @@ export class UserRepository {
     return user;
   }
 
-  /** Find user with Followings */
+  /**
+   * Find user by ID with followings (ONLY active users)
+   * @param id User ID
+   * @returns User entity with followings or null
+   */
   async findByIdWithFollowings(id: number): Promise<User | null> {
     return await this.userRepository
       .createQueryBuilder('user')
@@ -194,8 +237,12 @@ export class UserRepository {
       .getOne();
   }
 
-  /** Find user with Blocked  */
-  async findWithBlockedById(id: number): Promise<User | null> {
+  /**
+   * Find user by ID with blocked users (ONLY active users)
+   * @param id User ID
+   * @returns User entity with blocked users or null
+   */
+  async findByIdWithBlocked(id: number): Promise<User | null> {
     return await this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.blockers', 'userBlock')
@@ -208,45 +255,99 @@ export class UserRepository {
       .getOne();
   }
 
-  /** Find user with all details for UserDetails DTO */
-  async findUserDetailsById(id: number): Promise<User | null> {
+  /**
+   * Find user by ID with details (teams, followers, followings)
+   * @param id User ID
+   * @returns User entity with all details or null
+   */
+  async findByIdWithDetails(id: number): Promise<User | null> {
     return await this.userRepository
       .createQueryBuilder('user')
-      .leftJoinAndSelect('user.teamMembers', 'teamMember')
-      .leftJoinAndSelect('teamMember.team', 'team')
+      .leftJoinAndSelect(
+        'user.teamMembers',
+        'teamMember',
+        'teamMember.status = :joinedStatus',
+        { joinedStatus: 'JOINED' },
+      )
+      .leftJoinAndSelect('teamMember.team', 'team', 'team.deletedAt IS NULL')
       .leftJoinAndSelect('user.followers', 'followerRel')
-      .leftJoinAndSelect('followerRel.follower', 'followerUser')
+      .leftJoinAndSelect(
+        'followerRel.follower',
+        'followerUser',
+        'followerUser.deletedAt IS NULL AND followerUser.isActive = true',
+      )
       .leftJoinAndSelect('user.followings', 'followingRel')
-      .leftJoinAndSelect('followingRel.following', 'followingUser')
+      .leftJoinAndSelect(
+        'followingRel.following',
+        'followingUser',
+        'followingUser.deletedAt IS NULL AND followingUser.isActive = true',
+      )
       .where('user.id = :id', { id })
       .andWhere('user.deletedAt IS NULL AND user.isActive = true')
-      //  andWhere conditions to ensure no deleted or inactive teams, followers, and followings
-      .andWhere('(team.deletedAt IS NULL OR team.id IS NULL)')
-      .andWhere(
-        '(teamMember.status = :joinedStatus OR teamMember.status IS NULL)',
-        {
-          joinedStatus: 'JOINED',
-        },
-      )
-      .andWhere(
-        '(followerUser.deletedAt IS NULL AND followerUser.isActive = true OR followerUser.id IS NULL)',
-      )
-      .andWhere(
-        '(followingUser.deletedAt IS NULL AND followingUser.isActive = true OR followingUser.id IS NULL)',
-      )
       .getOne();
   }
 
-  // ===== Special Operations - Data Access =====
+  async findByNicknameWithDetails(nickname: string): Promise<User | null> {
+    return await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect(
+        'user.teamMembers',
+        'teamMember',
+        'teamMember.status = :joinedStatus',
+        { joinedStatus: 'JOINED' },
+      )
+      .leftJoinAndSelect('teamMember.team', 'team', 'team.deletedAt IS NULL')
+      .leftJoinAndSelect('user.followers', 'followerRel')
+      .leftJoinAndSelect(
+        'followerRel.follower',
+        'followerUser',
+        'followerUser.deletedAt IS NULL AND followerUser.isActive = true',
+      )
+      .leftJoinAndSelect('user.followings', 'followingRel')
+      .leftJoinAndSelect(
+        'followingRel.following',
+        'followingUser',
+        'followingUser.deletedAt IS NULL AND followingUser.isActive = true',
+      )
+      .where('user.nickname = :nickname', { nickname })
+      .andWhere('user.deletedAt IS NULL AND user.isActive = true')
+      .getOne();
+  }
+
+  // ===== Update and Delete =====
+  /**
+   * Update user information
+   * @param id
+   * @param updateUserDto
+   * @returns
+   */
+  async updateUser(
+    id: number,
+    updateUserDto: UpdateUserDto,
+  ): Promise<User | null> {
+    await this.userRepository.update(id, updateUserDto);
+    return await this.findById(id);
+  }
+
+  /** Update user Password */
+  async updatePasswordById(
+    id: number,
+    hashedNewPassword: string,
+  ): Promise<User | null> {
+    await this.userRepository.update(id, {
+      password: hashedNewPassword,
+    });
+    return await this.findByIdIncludingInactive(id);
+  }
 
   /** Permanently delete user */
-  async hardDelete(id: number): Promise<boolean> {
+  async hardDeleteById(id: number): Promise<boolean> {
     const result = await this.userRepository.delete(id);
     return (result.affected ?? 0) > 0;
   }
 
   /** Restore deleted user */
-  async restore(id: number): Promise<boolean> {
+  async restoreById(id: number): Promise<boolean> {
     const result = await this.userRepository
       .createQueryBuilder()
       .update()
@@ -259,7 +360,7 @@ export class UserRepository {
   // ===== Utility Methods =====
 
   /** Check if user exists (active users only) */
-  async exists(id: number): Promise<boolean> {
+  async userExistsById(id: number): Promise<boolean> {
     const count = await this.userRepository.count({
       where: { id, deletedAt: IsNull() },
     });
@@ -267,15 +368,9 @@ export class UserRepository {
   }
 
   /** Count active users */
-  async count(): Promise<number> {
+  async countUsers(): Promise<number> {
     return await this.userRepository.count({
       where: { deletedAt: IsNull() },
     });
   }
 }
-
-// TODO: Add user search functionality (search by name, email, nickname)
-// TODO: Add pagination support
-// TODO: Add user role-based query functionality
-// TODO: Add recent login time update functionality
-// TODO: Add user activity log functionality

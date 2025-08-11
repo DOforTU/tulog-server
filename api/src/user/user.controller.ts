@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Delete,
   Patch,
   Body,
   Param,
@@ -16,7 +15,6 @@ import { PublicUser, UserDetails, UpdateUserDto } from './user.dto';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
 import { SmartAuthGuard } from 'src/auth/jwt';
 import { toPublicUser } from 'src/common/helper/to-public-user';
-import { AdminGuard } from 'src/common/guards/only-admin.guard';
 
 /**
  * User Management Controller
@@ -28,7 +26,8 @@ import { AdminGuard } from 'src/common/guards/only-admin.guard';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  // ===== Basic CRUD - REST API =====
+  // ===== GET requests =====
+
   /** Get current logged-in user information */
   @Get('me')
   @UseGuards(JwtAuthGuard)
@@ -44,6 +43,14 @@ export class UserController {
     return toPublicUser(await this.userService.getUserById(id));
   }
 
+  /** Get user by nickname */
+  @Get('nickname/:nickname')
+  async getUserByNickname(
+    @Param('nickname') nickname: string,
+  ): Promise<PublicUser | null> {
+    return toPublicUser(await this.userService.getUserByNickname(nickname));
+  }
+
   /**
    * Get user details including teams, followers, and following
    * @param id User ID: the ID of the user whose details are to be fetched
@@ -56,8 +63,15 @@ export class UserController {
     return await this.userService.getUserDetailsById(id);
   }
 
+  @Get('nickname/:nickname/details')
+  async getUserDetailsByNickname(
+    @Param('nickname') nickname: string,
+  ): Promise<UserDetails> {
+    return await this.userService.getUserDetailsByNickname(nickname);
+  }
+
   /** Get user by id or nickname (query) */
-  @Get('search')
+  @Get('search/id-or-nickname')
   async getUserByIdOrNickname(
     @Query('id') id?: string,
     @Query('nickname') nickname?: string,
@@ -74,6 +88,8 @@ export class UserController {
     return null;
   }
 
+  // ===== PATCH requests =====
+
   /** Update user information(only active users) */
   @Patch('me')
   @UseGuards(SmartAuthGuard)
@@ -89,53 +105,5 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   async deleteUser(@Request() req: { user: User }): Promise<boolean> {
     return this.userService.deleteUser(req.user.id);
-  }
-
-  // ===== Special Query APIs =====
-
-  /** Get user by nickname */
-  @Get('nickname/:nickname')
-  async getUserByNickname(
-    @Param('nickname') nickname: string,
-  ): Promise<PublicUser | null> {
-    return toPublicUser(await this.userService.getUserByNickname(nickname));
-  }
-
-  // ===== Admin Only APIs =====
-
-  /** Get all active users */
-  @Get('all')
-  @UseGuards(AdminGuard)
-  async getAllUsers(): Promise<User[]> {
-    return this.userService.getAllUsers();
-  }
-
-  /** Get deleted users list */
-  @Get('admin/deleted')
-  @UseGuards(AdminGuard)
-  async getDeletedUsers(): Promise<User[]> {
-    return this.userService.getDeletedUsers();
-  }
-
-  /** Get active user count */
-  @Get('stats/count')
-  @UseGuards(AdminGuard)
-  async getCount(): Promise<{ count: number }> {
-    const count = await this.userService.getUserCount();
-    return { count };
-  }
-
-  /** Permanently delete user */
-  @Delete(':id/hard')
-  @UseGuards(AdminGuard)
-  async hardDeleteUser(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.userService.hardDeleteUser(id);
-  }
-
-  /** Restore deleted user */
-  @Patch(':id/restore')
-  @UseGuards(AdminGuard)
-  async restoreUser(@Param('id', ParseIntPipe) id: number): Promise<User> {
-    return this.userService.restoreUser(id);
   }
 }

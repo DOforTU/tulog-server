@@ -37,7 +37,7 @@ export class TeamController {
     return await this.teamService.getTeamById(id);
   }
 
-  // 팀 이름으로 팀 정보만
+  // 팀 이름으로 팀 정보(유저정보 포함)
   @Get('name/:name')
   async getTeamWithMembersByName(
     @Param('name') name: string,
@@ -45,6 +45,7 @@ export class TeamController {
     return await this.teamService.getTeamWithMembersByName(name);
   }
 
+  // 팀 정보 업데이트
   @Patch(':id')
   @UseGuards(SmartAuthGuard)
   async updateTemaInfo(

@@ -7,12 +7,14 @@ import { UserService } from 'src/user/user.service';
 import { FollowRepository } from './follow.repository';
 import { Follow } from './follow.entity';
 import { User } from 'src/user/user.entity';
+import { NoticeService } from 'src/notice/notice.service';
 
 @Injectable()
 export class FollowService {
   constructor(
     private readonly userService: UserService,
     private readonly followRepository: FollowRepository,
+    private readonly noticeService: NoticeService,
   ) {}
 
   /** Follow a user
@@ -37,7 +39,25 @@ export class FollowService {
       throw new ConflictException('You are already following this user');
     }
 
-    return await this.followRepository.followUser(followerId, followId);
+    // Create follow relationship
+    const follow = await this.followRepository.followUser(followerId, followId);
+
+    // Get follower info for notification
+    const follower = await this.userService.getUserById(followerId);
+
+    // Create follow notification for the target user
+    try {
+      await this.noticeService.createFollowNotice(
+        followId, // target user who receives the notification
+        followerId, // follower user ID
+        follower.nickname, // follower nickname
+      );
+    } catch (error) {
+      // Log the error but don't fail the follow operation
+      console.error('Failed to create follow notification:', error);
+    }
+
+    return follow;
   }
 
   /** Unfollow a user
@@ -71,7 +91,7 @@ export class FollowService {
     await this.userService.getUserById(userId);
 
     // user will be null, when no followers exist
-    const user = await this.userService.findByIdWithFollowers(userId);
+    const user = await this.userService.findUserByIdWithFollowers(userId);
     if (!user) {
       // so return []
       return [];
@@ -86,7 +106,7 @@ export class FollowService {
     await this.userService.getUserById(userId);
 
     // user will be null, when no followings exist
-    const user = await this.userService.findByIdWithFollowings(userId);
+    const user = await this.userService.findUserByIdWithFollowings(userId);
     if (!user) {
       // so return []
       return [];

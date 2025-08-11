@@ -8,6 +8,7 @@ export function toPublicUser(user: User): PublicUser {
     nickname: user.nickname,
     profilePicture: user.profilePicture,
     isActive: user.isActive,
+    role: user.role,
   };
 }
 
@@ -18,5 +19,6 @@ export function toPublicUsers(users: User[]): PublicUser[] {
     nickname: user.nickname,
     profilePicture: user.profilePicture,
     isActive: user.isActive,
+    role: user.role,
   }));
 }
