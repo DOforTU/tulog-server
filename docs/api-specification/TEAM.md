@@ -223,15 +223,10 @@
 
 ```json
 {
-    "success": true,
-    "data": {
-        "teamId": 10,
-        "memberId": 5,
-        "status": "INVITED",
-        "createdAt": "2025-08-03T12:20:00.000Z"
-    },
-    "timestamp": "2025-08-03T12:20:00.000Z",
-    "path": "/api/teams/10/members/5/invite"
+    "teamId": 10,
+    "memberId": 5,
+    "status": "INVITED",
+    "createdAt": "2025-08-03T12:20:00.000Z"
 }
 ```
 
@@ -258,7 +253,7 @@
 ### Request to Join Team
 
 > team-member/team-member.controller.ts  
-> **`POST /api/teams/:id/join`**
+> **`POST /api/teams/:teamId/join`**
 
 -   JWT 인증 & 활성화 인증이 필요하다.
 -   사용자가 팀에 참여를 요청한다.
@@ -268,15 +263,10 @@
 
 ```json
 {
-    "success": true,
-    "data": {
-        "teamId": 10,
-        "memberId": 5,
-        "status": "PENDING",
-        "createdAt": "2025-08-03T12:22:00.000Z"
-    },
-    "timestamp": "2025-08-03T12:22:00.000Z",
-    "path": "/api/teams/10/join"
+    "teamId": 10,
+    "memberId": 5,
+    "status": "PENDING",
+    "createdAt": "2025-08-03T12:22:00.000Z"
 }
 ```
 
@@ -314,15 +304,10 @@
 
 ```json
 {
-    "success": true,
-    "data": {
-        "teamId": 10,
-        "memberId": 5,
-        "status": "JOINED",
-        "joinedAt": "2025-08-03T12:25:00.000Z"
-    },
-    "timestamp": "2025-08-03T12:25:00.000Z",
-    "path": "/api/teams/10/invitation/accept"
+    "teamId": 10,
+    "memberId": 5,
+    "status": "JOINED",
+    "joinedAt": "2025-08-03T12:25:00.000Z"
 }
 ```
 
@@ -352,12 +337,7 @@
 -   **Success Response**:
 
 ```json
-{
-    "success": true,
-    "data": true,
-    "timestamp": "2025-08-03T12:27:00.000Z",
-    "path": "/api/teams/10/invitation/reject"
-}
+true
 ```
 
 ---
@@ -365,7 +345,7 @@
 ### Accept Team Join Request (Leader Only)
 
 > team-member/team-member.controller.ts  
-> **`POST /api/teams/:teamId/join-request/:memberId/accept`**
+> **`POST /api/teams/:teamId/join-request/members/:memberId/accept`**
 
 -   JWT 인증 & 활성화 인증이 필요하다.
 -   팀 리더만 팀 참여 요청을 수락할 수 있다.
@@ -375,15 +355,10 @@
 
 ```json
 {
-    "success": true,
-    "data": {
-        "teamId": 10,
-        "memberId": 5,
-        "status": "JOINED",
-        "joinedAt": "2025-08-03T12:30:00.000Z"
-    },
-    "timestamp": "2025-08-03T12:30:00.000Z",
-    "path": "/api/teams/10/join-request/5/accept"
+    "teamId": 10,
+    "memberId": 5,
+    "status": "JOINED",
+    "joinedAt": "2025-08-03T12:30:00.000Z"
 }
 ```
 
@@ -396,7 +371,7 @@
     "message": ["Only team leaders can accept join requests"],
     "error": "FORBIDDEN",
     "timestamp": "2025-08-03T12:30:00.000Z",
-    "path": "/api/teams/10/join-request/5/accept"
+    "path": "/api/teams/10/join-request/members/5/accept"
 }
 ```
 
@@ -405,7 +380,7 @@
 ### Reject Team Join Request (Leader Only)
 
 > team-member/team-member.controller.ts  
-> **`DELETE /api/teams/:teamId/join-request/:memberId/reject`**
+> **`DELETE /api/teams/:teamId/join-request/members/:memberId/reject`**
 
 -   JWT 인증 & 활성화 인증이 필요하다.
 -   팀 리더만 팀 참여 요청을 거절할 수 있다.
@@ -413,47 +388,26 @@
 -   **Success Response**:
 
 ```json
-{
-    "success": true,
-    "data": true,
-    "timestamp": "2025-08-03T12:32:00.000Z",
-    "path": "/api/teams/10/join-request/5/reject"
-}
+true
 ```
 
 ---
 
-## Legacy Team Actions
-
-### Join Team (Direct)
-
-> team-member/team-member.controller.ts  
-> **`POST /api/teams/:id/join`**
-
-> ⚠️ **Deprecated**: 새로운 알림 기반 시스템을 사용하세요.
-
--   JWT 인증 & 활성화 인증이 필요하다.
--   사용자가 팀에 직접 가입한다. (구 버전 호환성을 위해 유지)
-
----
+## Team Member Management
 
 ### Leave Team
 
 > team-member/team-member.controller.ts  
-> **`DELETE /api/teams/:id/leave`**
+> **`DELETE /api/teams/:teamId/leave`**
 
 -   JWT 인증 & 활성화 인증이 필요하다.
 -   사용자가 팀을 탈퇴한다.
+-   팀 리더에게 탈퇴 알림이 전송된다.
 
 -   **Success Response**:
 
 ```json
-{
-    "success": true,
-    "data": true,
-    "timestamp": "2025-08-03T12:30:00.000Z",
-    "path": "/api/teams/10/leave"
-}
+true
 ```
 
 -   **Failure Response**:
@@ -478,20 +432,16 @@
 ### Kick Member
 
 > team-member/team-member.controller.ts  
-> **`DELETE /api/teams/:id/kick?userId=:userId`**
+> **`DELETE /api/teams/:teamId/members/:memberId/kick`**
 
 -   JWT 인증 & 활성화 인증이 필요하다.
 -   팀장이 특정 팀원을 강제 탈퇴시킨다.
+-   추방당한 사용자에게 추방 알림이 전송된다.
 
 -   **Success Response**:
 
 ```json
-{
-    "success": true,
-    "data": true,
-    "timestamp": "2025-08-03T12:25:00.000Z",
-    "path": "/api/teams/10/kick"
-}
+true
 ```
 
 -   **Failure Response**:
@@ -503,7 +453,7 @@
     "message": ["Only team leader can kick members"],
     "error": "FORBIDDEN",
     "timestamp": "2025-08-03T12:25:00.000Z",
-    "path": "/api/teams/10/kick"
+    "path": "/api/teams/10/members/5/kick"
 }
 ```
 
