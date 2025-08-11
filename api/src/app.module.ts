@@ -23,6 +23,9 @@ import { FileModule } from './file/file.module';
 import { PendingUser } from './auth/pending-user.entity';
 import { NoticeModule } from './notice/notice.module';
 import { Notice } from './notice/notice.entity';
+import { TeamFollowService } from './team-follow/team-follow.service';
+import { TeamFollowModule } from './team-follow/team-follow.module';
+import { TeamFollwController } from './team-follow/team-follow.controller';
 
 @Module({
   imports: [
@@ -68,9 +71,10 @@ import { Notice } from './notice/notice.entity';
     UserBlcokModule,
     TeamMemberModule,
     NoticeModule,
+    TeamFollowModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, TeamFollwController],
+  providers: [AppService, TeamFollowService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
