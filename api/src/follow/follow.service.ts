@@ -79,7 +79,7 @@ export class FollowService {
     );
 
     if (!isFollowing) {
-      throw new ConflictException('You are not following this user');
+      throw new ConflictException('You are not unfollowing this user');
     }
 
     return await this.followRepository.unfollowUser(followerId, followId);

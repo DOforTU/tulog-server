@@ -42,6 +42,7 @@ export class NoticeController {
     };
   }
 
+  // ===== About user Methods =====
   /**
    * Get user's notices with pagination and filters
    * GET /notices
@@ -86,7 +87,7 @@ export class NoticeController {
     @Param('id', ParseIntPipe) noticeId: number,
   ): Promise<Notice> {
     const userId: number = req.user.id;
-    const notice = await this.noticeService.markAsRead(userId, noticeId);
+    const notice = await this.noticeService.markAsRead(noticeId, userId);
 
     return notice;
   }

@@ -8,6 +8,7 @@ import {
   Max,
   Min,
   Matches,
+  isString,
 } from 'class-validator';
 import { Team, TeamVisibility } from './team.entity';
 import { PublicUser } from 'src/user/user.dto';
@@ -61,6 +62,10 @@ export class UpdateTeamInfoDto {
   @Max(10)
   @Min(1)
   maxMember?: number;
+
+  @IsOptional()
+  @IsString()
+  mainImage?: string;
 }
 
 export class PublicTeamMember {

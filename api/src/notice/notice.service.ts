@@ -16,6 +16,7 @@ export class NoticeService {
     return await this.noticeRepository.createNotice(createNoticeDto);
   }
 
+  // ===== About user follow info Methods =====
   /** Create notice for user follow event */
   async createFollowNotice(
     targetUserId: number,
@@ -37,6 +38,7 @@ export class NoticeService {
     return await this.noticeRepository.createNotice(createNoticeDto);
   }
 
+  // ===== About team invite info Methods =====
   /** Create notice for team invite */
   async createTeamInviteNotice(
     userId: number,
@@ -60,7 +62,10 @@ export class NoticeService {
     return await this.noticeRepository.createNotice(createNoticeDto);
   }
 
-  /** Create notice for team join */
+  // ===== About team member info Methods =====
+  /** Create notice for team join
+   *  Dto 매핑하기 위함
+   */
   async createTeamJoinNotice(
     teamOwnerId: number,
     teamId: number,
@@ -116,8 +121,8 @@ export class NoticeService {
     const createNoticeDto: CreateNoticeDto = {
       userId: kickedUserId,
       type: NoticeType.TEAM_KICK,
-      title: '팀에서 제명',
-      content: `'${teamName}' 팀에서 제명되었습니다.`,
+      title: '팀에서 강퇴',
+      content: `'${teamName}' 팀에서 강퇴되었습니다.`,
       relatedEntityId: teamId,
       metadata: {
         teamId,
@@ -186,7 +191,7 @@ export class NoticeService {
   }
 
   /** Mark notice as read */
-  async markAsRead(userId: number, noticeId: number): Promise<Notice> {
+  async markAsRead(noticeId: number, userId: number): Promise<Notice> {
     // Verify ownership
     const notice = await this.noticeRepository.findByIdAndUserId(
       noticeId,

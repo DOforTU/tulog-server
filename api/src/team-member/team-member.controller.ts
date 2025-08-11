@@ -38,53 +38,6 @@ export class TeamMemberController {
   }
 
   /**
-   * leave a team
-   * @param req Request object containing user information
-   * @param id Team ID: the ID of the team to leave
-   * @returns A boolean indicating whether the leave operation was successful
-   */
-  @Delete(':id/leave')
-  @UseGuards(SmartAuthGuard)
-  async leaveTeam(
-    @Request() req: { user: User },
-    @Param('id') id: number,
-  ): Promise<boolean> {
-    return await this.teamMemberService.leaveTeam(id, req.user.id);
-  }
-
-  /**
-   * Join a team
-   * @param id Team ID: the ID is that you want to join
-   * @param req Request object containing user information
-   * @returns The created TeamMember entity
-   */
-  @Post(':id/join')
-  @UseGuards(SmartAuthGuard)
-  async requestToTeam(
-    @Request() req: { user: User },
-    @Param('id') id: number,
-  ): Promise<TeamMember> {
-    return await this.teamMemberService.requestToTeam(req.user.id, id);
-  }
-
-  /**
-   * Kick a team member
-   * @param req Request object containing user information
-   * @param id Team ID: the ID of the team from which to kick the member
-   * @param userId User ID: the ID of the user to be kicked
-   * @returns A boolean indicating whether the kick operation was successful
-   */
-  @Delete(':id/kick')
-  @UseGuards(SmartAuthGuard)
-  async kickTeamMember(
-    @Request() req: { user: User },
-    @Param('id') id: number,
-    @Query('userId') userId: number,
-  ): Promise<boolean> {
-    return await this.teamMemberService.kickTeamMember(req.user.id, id, userId);
-  }
-
-  /**
    * Accept team invitation from notification
    * @param req Request object containing user information
    * @param teamId Team ID
@@ -118,6 +71,21 @@ export class TeamMemberController {
       teamId,
       req.user.id,
     );
+  }
+
+  /**
+   * Join a team
+   * @param id Team ID: the ID is that you want to join
+   * @param req Request object containing user information
+   * @returns The created TeamMember entity
+   */
+  @Post(':id/join')
+  @UseGuards(SmartAuthGuard)
+  async requestToTeam(
+    @Request() req: { user: User },
+    @Param('id') id: number,
+  ): Promise<TeamMember> {
+    return await this.teamMemberService.requestToTeam(req.user.id, id);
   }
 
   /**
@@ -160,5 +128,37 @@ export class TeamMemberController {
       memberId,
       req.user.id, // Leader ID
     );
+  }
+
+  /**
+   * leave a team
+   * @param req Request object containing user information
+   * @param id Team ID: the ID of the team to leave
+   * @returns A boolean indicating whether the leave operation was successful
+   */
+  @Delete(':id/leave')
+  @UseGuards(SmartAuthGuard)
+  async leaveTeam(
+    @Request() req: { user: User },
+    @Param('id') id: number,
+  ): Promise<boolean> {
+    return await this.teamMemberService.leaveTeam(id, req.user.id);
+  }
+
+  /**
+   * Kick a team member
+   * @param req Request object containing user information
+   * @param id Team ID: the ID of the team from which to kick the member
+   * @param userId User ID: the ID of the user to be kicked
+   * @returns A boolean indicating whether the kick operation was successful
+   */
+  @Delete(':id/kick')
+  @UseGuards(SmartAuthGuard)
+  async kickTeamMember(
+    @Request() req: { user: User },
+    @Param('id') id: number,
+    @Query('userId') userId: number,
+  ): Promise<boolean> {
+    return await this.teamMemberService.kickTeamMember(req.user.id, id, userId);
   }
 }

@@ -84,6 +84,7 @@ export class TeamService {
     }
   }
 
+  // ===== Get team info Methods =====
   /**
    * 팀을 가져오고 속해있는 맴버 정보 가져옴
    */
@@ -145,6 +146,7 @@ export class TeamService {
     return team;
   }
 
+  //---------------Update function-------------------------------------
   /**
    * 팀이 존재하는지
    * 팀 이름 중복인지
