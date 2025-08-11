@@ -3,7 +3,6 @@ import {
   Delete,
   Param,
   Post,
-  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -12,7 +11,7 @@ import { SmartAuthGuard } from 'src/auth/jwt';
 import { User } from 'src/user/user.entity';
 import { TeamMember } from './team-member.entity';
 
-@Controller('teams/:teamId/members')
+@Controller('teams/:teamId')
 export class TeamMemberController {
   constructor(private readonly teamMemberService: TeamMemberService) {}
 
@@ -23,7 +22,7 @@ export class TeamMemberController {
    * @param memberId Member ID: the ID of the member to invite
    * @returns The created TeamMember entity
    */
-  @Post(':memberId/invite')
+  @Post('members/:memberId/invite')
   @UseGuards(SmartAuthGuard)
   async inviteToTeam(
     @Request() req: { user: User },
@@ -43,7 +42,7 @@ export class TeamMemberController {
    * @param teamId Team ID
    * @returns Updated TeamMember entity
    */
-  @Post(':teamId/invitation/accept')
+  @Post('invitation/accept')
   @UseGuards(SmartAuthGuard)
   async acceptTeamInvitation(
     @Request() req: { user: User },
@@ -61,7 +60,7 @@ export class TeamMemberController {
    * @param teamId Team ID
    * @returns Success status
    */
-  @Delete(':teamId/invitation/reject')
+  @Delete('invitation/reject')
   @UseGuards(SmartAuthGuard)
   async rejectTeamInvitation(
     @Request() req: { user: User },
@@ -79,7 +78,7 @@ export class TeamMemberController {
    * @param req Request object containing user information
    * @returns The created TeamMember entity
    */
-  @Post(':id/join')
+  @Post('join')
   @UseGuards(SmartAuthGuard)
   async requestToTeam(
     @Request() req: { user: User },
@@ -95,7 +94,7 @@ export class TeamMemberController {
    * @param memberId Member ID who requested to join
    * @returns Updated TeamMember entity
    */
-  @Post(':teamId/join-request/:memberId/accept')
+  @Post('join-request/members/:memberId/accept')
   @UseGuards(SmartAuthGuard)
   async acceptTeamJoinRequest(
     @Request() req: { user: User },
@@ -116,7 +115,7 @@ export class TeamMemberController {
    * @param memberId Member ID who requested to join
    * @returns Success status
    */
-  @Delete(':teamId/join-request/:memberId/reject')
+  @Delete('join-request/members/:memberId/reject')
   @UseGuards(SmartAuthGuard)
   async rejectTeamJoinRequest(
     @Request() req: { user: User },
@@ -136,13 +135,13 @@ export class TeamMemberController {
    * @param id Team ID: the ID of the team to leave
    * @returns A boolean indicating whether the leave operation was successful
    */
-  @Delete(':id/leave')
+  @Delete('leave')
   @UseGuards(SmartAuthGuard)
   async leaveTeam(
     @Request() req: { user: User },
-    @Param('id') id: number,
+    @Param('teamId') teamId: number,
   ): Promise<boolean> {
-    return await this.teamMemberService.leaveTeam(id, req.user.id);
+    return await this.teamMemberService.leaveTeam(teamId, req.user.id);
   }
 
   /**
@@ -152,13 +151,17 @@ export class TeamMemberController {
    * @param userId User ID: the ID of the user to be kicked
    * @returns A boolean indicating whether the kick operation was successful
    */
-  @Delete(':id/kick')
+  @Delete('members/:memberId/kick')
   @UseGuards(SmartAuthGuard)
   async kickTeamMember(
     @Request() req: { user: User },
-    @Param('id') id: number,
-    @Query('userId') userId: number,
+    @Param('teamId') teamId: number,
+    @Param('userId') userId: number,
   ): Promise<boolean> {
-    return await this.teamMemberService.kickTeamMember(req.user.id, id, userId);
+    return await this.teamMemberService.kickTeamMember(
+      req.user.id,
+      teamId,
+      userId,
+    );
   }
 }

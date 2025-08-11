@@ -386,7 +386,7 @@ export class TeamMemberService {
       }
     }
 
-    return newTeamMember as TeamMember;
+    return newTeamMember;
   }
 
   /**
@@ -510,7 +510,7 @@ export class TeamMemberService {
     if (!leavingMember) {
       throw new NotFoundException('해당 멤버가 팀에 존재하지 않습니다.');
     }
-
+    console.log(teamMembers);
     // If only one team member exists: delete team after leaving (transaction)
     if (teamMembers.length === 1) {
       const queryRunner = this.dataSource.createQueryRunner();

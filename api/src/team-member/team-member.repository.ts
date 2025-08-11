@@ -29,6 +29,9 @@ export class TeamMemberRepository {
       .createQueryBuilder('teamMember')
       .leftJoinAndSelect('teamMember.team', 'team')
       .where('teamMember.teamId = :teamId', { teamId })
+      .andWhere('teamMember.status = :status', {
+        status: TeamMemberStatus.JOINED,
+      })
       .getMany();
   }
 
