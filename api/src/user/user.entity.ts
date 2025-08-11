@@ -3,6 +3,7 @@ import { UserBlock } from 'src/block/user-block.entity';
 import { Common } from 'src/common/entity/common.entity';
 import { Follow } from 'src/follow/follow.entity';
 import { TeamMember } from 'src/team-member/team-member.entity';
+import { Editor } from 'src/editor/editor.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -87,4 +88,8 @@ export class User extends Common {
   /** Teammember in Team*/
   @OneToMany(() => TeamMember, (teamMember) => teamMember.user)
   teamMembers: TeamMember[];
+
+  /** Editor in Post */
+  @OneToMany(() => Editor, (editor) => editor.user)
+  editors: Editor[];
 }

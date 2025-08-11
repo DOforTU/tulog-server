@@ -23,6 +23,18 @@ import { FileModule } from './file/file.module';
 import { PendingUser } from './auth/pending-user.entity';
 import { NoticeModule } from './notice/notice.module';
 import { Notice } from './notice/notice.entity';
+import { Post } from './post/post.entity';
+import { Editor } from './editor/editor.entity';
+import { PostLike } from './post-like/post-like.entity';
+import { Comment } from './comment/comment.entity';
+import { PostHide } from './post-hide/post-hide.entity';
+import { Bookmark } from './bookmark/bookmark.entity';
+import { PostModule } from './post/post.module';
+import { EditorModule } from './editor/editor.module';
+import { PostLikeModule } from './post-like/post-like.module';
+import { CommentModule } from './comment/comment.module';
+import { PostHideModule } from './post-hide/post-hide.module';
+import { BookmarkModule } from './bookmark/bookmark.module';
 
 @Module({
   imports: [
@@ -54,6 +66,12 @@ import { Notice } from './notice/notice.entity';
           TeamMember,
           PendingUser,
           Notice,
+          Post,
+          Editor,
+          PostLike,
+          Comment,
+          PostHide,
+          Bookmark,
         ],
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
@@ -68,6 +86,12 @@ import { Notice } from './notice/notice.entity';
     UserBlcokModule,
     TeamMemberModule,
     NoticeModule,
+    PostModule,
+    EditorModule,
+    PostLikeModule,
+    CommentModule,
+    PostHideModule,
+    BookmarkModule,
   ],
   controllers: [AppController],
   providers: [AppService],
