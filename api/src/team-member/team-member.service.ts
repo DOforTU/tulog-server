@@ -180,6 +180,25 @@ export class TeamMemberService {
     );
   }
 
+  /**
+   * get joined team members by team ID
+   * @param teamId Team ID: the ID of the team whose members are to be fetched
+   * @returns An array of TeamMember objects representing the joined members
+   */
+  async getJoinedTeamMembersByTeamId(teamId: number): Promise<TeamMember[]> {
+    const teamMembers = await this.teamMemberRepository.getTeamMembersByTeamId(teamId);
+    
+    const joinedMembers = teamMembers.filter(
+      member => member.status === TeamMemberStatus.JOINED
+    );
+    
+    if (!joinedMembers || joinedMembers.length === 0) {
+      throw new NotFoundException('Team members not found');
+    }
+    
+    return joinedMembers;
+  }
+
   //---------------About invite and request to team function-------------------------------------
   /**
    * Invite a team member

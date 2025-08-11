@@ -1,5 +1,11 @@
-import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Common } from 'src/common/entity/common.entity';
+import {
+  Entity,
+  PrimaryColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+} from 'typeorm';
 import { Post } from 'src/post/post.entity';
 import { User } from 'src/user/user.entity';
 
@@ -10,7 +16,7 @@ export enum EditorRole {
 }
 
 @Entity('editor')
-export class Editor extends Common {
+export class Editor {
   @PrimaryColumn()
   postId: number;
 
@@ -20,6 +26,9 @@ export class Editor extends Common {
 
   @PrimaryColumn()
   userId: number;
+
+  @CreateDateColumn()
+  createdAt: Date;
 
   @ManyToOne(() => User, (user) => user.editors)
   @JoinColumn({ name: 'userId' })

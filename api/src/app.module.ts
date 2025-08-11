@@ -35,6 +35,10 @@ import { PostLikeModule } from './post-like/post-like.module';
 import { CommentModule } from './comment/comment.module';
 import { PostHideModule } from './post-hide/post-hide.module';
 import { BookmarkModule } from './bookmark/bookmark.module';
+import { TagModule } from './tag/tag.module';
+import { PostTagModule } from './post-tag/post-tag.module';
+import { Tag } from './tag/tag.entity';
+import { PostTag } from './post-tag/post-tag.entity';
 
 @Module({
   imports: [
@@ -72,6 +76,8 @@ import { BookmarkModule } from './bookmark/bookmark.module';
           Comment,
           PostHide,
           Bookmark,
+          Tag,
+          PostTag,
         ],
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
@@ -92,6 +98,8 @@ import { BookmarkModule } from './bookmark/bookmark.module';
     CommentModule,
     PostHideModule,
     BookmarkModule,
+    TagModule,
+    PostTagModule,
   ],
   controllers: [AppController],
   providers: [AppService],

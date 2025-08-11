@@ -9,6 +9,7 @@ import {
 import { Common } from 'src/common/entity/common.entity';
 import { Team } from 'src/team/team.entity';
 import { Editor } from 'src/editor/editor.entity';
+import { PostTag } from 'src/post-tag/post-tag.entity';
 
 export enum PostStatus {
   DRAFT = 'DRAFT',
@@ -50,9 +51,6 @@ export class Post extends Common {
   @Column({ default: 0 })
   commentCount: number;
 
-  @Column('simple-array', { nullable: true })
-  tags: string[];
-
   @Column({ nullable: true })
   teamId: number;
 
@@ -62,4 +60,7 @@ export class Post extends Common {
 
   @OneToMany(() => Editor, (editor) => editor.post)
   editors: Editor[];
+
+  @OneToMany(() => PostTag, (postTag) => postTag.post)
+  postTags: PostTag[];
 }
