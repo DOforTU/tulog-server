@@ -386,7 +386,7 @@ export class TeamMemberService {
       }
     }
 
-    return newTeamMember as TeamMember;
+    return newTeamMember;
   }
 
   /**
