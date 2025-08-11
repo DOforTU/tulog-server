@@ -148,6 +148,16 @@ export class UserService {
     };
   }
 
+  /**
+   *
+   * @param userId 사용자가 팔로우한 팀을 조회
+   *
+   */
+  async findMyFollowingTeams(userId: number): Promise<User | null> {
+    const followingTeams = this.userRepository.findMyFollowingTeams(userId);
+    return followingTeams;
+  }
+
   // ===== Admin Logic =====
 
   /**

@@ -1,80 +1,45 @@
 import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { TeamMember, TeamMemberStatus } from './team-member.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TeamFollow } from './team-follow.entity';
 
 @Injectable()
-export class teamFollowRepository {
+export class TeamFollowRepository {
   constructor(
     @InjectRepository(TeamFollow)
-    private readonly teamMemberRepository: Repository<TeamFollow>,
+    private readonly teamFollowRepository: Repository<TeamFollow>,
   ) {}
 
-  async findByMemberId(memberId: number): Promise<TeamMember[] | null> {
-    return await this.teamMemberRepository.find({ where: { memberId } });
-  }
-
-  async findWithTeamsByMemberId(
-    memberId: number,
-  ): Promise<TeamMember[] | null> {
-    return await this.teamMemberRepository
-      .createQueryBuilder('teamMember')
-      .leftJoinAndSelect('teamMember.team', 'team')
-      .where('teamMember.memberId = :memberId', { memberId })
-      .getMany();
-  }
-
-  async findWithTeamsByTeamId(teamId: number): Promise<TeamMember[]> {
-    return await this.teamMemberRepository
-      .createQueryBuilder('teamMember')
-      .leftJoinAndSelect('teamMember.team', 'team')
-      .where('teamMember.teamId = :teamId', { teamId })
-      .getMany();
-  }
-
-  async findOneByPrimaryKey(
-    teamId: number,
-    memberId: number,
-  ): Promise<TeamMember | null> {
-    return await this.teamMemberRepository.findOne({
-      where: { teamId, memberId },
+  /** check if the duplicate follow exists */
+  async isFollowing(userId: number, teamId: number): Promise<boolean> {
+    const isFollowing = await this.teamFollowRepository.findOne({
+      where: { userId, teamId },
     });
+    return isFollowing !== null;
+  }
+
+  /** Follow a team */
+  async followTeam(userId: number, teamId: number): Promise<TeamFollow> {
+    const followTeam = this.teamFollowRepository.create({ userId, teamId });
+    return await this.teamFollowRepository.save(followTeam);
+  }
+
+  /** Unfollow a team */
+  async unfollowTeam(userId: number, teamId: number): Promise<boolean> {
+    await this.teamFollowRepository.delete({ userId, teamId });
+    return true;
   }
 
   /**
-   * 팀 아이디로 팀 맴버를 가져온다 --> 팀 맴버로 역 조회를 하기 위함
+   * 팀 아이디로 팀 맴버를 가져온다 --> 사용자는 팔로우한 팀 맴버를 조회할 수 있다.
    *
    */
-  async getTeamMembersByTeamId(teamId: number): Promise<TeamMember[]> {
-    return this.teamMemberRepository
+  async getTeamMembersByTeamId(teamId: number): Promise<TeamFollow[]> {
+    return this.teamFollowRepository
       .createQueryBuilder('teamMember')
       .leftJoinAndSelect('teamMember.team', 'team')
       .leftJoinAndSelect('teamMember.user', 'user')
       .where('teamMember.teamId = :teamId', { teamId })
       .getMany();
-  }
-
-  async leaveTeam(teamId: number, memberId: number): Promise<boolean> {
-    await this.teamMemberRepository.delete({ teamId, memberId });
-    return true;
-  }
-
-  async inviteTeam(teamId: number, memberId: number): Promise<TeamMember> {
-    const teamMember = this.teamMemberRepository.create({
-      teamId,
-      memberId,
-      status: TeamMemberStatus.INVITED,
-    });
-    return await this.teamMemberRepository.save(teamMember);
-  }
-
-  async requestToTeam(teamId: number, memberId: number): Promise<TeamMember> {
-    const teamMember = this.teamMemberRepository.create({
-      teamId,
-      memberId,
-      status: TeamMemberStatus.PENDING,
-    });
-    return await this.teamMemberRepository.save(teamMember);
   }
 }

@@ -4,6 +4,8 @@ import { UserService } from 'src/user/user.service';
 import { TeamFollow } from './team-follow.entity';
 import { TeamService } from 'src/team/team.service';
 import { Team } from 'src/team/team.entity';
+import { User } from 'src/user/user.entity';
+import { TeamFollowRepository } from './team-follow.repository';
 
 @Injectable()
 export class TeamFollowService {
@@ -11,19 +13,20 @@ export class TeamFollowService {
     private readonly teamService: TeamService,
     private readonly teamFollowRepository: TeamFollowRepository,
     private readonly noticeService: NoticeService,
+    private readonly userService: UserService,
   ) {}
 
   /** Follow a team
    * followerId follows followId
    */
-  async followTeam(userId: number, team: Team): Promise<TeamFollow> {
+  async followTeam(userId: number, teamId: number): Promise<TeamFollow> {
     // check if the team exists
-    await this.teamService.getTeamById(team.id);
+    await this.teamService.getTeamById(teamId);
 
     // check if the duplicate follow exists
     const isFollowing = await this.teamFollowRepository.isFollowing(
       userId,
-      team.id,
+      teamId,
     );
 
     if (isFollowing) {
@@ -31,13 +34,13 @@ export class TeamFollowService {
     }
 
     // Create follow relationship
-    const follow = await this.teamFollowRepository.followTeam(userId, team.id);
+    const follow = await this.teamFollowRepository.followTeam(userId, teamId);
     //const leader = await this.
 
     // Create follow notification for the target team
     try {
       await this.noticeService.createFollowNotice(
-        team, // target user who receives the notification
+        teamId, // target user who receives the notification
         userId, // follower user ID
         follow.nickname, // follower nickname
       );
@@ -49,58 +52,57 @@ export class TeamFollowService {
     return follow;
   }
 
+  /** Get following teams of a user
+   *  유저가 팔로우한 팀 조회(유저기준)
+   */
+  async getMyFollowingTeams(userId: number): Promise<Team[]> {
+    // check if the user exists
+    await this.userService.getUserById(userId);
+
+    // team will be null, when no followings exist
+    const followingTeams = await this.userService.findMyFollowingTeams(userId);
+    if (!followingTeams) {
+      // so return []
+      return [];
+    }
+
+    return followingTeams.teamFollows.map((f) => f.team);
+  }
+
+  /** Get users of following team
+   *  팀을 팔로우한 유저 조회 (팀 기준)
+   */
+  async getFollowersWithTeam(teamId: number): Promise<User[]> {
+    // 팀이 존재한지 안한지
+    await this.teamService.getTeamById(teamId);
+
+    // user will be null, when no followers exist
+    const team = await this.teamService.findFollowingUserById(teamId);
+    if (!team) {
+      // so return []
+      return [];
+    }
+
+    return team.followers.map((f) => f.user);
+  }
+
   /** Unfollow a user
    * followerId unfollows followId
    */
-  async unfollowUser(followerId: number, followId: number): Promise<boolean> {
-    // you cannot unfollow yourself
-    if (followerId === followId) {
-      throw new BadRequestException('You cannot unfollow yourself');
-    }
-
+  async unfollowTeam(userId: number, teamId: number): Promise<boolean> {
     // check if the follow exists
-    await this.userService.getUserById(followId);
-
-    // check if the follow exists
-    const isFollowing = await this.followRepository.isFollowing(
-      followerId,
-      followId,
+    const isFollowing = await this.teamFollowRepository.isFollowing(
+      userId,
+      teamId,
     );
 
     if (!isFollowing) {
-      throw new ConflictException('You are not unfollowing this user');
+      throw new ConflictException('You are not unfollowing this team');
     }
 
-    return await this.followRepository.unfollowUser(followerId, followId);
+    return await this.teamFollowRepository.unfollowTeam(userId, teamId);
   }
 
-  /** Get followers of a user */
-  async getFollowers(userId: number): Promise<User[]> {
-    // check if the user exists
-    await this.userService.getUserById(userId);
-
-    // user will be null, when no followers exist
-    const user = await this.userService.findUserByIdWithFollowers(userId);
-    if (!user) {
-      // so return []
-      return [];
-    }
-
-    return user.followers.map((f) => f.follower);
-  }
-
-  /** Get followings of a user */
-  async getFollowings(userId: number): Promise<User[]> {
-    // check if the user exists
-    await this.userService.getUserById(userId);
-
-    // user will be null, when no followings exist
-    const user = await this.userService.findUserByIdWithFollowings(userId);
-    if (!user) {
-      // so return []
-      return [];
-    }
-
-    return user.followings.map((f) => f.following);
-  }
+  // 팀을 가져오되 리더 정보와 같이 가져옴
+  //async getTeamWithLeaderById(teamId: number): Promise<team>;
 }

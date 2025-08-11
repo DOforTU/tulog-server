@@ -24,16 +24,19 @@ export class TeamFollwController {
   @UseGuards(SmartAuthGuard)
   async followTeam(
     @Request() req: { user: User },
-    @Request() team: Team,
+    @Param('id') teamId: number,
   ): Promise<TeamFollow> {
-    return await this.teamFollowService.followTeam(req.user.id, team);
+    return await this.teamFollowService.followTeam(req.user.id, teamId);
   }
 
   /** Get my followed teams */
   @Get('me')
   @UseGuards(SmartAuthGuard)
-  async getMyFollowingTeams(@Request() req: { user: User }): Promise<Team[]> {
-    return await this.teamFollowService.getFollowingTeams(req.user.id);
+  async getMyFollowingTeams(
+    @Request() req: { user: User },
+    @Param() team: Team,
+  ): Promise<Team[]> {
+    return await this.teamFollowService.getMyFollowingTeams(req.user.id);
   }
 
   /** Get users who follow team */
