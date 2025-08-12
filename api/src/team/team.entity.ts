@@ -1,7 +1,15 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  ManyToMany,
+  ManyToOne,
+} from 'typeorm';
 import { Common } from 'src/common/entity/common.entity';
 import { TeamMember } from 'src/team-member/team-member.entity';
 import { Max, Min } from 'class-validator';
+import { TeamFollow } from 'src/team-follow/team-follow.entity';
 
 export enum TeamVisibility {
   ONLY_INVITE = 'ONLY_INVITE',
@@ -37,4 +45,7 @@ export class Team extends Common {
   /** Teammember in Team*/
   @OneToMany(() => TeamMember, (teamMember) => teamMember.team)
   teamMembers: TeamMember[];
+
+  @OneToMany(() => TeamFollow, (teamFollow) => teamFollow.team)
+  followers: TeamFollow[];
 }

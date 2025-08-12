@@ -3,6 +3,7 @@ import { IsNull, Repository } from 'typeorm';
 import { Team } from './team.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UpdateTeamInfoDto } from './team.dto';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class TeamRepository {
@@ -58,6 +59,15 @@ export class TeamRepository {
       .andWhere(
         '(user.deletedAt IS NULL AND user.isActive = true OR user.id IS NULL)',
       )
+      .getOne();
+  }
+
+  async findFollowingUserById(teamId: number): Promise<Team | null> {
+    return await this.teamRepository
+      .createQueryBuilder('team')
+      .leftJoin('team.teamFollows', 'teamFollow') // Team → TeamFollow 조인
+      .leftJoinAndSelect('teamFollow.user', 'user')
+      .where('team.id = :teamId', { teamId })
       .getOne();
   }
 

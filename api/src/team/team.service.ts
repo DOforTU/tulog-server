@@ -146,6 +146,15 @@ export class TeamService {
     return team;
   }
 
+  /**
+   *
+   * @param teamId 팀을 팔로우한 유저를 조회
+   */
+  async findFollowingUserById(teamId: number): Promise<Team | null> {
+    const user = await this.teamRepository.findFollowingUserById(teamId);
+    return user;
+  }
+
   //---------------Update function-------------------------------------
   /**
    * 팀이 존재하는지

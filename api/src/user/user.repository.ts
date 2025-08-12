@@ -314,6 +314,15 @@ export class UserRepository {
       .getOne();
   }
 
+  async findMyFollowingTeams(userId: number): Promise<User | null> {
+    return await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoin('user.teamFollows', 'teamFollow') // User → TeamFollow 조인
+      .leftJoinAndSelect('teamFollow.team', 'team')
+      .where('user.id = :userId', { userId })
+      .getOne();
+  }
+
   // ===== Update and Delete =====
   /**
    * Update user information
