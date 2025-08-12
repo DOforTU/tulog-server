@@ -11,6 +11,8 @@ export class NoticeService {
     private readonly dataSource: DataSource,
   ) {}
 
+  // ===== CREATE =====
+
   /** Create a new notice */
   async createNotice(createNoticeDto: CreateNoticeDto): Promise<Notice> {
     return await this.noticeRepository.createNotice(createNoticeDto);
@@ -38,7 +40,6 @@ export class NoticeService {
     return await this.noticeRepository.createNotice(createNoticeDto);
   }
 
-  // ===== About team invite info Methods =====
   /** Create notice for team invite */
   async createTeamInviteNotice(
     userId: number,
@@ -62,7 +63,6 @@ export class NoticeService {
     return await this.noticeRepository.createNotice(createNoticeDto);
   }
 
-  // ===== About team member info Methods =====
   /** Create notice for team join
    *  Dto 매핑하기 위함
    */
@@ -152,6 +152,27 @@ export class NoticeService {
     return await this.noticeRepository.createNotice(createNoticeDto);
   }
 
+  /** Create multiple notices with transaction (for bulk operations) */
+  async createMultipleNotices(
+    createNoticeDtos: CreateNoticeDto[],
+  ): Promise<Notice[]> {
+    return await this.dataSource.transaction(async (manager) => {
+      const notices: Notice[] = [];
+
+      for (const createNoticeDto of createNoticeDtos) {
+        const notice = await this.noticeRepository.createNoticeWithTransaction(
+          createNoticeDto,
+          manager,
+        );
+        notices.push(notice);
+      }
+
+      return notices;
+    });
+  }
+
+  // ===== READ =====
+
   /** Get user notices with pagination and filters */
   async getUserNotices(
     userId: number,
@@ -190,6 +211,8 @@ export class NoticeService {
     return { count };
   }
 
+  // ===== UPDATE =====
+
   /** Mark notice as read */
   async markAsRead(noticeId: number, userId: number): Promise<Notice> {
     // Verify ownership
@@ -220,6 +243,8 @@ export class NoticeService {
     return { updatedCount };
   }
 
+  // ===== DELETE =====
+
   /** Delete notice */
   async deleteNotice(userId: number, noticeId: number): Promise<void> {
     const notice = await this.noticeRepository.findByIdAndUserId(
@@ -247,24 +272,5 @@ export class NoticeService {
   ): Promise<{ deletedCount: number }> {
     const deletedCount = await this.noticeRepository.deleteOldNotices(daysOld);
     return { deletedCount };
-  }
-
-  /** Create multiple notices with transaction (for bulk operations) */
-  async createMultipleNotices(
-    createNoticeDtos: CreateNoticeDto[],
-  ): Promise<Notice[]> {
-    return await this.dataSource.transaction(async (manager) => {
-      const notices: Notice[] = [];
-
-      for (const createNoticeDto of createNoticeDtos) {
-        const notice = await this.noticeRepository.createNoticeWithTransaction(
-          createNoticeDto,
-          manager,
-        );
-        notices.push(notice);
-      }
-
-      return notices;
-    });
   }
 }

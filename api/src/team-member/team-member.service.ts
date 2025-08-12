@@ -186,16 +186,17 @@ export class TeamMemberService {
    * @returns An array of TeamMember objects representing the joined members
    */
   async getJoinedTeamMembersByTeamId(teamId: number): Promise<TeamMember[]> {
-    const teamMembers = await this.teamMemberRepository.getTeamMembersByTeamId(teamId);
-    
+    const teamMembers =
+      await this.teamMemberRepository.getTeamMembersByTeamId(teamId);
+
     const joinedMembers = teamMembers.filter(
-      member => member.status === TeamMemberStatus.JOINED
+      (member) => member.status === TeamMemberStatus.JOINED,
     );
-    
+
     if (!joinedMembers || joinedMembers.length === 0) {
       throw new NotFoundException('Team members not found');
     }
-    
+
     return joinedMembers;
   }
 

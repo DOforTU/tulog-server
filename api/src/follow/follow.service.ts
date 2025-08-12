@@ -17,6 +17,8 @@ export class FollowService {
     private readonly noticeService: NoticeService,
   ) {}
 
+  // ===== CREATE =====
+
   /** Follow a user
    * followerId follows followId
    */
@@ -60,30 +62,7 @@ export class FollowService {
     return follow;
   }
 
-  /** Unfollow a user
-   * followerId unfollows followId
-   */
-  async unfollowUser(followerId: number, followId: number): Promise<boolean> {
-    // you cannot unfollow yourself
-    if (followerId === followId) {
-      throw new BadRequestException('You cannot unfollow yourself');
-    }
-
-    // check if the follow exists
-    await this.userService.getUserById(followId);
-
-    // check if the follow exists
-    const isFollowing = await this.followRepository.isFollowing(
-      followerId,
-      followId,
-    );
-
-    if (!isFollowing) {
-      throw new ConflictException('You are not unfollowing this user');
-    }
-
-    return await this.followRepository.unfollowUser(followerId, followId);
-  }
+  // ===== READ =====
 
   /** Get followers of a user */
   async getFollowers(userId: number): Promise<User[]> {
@@ -113,5 +92,34 @@ export class FollowService {
     }
 
     return user.followings.map((f) => f.following);
+  }
+
+  // ===== UPDATE =====
+
+  // ===== DELETE =====
+
+  /** Unfollow a user
+   * followerId unfollows followId
+   */
+  async unfollowUser(followerId: number, followId: number): Promise<boolean> {
+    // you cannot unfollow yourself
+    if (followerId === followId) {
+      throw new BadRequestException('You cannot unfollow yourself');
+    }
+
+    // check if the follow exists
+    await this.userService.getUserById(followId);
+
+    // check if the follow exists
+    const isFollowing = await this.followRepository.isFollowing(
+      followerId,
+      followId,
+    );
+
+    if (!isFollowing) {
+      throw new ConflictException('You are not unfollowing this user');
+    }
+
+    return await this.followRepository.unfollowUser(followerId, followId);
   }
 }

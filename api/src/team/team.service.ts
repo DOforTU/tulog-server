@@ -199,8 +199,4 @@ export class TeamService {
     }
     return !!existingTeam;
   }
-
-  async leaveTeam(teamId: number, memberId: number): Promise<boolean> {
-    return await this.teamMemberService.leaveTeam(teamId, memberId);
-  }
 }

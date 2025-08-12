@@ -10,6 +10,8 @@ export class PendingUserRepository {
     private readonly pendingUserRepository: Repository<PendingUser>,
   ) {}
 
+  // ===== CREATE =====
+
   /**
    * 임시 회원가입 정보 저장
    */
@@ -17,6 +19,8 @@ export class PendingUserRepository {
     const pendingUser = this.pendingUserRepository.create(pendingUserData);
     return await this.pendingUserRepository.save(pendingUser);
   }
+
+  // ===== READ =====
 
   /**
    * 이메일로 임시 회원가입 정보 조회
@@ -38,6 +42,8 @@ export class PendingUserRepository {
       where: { email, verificationCode: code },
     });
   }
+
+  // ===== DELETE =====
 
   /**
    * 임시 회원가입 정보 삭제

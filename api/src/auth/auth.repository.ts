@@ -19,18 +19,22 @@ export class AuthRepository {
     private readonly authRepository: Repository<Auth>,
   ) {}
 
+  // ===== CREATE =====
+
   /** Create auth */
   async createAuth(authData: CreateAuthDto, user: User): Promise<Auth> {
     const auth = this.authRepository.create({ ...authData, user: user });
     return this.authRepository.save(auth);
   }
 
+  // ===== READ =====
+
   /** Find auth by UserId(NOT Auth Id) */
   async findByUserId(userId: number): Promise<Auth | null> {
-    return this.authRepository.findOne({
-      where: {
-        user: { id: userId },
-      },
-    });
+    return this.authRepository
+      .createQueryBuilder('auth')
+      .innerJoin('auth.user', 'user')
+      .where('user.id = :userId', { userId })
+      .getOne();
   }
 }

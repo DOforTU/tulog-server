@@ -10,6 +10,28 @@ export class TeamMemberRepository {
     private readonly teamMemberRepository: Repository<TeamMember>,
   ) {}
 
+  // ===== CREATE =====
+
+  async inviteTeam(teamId: number, memberId: number): Promise<TeamMember> {
+    const teamMember = this.teamMemberRepository.create({
+      teamId,
+      memberId,
+      status: TeamMemberStatus.INVITED,
+    });
+    return await this.teamMemberRepository.save(teamMember);
+  }
+
+  async requestToTeam(teamId: number, memberId: number): Promise<TeamMember> {
+    const teamMember = this.teamMemberRepository.create({
+      teamId,
+      memberId,
+      status: TeamMemberStatus.PENDING,
+    });
+    return await this.teamMemberRepository.save(teamMember);
+  }
+
+  // ===== READ =====
+
   async findByMemberId(memberId: number): Promise<TeamMember[] | null> {
     return await this.teamMemberRepository.find({ where: { memberId } });
   }
@@ -57,26 +79,12 @@ export class TeamMemberRepository {
       .getMany();
   }
 
+  // ===== UPDATE =====
+
+  // ===== DELETE =====
+
   async leaveTeam(teamId: number, memberId: number): Promise<boolean> {
     await this.teamMemberRepository.delete({ teamId, memberId });
     return true;
-  }
-
-  async inviteTeam(teamId: number, memberId: number): Promise<TeamMember> {
-    const teamMember = this.teamMemberRepository.create({
-      teamId,
-      memberId,
-      status: TeamMemberStatus.INVITED,
-    });
-    return await this.teamMemberRepository.save(teamMember);
-  }
-
-  async requestToTeam(teamId: number, memberId: number): Promise<TeamMember> {
-    const teamMember = this.teamMemberRepository.create({
-      teamId,
-      memberId,
-      status: TeamMemberStatus.PENDING,
-    });
-    return await this.teamMemberRepository.save(teamMember);
   }
 }

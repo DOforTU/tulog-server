@@ -10,19 +10,15 @@ export class FollowRepository {
     private readonly followRepository: Repository<Follow>,
   ) {}
 
-  /** check if the duplicate follow exists */
-  async isFollowing(followerId: number, followingId: number): Promise<boolean> {
-    const isFollowing = await this.followRepository.findOne({
-      where: { followerId, followingId },
-    });
-    return isFollowing !== null;
-  }
+  // ===== CREATE =====
 
   /** Follow a user */
   async followUser(followerId: number, followingId: number): Promise<Follow> {
     const follow = this.followRepository.create({ followerId, followingId });
     return await this.followRepository.save(follow);
   }
+
+  // ===== DELETE =====
 
   /** Unfollow a user */
   async unfollowUser(
@@ -31,5 +27,17 @@ export class FollowRepository {
   ): Promise<boolean> {
     await this.followRepository.delete({ followerId, followingId });
     return true;
+  }
+
+  // ===== SUB FUNCTIONS =====
+
+  /** check if the duplicate follow exists */
+  async isFollowing(followerId: number, followingId: number): Promise<boolean> {
+    const follow = await this.followRepository
+      .createQueryBuilder('follow')
+      .where('follow.followerId = :followerId', { followerId })
+      .andWhere('follow.followingId = :followingId', { followingId })
+      .getOne();
+    return follow !== null;
   }
 }
