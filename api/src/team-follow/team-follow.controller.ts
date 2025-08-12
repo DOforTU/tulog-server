@@ -28,7 +28,11 @@ export class TeamFollwController {
     @Request() req: { user: User },
     @Param('id') teamId: number,
   ): Promise<TeamFollow> {
-    return await this.teamFollowService.followTeam(req.user.id, teamId);
+    return await this.teamFollowService.followTeam(
+      req.user.id,
+      req.user.nickname,
+      teamId,
+    );
   }
 
   // ===== READ =====
@@ -36,10 +40,7 @@ export class TeamFollwController {
   /** Get my followed teams */
   @Get('me')
   @UseGuards(SmartAuthGuard)
-  async getMyFollowingTeams(
-    @Request() req: { user: User },
-    @Param() team: Team,
-  ): Promise<Team[]> {
+  async getMyFollowingTeams(@Request() req: { user: User }): Promise<Team[]> {
     return await this.teamFollowService.getMyFollowingTeams(req.user.id);
   }
 

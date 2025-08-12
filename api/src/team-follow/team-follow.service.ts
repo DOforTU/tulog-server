@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { NoticeService } from 'src/notice/notice.service';
 import { UserService } from 'src/user/user.service';
 import { TeamFollow } from './team-follow.entity';
@@ -6,6 +10,7 @@ import { TeamService } from 'src/team/team.service';
 import { Team } from 'src/team/team.entity';
 import { User } from 'src/user/user.entity';
 import { TeamFollowRepository } from './team-follow.repository';
+import { NotFoundError } from 'rxjs';
 
 @Injectable()
 export class TeamFollowService {
@@ -21,9 +26,15 @@ export class TeamFollowService {
   /** Follow a team
    * followerId follows followId
    */
-  async followTeam(userId: number, teamId: number): Promise<TeamFollow> {
+  async followTeam(
+    userId: number,
+    nickname: string,
+    teamId: number,
+  ): Promise<TeamFollow> {
     // check if the team exists
-    await this.teamService.getTeamById(teamId);
+    const teamMembers = await this.teamService.getTeamWithMembersById(teamId);
+    const leaderId = teamMembers.teamMembers.find((m) => m.isLeader == true)
+      ?.user.id;
 
     // check if the duplicate follow exists
     const isFollowing = await this.teamFollowRepository.isFollowing(
@@ -41,10 +52,13 @@ export class TeamFollowService {
 
     // Create follow notification for the target team
     try {
+      if (!leaderId) {
+        throw new NotFoundException('You can not found the laeder.');
+      }
       await this.noticeService.createFollowNotice(
-        teamId, // target user who receives the notification
+        leaderId, // target user who receives the notification
         userId, // follower user ID
-        follow.nickname, // follower nickname
+        nickname, // follower nickname
       );
     } catch (error) {
       // Log the error but don't fail the follow operation
@@ -60,9 +74,6 @@ export class TeamFollowService {
    *  유저가 팔로우한 팀 조회(유저기준)
    */
   async getMyFollowingTeams(userId: number): Promise<Team[]> {
-    // check if the user exists
-    await this.userService.getUserById(userId);
-
     // team will be null, when no followings exist
     const followingTeams = await this.userService.findMyFollowingTeams(userId);
     if (!followingTeams) {
