@@ -23,6 +23,8 @@ export class PostService {
     private readonly dataSource: DataSource,
   ) {}
 
+  // ===== CREATE =====
+
   async createPost(
     createPostDto: CreatePostDto,
     userId: number,
@@ -110,56 +112,7 @@ export class PostService {
     }
   }
 
-  private async handleEditorsCreation(
-    manager: any,
-    postId: number,
-    teamId: number | undefined,
-    userId: number,
-  ): Promise<void> {
-    if (teamId) {
-      const teamMembers =
-        await this.teamMemberService.getJoinedTeamMembersByTeamId(teamId);
-
-      for (const teamMember of teamMembers) {
-        const role =
-          teamMember.memberId === userId ? EditorRole.OWNER : EditorRole.EDITOR;
-        await manager.save(Editor, {
-          postId: postId,
-          userId: teamMember.memberId,
-          role: role,
-        });
-      }
-    } else {
-      await manager.save(Editor, {
-        postId: postId,
-        userId: userId,
-        role: EditorRole.OWNER,
-      });
-    }
-  }
-
-  private async handleTagsCreation(
-    manager: any,
-    postId: number,
-    tagNames?: string[],
-  ): Promise<void> {
-    if (!tagNames || tagNames.length === 0) {
-      return;
-    }
-
-    for (const tagName of tagNames) {
-      let tag = await manager.findOne(Tag, { where: { name: tagName } });
-
-      if (!tag) {
-        tag = await manager.save(Tag, { name: tagName });
-      }
-
-      await manager.save(PostTag, {
-        postId: postId,
-        tagId: tag.id,
-      });
-    }
-  }
+  // ===== READ =====
 
   async getPostById(id: number): Promise<Post> {
     const post = await this.postRepository.findById(id);
@@ -176,6 +129,8 @@ export class PostService {
     }
     return post;
   }
+
+  // ===== UPDATE =====
 
   async updatePost(
     id: number,
@@ -255,6 +210,59 @@ export class PostService {
         : new InternalServerErrorException('Failed updating post');
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  // ===== SUB FUNCTIONS =====
+
+  private async handleEditorsCreation(
+    manager: any,
+    postId: number,
+    teamId: number | undefined,
+    userId: number,
+  ): Promise<void> {
+    if (teamId) {
+      const teamMembers =
+        await this.teamMemberService.getJoinedTeamMembersByTeamId(teamId);
+
+      for (const teamMember of teamMembers) {
+        const role =
+          teamMember.memberId === userId ? EditorRole.OWNER : EditorRole.EDITOR;
+        await manager.save(Editor, {
+          postId: postId,
+          userId: teamMember.memberId,
+          role: role,
+        });
+      }
+    } else {
+      await manager.save(Editor, {
+        postId: postId,
+        userId: userId,
+        role: EditorRole.OWNER,
+      });
+    }
+  }
+
+  private async handleTagsCreation(
+    manager: any,
+    postId: number,
+    tagNames?: string[],
+  ): Promise<void> {
+    if (!tagNames || tagNames.length === 0) {
+      return;
+    }
+
+    for (const tagName of tagNames) {
+      let tag = await manager.findOne(Tag, { where: { name: tagName } });
+
+      if (!tag) {
+        tag = await manager.save(Tag, { name: tagName });
+      }
+
+      await manager.save(PostTag, {
+        postId: postId,
+        tagId: tag.id,
+      });
     }
   }
 

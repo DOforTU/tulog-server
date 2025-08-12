@@ -18,6 +18,8 @@ import { SmartAuthGuard } from 'src/auth/jwt';
 export class PostController {
   constructor(private readonly postService: PostService) {}
 
+  // ===== CREATE =====
+
   @PostMapping()
   @UseGuards(SmartAuthGuard)
   async createPost(
@@ -36,10 +38,14 @@ export class PostController {
     return await this.postService.draftPost(draftPostDto, req.user.id);
   }
 
+  // ===== READ =====
+
   @Get(':id')
   async getPostById(@Param('id') id: number): Promise<Post> {
     return await this.postService.getPostById(id);
   }
+
+  // ===== UPDATE =====
 
   @Patch(':id')
   @UseGuards(SmartAuthGuard)
