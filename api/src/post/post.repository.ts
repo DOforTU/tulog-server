@@ -10,10 +10,14 @@ export class PostRepository {
     private readonly postRepository: Repository<Post>,
   ) {}
 
+  // ===== CREATE =====
+
   async createPost(postData: Partial<Post>): Promise<Post> {
     const post = this.postRepository.create(postData);
     return await this.postRepository.save(post);
   }
+
+  // ===== READ =====
 
   async findById(id: number): Promise<Post | null> {
     return await this.postRepository
@@ -38,6 +42,8 @@ export class PostRepository {
       .where('post.id = :id', { id })
       .getOne();
   }
+
+  // ===== UPDATE =====
 
   async updatePost(id: number, updateData: Partial<Post>): Promise<void> {
     await this.postRepository

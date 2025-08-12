@@ -22,6 +22,8 @@ import { Notice } from './notice.entity';
 export class NoticeController {
   constructor(private readonly noticeService: NoticeService) {}
 
+  // ===== CREATE =====
+
   /**
    * Create a new notice
    * POST /notices
@@ -42,7 +44,8 @@ export class NoticeController {
     };
   }
 
-  // ===== About user Methods =====
+  // ===== READ =====
+
   /**
    * Get user's notices with pagination and filters
    * GET /notices
@@ -77,6 +80,8 @@ export class NoticeController {
     return result;
   }
 
+  // ===== UPDATE =====
+
   /**
    * Mark notice as read
    * PATCH /notices/:id/read
@@ -103,6 +108,8 @@ export class NoticeController {
 
     return result;
   }
+
+  // ===== DELETE =====
 
   /**
    * Delete notice

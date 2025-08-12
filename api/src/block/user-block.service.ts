@@ -18,6 +18,8 @@ export class UserBlockService {
     private readonly dataSource: DataSource,
   ) {}
 
+  // ===== CREATE =====
+
   async blockUser(blockerId: number, blockedId: number): Promise<UserBlock> {
     if (blockerId === blockedId) {
       throw new BadRequestException('Cannot block yourself.');
@@ -76,6 +78,8 @@ export class UserBlockService {
     });
   }
 
+  // ===== READ =====
+
   /** 차단한 유저들을 조회하려고 하는데
    * 아이디로 유저가 존재하는지 진행 후 ,
    * 유저 아이디로 차단한 사용자를 user변수에 담는다 (아마 리스트로? 많을수도있으니까)
@@ -93,6 +97,8 @@ export class UserBlockService {
 
     return user.blockers.map((b) => b.blocked);
   }
+
+  // ===== DELETE =====
 
   async unblockUser(blockerId: number, blockedId: number): Promise<boolean> {
     if (blockerId === blockedId) {

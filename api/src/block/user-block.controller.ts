@@ -17,6 +17,8 @@ import { UserBlock } from './user-block.entity';
 export class UserBlockController {
   constructor(private readonly userBlockService: UserBlockService) {}
 
+  // ===== CREATE =====
+
   /**req.user.id는 로그인한 유저이고 id는 내가 차단할 사용자의 id */
   @Post(':id/block')
   @UseGuards(JwtAuthGuard)
@@ -27,6 +29,8 @@ export class UserBlockController {
     return await this.userBlockService.blockUser(req.user.id, id);
   }
 
+  // ===== READ =====
+
   /** Get my blockmember */
   @Get('users/me/blocks')
   @UseGuards(JwtAuthGuard)
@@ -35,6 +39,8 @@ export class UserBlockController {
   ): Promise<User[] | null> {
     return await this.userBlockService.getBlockUsers(req.user.id);
   }
+
+  // ===== DELETE =====
 
   @Delete('users/:id/block')
   @UseGuards(JwtAuthGuard)

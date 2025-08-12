@@ -11,6 +11,8 @@ export class NoticeRepository {
     private readonly noticeRepository: Repository<Notice>,
   ) {}
 
+  // ===== CREATE =====
+
   /** Create a new notice */
   async createNotice(createNoticeDto: CreateNoticeDto): Promise<Notice> {
     const notice = this.noticeRepository.create(createNoticeDto);
@@ -25,6 +27,8 @@ export class NoticeRepository {
     const notice = manager.getRepository(Notice).create(createNoticeDto);
     return await manager.getRepository(Notice).save(notice);
   }
+
+  // ===== READ =====
 
   /** Find notices by user ID with pagination */
   async findByUserId(
@@ -59,10 +63,38 @@ export class NoticeRepository {
 
   /** Find notice by ID and user ID (for ownership check) */
   async findByIdAndUserId(id: number, userId: number): Promise<Notice | null> {
-    return await this.noticeRepository.findOne({
-      where: { id, userId },
-    });
+    return await this.noticeRepository
+      .createQueryBuilder('notice')
+      .where('notice.id = :id', { id })
+      .andWhere('notice.userId = :userId', { userId })
+      .getOne();
   }
+
+  /** Get unread notice count for a user */
+  async getUnreadCount(userId: number): Promise<number> {
+    return await this.noticeRepository
+      .createQueryBuilder('notice')
+      .where('notice.userId = :userId', { userId })
+      .andWhere('notice.isRead = :isRead', { isRead: false })
+      .getCount();
+  }
+
+  /** Find notices by type and related entity */
+  async findByTypeAndRelatedEntity(
+    type: NoticeType,
+    relatedEntityId: number,
+  ): Promise<Notice[]> {
+    return await this.noticeRepository
+      .createQueryBuilder('notice')
+      .where('notice.type = :type', { type })
+      .andWhere('notice.relatedEntityId = :relatedEntityId', {
+        relatedEntityId,
+      })
+      .orderBy('notice.createdAt', 'DESC')
+      .getMany();
+  }
+
+  // ===== UPDATE =====
 
   /** Mark notice as read */
   async markAsRead(id: number, userId: number): Promise<boolean> {
@@ -82,12 +114,7 @@ export class NoticeRepository {
     return result.affected || 0;
   }
 
-  /** Get unread notice count for a user */
-  async getUnreadCount(userId: number): Promise<number> {
-    return await this.noticeRepository.count({
-      where: { userId, isRead: false },
-    });
-  }
+  // ===== DELELTE =====
 
   /** Delete notice by ID and user ID */
   async deleteByIdAndUserId(id: number, userId: number): Promise<boolean> {
@@ -105,18 +132,5 @@ export class NoticeRepository {
     });
 
     return result.affected || 0;
-  }
-
-  /** Find notices by type and related entity */
-  async findByTypeAndRelatedEntity(
-    type: NoticeType,
-    relatedEntityId: number,
-  ): Promise<Notice[]> {
-    return await this.noticeRepository.find({
-      where: {
-        type,
-        relatedEntityId,
-      },
-    });
   }
 }

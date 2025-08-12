@@ -31,6 +31,7 @@ export class TeamMemberRepository {
   }
 
   // ===== READ =====
+
   /**
    * 팀 아이디로 팀 맴버를 가져온다 --> 팀 맴버로 역 조회를 하기 위함
    *
@@ -86,4 +87,6 @@ export class TeamMemberRepository {
       where: { teamId, memberId },
     });
   }
+
+
 }
