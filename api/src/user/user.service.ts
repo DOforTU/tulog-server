@@ -2,19 +2,12 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import { UserRepository } from './user.repository';
-import { User, AuthProvider } from './user.entity';
-import { UpdateUserDto } from './user.dto';
-
-/** Google OAuth user data interface */
-interface GoogleUserData {
-  googleId: string;
-  email: string;
-  nickname: string;
-  username: string;
-  profilePicture?: string;
-}
+import { User } from './user.entity';
+import { UpdateUserDto, UserDetails } from './user.dto';
 
 /**
  * User Business Logic Service
@@ -25,16 +18,18 @@ interface GoogleUserData {
  */
 @Injectable()
 export class UserService {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
-  // ===== Basic CRUD - Domain Specific =====
+  // ===== User Retrieval =====
 
-  /** Get all active users */
-  async getAllUsers(): Promise<User[]> {
-    return this.userRepository.findAll();
-  }
-
-  /** Get user by ID (throws exception) */
+  /**
+   * Get user by ID (throws exception)
+   * @param id User ID
+   * @returns User entity
+   */
   async getUserById(id: number): Promise<User> {
     const user = await this.userRepository.findById(id);
     if (!user) {
@@ -43,75 +38,7 @@ export class UserService {
     return user;
   }
 
-  /** Create user */
-  async createUser(userData: GoogleUserData): Promise<User> {
-    // Check for email duplication only among non-deleted users
-    const existingActiveUser = await this.userRepository.findByEmail(
-      userData.email,
-    );
-    if (existingActiveUser) {
-      throw new ConflictException('Email already exists');
-    }
-
-    return this.userRepository.createGoogleUser(userData);
-  }
-
-  /** Update user information */
-  async updateUser(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-    // Business logic: Check user existence
-    const existingUser = await this.userRepository.findById(id);
-    if (!existingUser) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-
-    // Business logic: Email duplication check (with other users)
-    if (updateUserDto.email && updateUserDto.email !== existingUser.email) {
-      const userWithEmail = await this.userRepository.findByEmail(
-        updateUserDto.email,
-      );
-      if (userWithEmail) {
-        throw new ConflictException('Email already exists');
-      }
-    }
-
-    // Business logic: Username duplication check (with other users)
-    if (
-      updateUserDto.username &&
-      updateUserDto.username !== existingUser.username
-    ) {
-      const userWithUsername = await this.userRepository.findByUsername(
-        updateUserDto.username,
-      );
-      if (userWithUsername) {
-        throw new ConflictException('Username already exists');
-      }
-    }
-
-    const updatedUser = await this.userRepository.update(id, updateUserDto);
-    if (!updatedUser) {
-      throw new NotFoundException(`Failed to update user with ID ${id}`);
-    }
-
-    return updatedUser;
-  }
-
-  /** Soft delete user */
-  async deleteUser(id: number): Promise<void> {
-    // Business logic: Check user existence
-    const userExists = await this.userRepository.exists(id);
-    if (!userExists) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-
-    const deleted = await this.userRepository.delete(id);
-    if (!deleted) {
-      throw new Error(`Failed to delete user with ID ${id}`);
-    }
-  }
-
-  // ===== Query Methods - Domain Specific =====
-
-  /** Get user by email (throws exception) */
+  /** Get user by email (with throws exception, can get no isActive user) */
   async getUserByEmail(email: string): Promise<User> {
     const user = await this.userRepository.findByEmail(email);
     if (!user) {
@@ -120,46 +47,410 @@ export class UserService {
     return user;
   }
 
-  /** Get user by Google ID */
-  async getUserByGoogleId(googleId: string): Promise<User | null> {
-    return this.userRepository.findByGoogleId(googleId);
+  /** Get user by nickname(throws exception) */
+  async getUserByNickname(nickname: string): Promise<User> {
+    const user = await this.userRepository.findByNickname(nickname);
+    if (!user) {
+      throw new NotFoundException(`User with nickname ${nickname} not found`);
+    }
+    return user;
   }
 
-  /** Get deleted users list */
-  async getDeletedUsers(): Promise<User[]> {
-    return this.userRepository.findDeleted();
-  }
-
-  /** Get active user count */
-  async getUserCount(): Promise<number> {
-    return this.userRepository.count();
-  }
-
-  // ===== Business Logic - Verb-Centric =====
-
-  /** Permanently delete user */
-  async hardDeleteUser(id: number): Promise<void> {
-    // Business logic: Check user existence (including deleted users)
-    const user = await this.userRepository.findDeletedById(id);
+  /** Get user details including teams, followers, and following */
+  async getUserDetailsById(id: number): Promise<UserDetails> {
+    const user = await this.findUserDetailsById(id);
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    const deleted = await this.userRepository.hardDelete(id);
+    // Transform teams data
+    const teams =
+      user.teamMembers?.map((teamMember) => ({
+        team: teamMember.team,
+        status: teamMember.status,
+        isLeader: teamMember.isLeader,
+      })) || [];
+
+    // Transform followers data
+    const followers =
+      user.followers?.map((followerRel) => ({
+        id: followerRel.follower.id,
+        nickname: followerRel.follower.nickname,
+        profilePicture: followerRel.follower.profilePicture,
+        isActive: followerRel.follower.isActive,
+        role: followerRel.follower.role,
+      })) || [];
+
+    // Transform following data
+    const following =
+      user.followings?.map((followingRel) => ({
+        id: followingRel.following.id,
+        nickname: followingRel.following.nickname,
+        profilePicture: followingRel.following.profilePicture,
+        isActive: followingRel.following.isActive,
+        role: followingRel.following.role,
+      })) || [];
+
+    return {
+      id: user.id,
+      nickname: user.nickname,
+      profilePicture: user.profilePicture,
+      isActive: user.isActive,
+      teams,
+      followers,
+      following,
+    };
+  }
+
+  /** Get user details including teams, followers, and following */
+  async getUserDetailsByNickname(nickname: string): Promise<UserDetails> {
+    const user = await this.findUserDetailsByNickname(nickname);
+    if (!user) {
+      throw new NotFoundException(`User with nickname ${nickname} not found`);
+    }
+
+    // Transform teams data
+    const teams =
+      user.teamMembers?.map((teamMember) => ({
+        team: teamMember.team,
+        status: teamMember.status,
+        isLeader: teamMember.isLeader,
+      })) || [];
+
+    // Transform followers data
+    const followers =
+      user.followers?.map((followerRel) => ({
+        id: followerRel.follower.id,
+        nickname: followerRel.follower.nickname,
+        profilePicture: followerRel.follower.profilePicture,
+        isActive: followerRel.follower.isActive,
+        role: followerRel.follower.role,
+      })) || [];
+
+    // Transform following data
+    const following =
+      user.followings?.map((followingRel) => ({
+        id: followingRel.following.id,
+        nickname: followingRel.following.nickname,
+        profilePicture: followingRel.following.profilePicture,
+        isActive: followingRel.following.isActive,
+        role: followingRel.following.role,
+      })) || [];
+
+    return {
+      id: user.id,
+      nickname: user.nickname,
+      profilePicture: user.profilePicture,
+      isActive: user.isActive,
+      teams,
+      followers,
+      following,
+    };
+  }
+
+  // ===== Admin Logic =====
+
+  /**
+   * Get active user count
+   * @returns Number of active users
+   */
+  async getUserCount(): Promise<number> {
+    return this.userRepository.countUsers();
+  }
+
+  async getDeletedUserById(id: number): Promise<User> {
+    const user = await this.userRepository.findDeletedById(id);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return user;
+  }
+
+  async findByIdIncludingInactive(id: number): Promise<User> {
+    const user = await this.userRepository.findByIdIncludingInactive(id);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return user;
+  }
+
+  /**
+   * Activate user account
+   * @param id User ID
+   * @returns Activated user entity
+   */
+  async activateUser(id: number): Promise<User> {
+    // Check user existence
+    const existingUser = await this.findByIdIncludingInactive(id);
+
+    // Business logic: Check if already active
+    if (existingUser.isActive) {
+      throw new Error(`User with ID ${id} is already active`);
+    }
+
+    const updatedUser = await this.userRepository.updateUser(id, {
+      isActive: true,
+    });
+    if (!updatedUser) {
+      throw new Error(`Failed to activate user with ID ${id}`);
+    }
+
+    return updatedUser;
+  }
+
+  // ===== Find Methods - Simple Form: get user or null =====
+
+  /**
+   * Get all users
+   * @returns Array of user entities
+   */
+  async findAllUsers(): Promise<User[] | null> {
+    return this.userRepository.findAll();
+  }
+
+  /**
+   * Find active user by ID (nullable)
+   * @param id User ID
+   * @returns User entity or null
+   */
+  async findUserById(id: number): Promise<User | null> {
+    return this.userRepository.findById(id);
+  }
+
+  /**
+   * Find active user by email (nullable)
+   * @param email User email
+   * @returns User entity or null
+   */
+  async findUserByEmail(email: string): Promise<User | null> {
+    return await this.userRepository.findByEmail(email);
+  }
+
+  async findUserDetailsById(id: number): Promise<User | null> {
+    return await this.userRepository.findByIdWithDetails(id);
+  }
+
+  async findUserDetailsByNickname(nickname: string): Promise<User | null> {
+    return await this.userRepository.findByNicknameWithDetails(nickname);
+  }
+
+  /**
+   * Find active user by email with password (for login)
+   * @param email User email
+   * @returns User entity or null
+   */
+  async findUserWithPasswordByEmail(email: string): Promise<User | null> {
+    return await this.userRepository.findByEmailWithPassword(email);
+  }
+
+  /**
+   * Find active user by nickname (nullable)
+   * @param nickname User nickname
+   * @returns User entity or null
+   */
+  async findUserByNickname(nickname: string): Promise<User | null> {
+    return await this.userRepository.findByNickname(nickname);
+  }
+
+  /**
+   * Find active user by sub (used in JWT validation)
+   * @param sub User sub
+   * @returns User entity or null
+   */
+  async findUserBySub(sub: number): Promise<User | null> {
+    return await this.userRepository.findBySub(sub);
+  }
+
+  /**
+   * Find user by email (with deleted users)
+   * @param email User email
+   * @returns User entity or null
+   */
+  async findUserIncludingDeletedByEmail(email: string): Promise<User | null> {
+    return await this.userRepository.findByEmailIncludingDeleted(email);
+  }
+
+  /**
+   * Find user by email (including no active users)
+   * @param email User email
+   * @returns User entity or null
+   */
+  async findUserIncludingNoActiveByEmail(email: string): Promise<User | null> {
+    return await this.userRepository.findByEmailIncludingInactive(email);
+  }
+
+  /**
+   * Find user by nickname (including no active users)
+   * @param nickname User nickname
+   * @returns User entity or null
+   */
+  async findUserIncludingNoActiveByNickname(
+    nickname: string,
+  ): Promise<User | null> {
+    return await this.userRepository.findByNicknameIncludingInactive(nickname);
+  }
+
+  /**
+   * Find user by ID (including followers)
+   * @param id User ID
+   * @returns User entity or null
+   */
+  async findUserByIdWithFollowers(id: number): Promise<User | null> {
+    return this.userRepository.findByIdWithFollowers(id);
+  }
+
+  /**
+   * Find user by ID (including followings)
+   * @param id User ID
+   * @returns User entity or null
+   */
+  async findUserByIdWithFollowings(id: number): Promise<User | null> {
+    return this.userRepository.findByIdWithFollowings(id);
+  }
+
+  /**
+   * Find user by ID (including blocked users)
+   * @param id User ID
+   * @returns User entity or null
+   */
+  async findUserWithBlockedById(id: number): Promise<User | null> {
+    return await this.userRepository.findByIdWithBlocked(id);
+  }
+
+  /**
+   * Find all deleted users
+   * @returns Array of deleted user entities
+   */
+  async findDeletedUsers(): Promise<User[]> {
+    return await this.userRepository.findAllDeleted();
+  }
+
+  // ===== Special Operations - Update and Delete =====
+
+  /** Soft delete user */
+  async deleteUser(id: number): Promise<boolean> {
+    // Check user existence
+    const user = await this.getUserDetailsById(id);
+
+    if (user.teams.length > 0) {
+      throw new ForbiddenException(
+        `You have to leave all teams before deleting your account.`,
+      );
+    }
+
+    // Use transaction to delete user and related follow relationships
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Delete all follow relationships where user is follower
+      await queryRunner.query(
+        'DELETE FROM "server_api"."follow" WHERE "followerId" = $1',
+        [id],
+      );
+
+      // Delete all follow relationships where user is being followed
+      await queryRunner.query(
+        'DELETE FROM "server_api"."follow" WHERE "followingId" = $1',
+        [id],
+      );
+
+      // Soft delete the user
+      await queryRunner.query(
+        'UPDATE "server_api"."user" SET "deletedAt" = NOW() WHERE "id" = $1',
+        [id],
+      );
+
+      await queryRunner.commitTransaction();
+      return true;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw new Error(`Failed to delete user with ID ${id}: ${error.message}`);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  // ===== Update User Information =====
+
+  /**
+   * Update user information
+   * @param id User ID
+   * @param updateUserDto Update user data
+   * @returns Updated user entity
+   */
+  async updateUser(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+    // Check user existence
+    const existingUser = await this.getUserById(id);
+
+    // Business logic: Username duplication check (with other users)
+    if (
+      updateUserDto.nickname &&
+      updateUserDto.nickname !== existingUser.nickname
+    ) {
+      const userWithUsername = await this.findUserByNickname(
+        updateUserDto.nickname,
+      );
+      if (userWithUsername) {
+        throw new ConflictException('nickname already exists');
+      }
+    }
+    const updatedUser = await this.userRepository.updateUser(id, updateUserDto);
+    if (!updatedUser) {
+      throw new NotFoundException(`Failed to update user with ID ${id}`);
+    }
+
+    return updatedUser;
+  }
+
+  /**
+   * Update user password
+   * @param id User ID
+   * @param hashedNewPassword New hashed password
+   * @returns Updated user entity
+   */
+  async updatePassword(id: number, hashedNewPassword: string): Promise<User> {
+    // Check user existence
+    await this.getUserById(id);
+
+    // Business logic: Update user password
+    const updatedUser = await this.userRepository.updatePasswordById(
+      id,
+      hashedNewPassword,
+    );
+
+    if (!updatedUser) {
+      throw new Error(`Failed to update password for user with ID ${id}`);
+    }
+
+    return updatedUser;
+  }
+
+  /**
+   * Permanently delete user
+   * @param id User ID
+   */
+  async hardDeleteUser(id: number): Promise<void> {
+    // Business logic: Check user existence (including deleted users)
+    await this.getDeletedUserById(id);
+
+    const deleted = await this.userRepository.hardDeleteById(id);
     if (!deleted) {
       throw new Error(`Failed to permanently delete user with ID ${id}`);
     }
   }
 
-  /** Restore deleted user */
+  /**
+   * Restore deleted user
+   * @param id User ID
+   * @returns Restored user entity
+   */
   async restoreUser(id: number): Promise<User> {
-    // Business logic: Check deleted user existence
-    const deletedUser = await this.userRepository.findDeletedById(id);
-    if (!deletedUser) {
-      throw new NotFoundException(`Deleted user with ID ${id} not found`);
-    }
+    // Check deleted user existence
+    await this.getDeletedUserById(id);
 
-    const restored = await this.userRepository.restore(id);
+    const restored = await this.userRepository.restoreById(id);
     if (!restored) {
       throw new Error(`Failed to restore user with ID ${id}`);
     }
@@ -171,70 +462,4 @@ export class UserService {
 
     return restoredUser;
   }
-
-  /** Create Google OAuth user */
-  async createGoogleUser(googleUserData: GoogleUserData): Promise<User> {
-    // Check for email duplication only among non-deleted users
-    // Deleted users can create new accounts
-    const existingActiveUser = await this.userRepository.findByEmail(
-      googleUserData.email,
-    );
-    if (existingActiveUser) {
-      throw new ConflictException('Email already exists');
-    }
-
-    // Create new account even if deleted users exist
-    return this.userRepository.createGoogleUser(googleUserData);
-  }
-
-  /** Link Google account to existing account */
-  async linkGoogleAccount(
-    userId: number,
-    linkData: { googleId: string; profilePicture?: string },
-  ): Promise<User> {
-    const updateData = {
-      googleId: linkData.googleId,
-      profilePicture: linkData.profilePicture,
-      provider: AuthProvider.GOOGLE,
-    };
-
-    const updatedUser = await this.userRepository.update(userId, updateData);
-    if (!updatedUser) {
-      throw new NotFoundException(
-        `Failed to link Google account for user ${userId}`,
-      );
-    }
-
-    return updatedUser;
-  }
-
-  // ===== Internal Helper Methods - Simple Form =====
-
-  /** Find active user by email (nullable) */
-  async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findByEmail(email);
-  }
-
-  /** Find active user by ID (nullable) */
-  async findById(id: number): Promise<User | null> {
-    return this.userRepository.findById(id);
-  }
-
-  /** Find user by email (including deleted users) */
-  async findByEmailIncludingDeleted(email: string): Promise<User | null> {
-    return this.userRepository.findByEmailIncludingDeleted(email);
-  }
-
-  /** Find user by Google ID */
-  async findByGoogleId(googleId: string): Promise<User | null> {
-    return this.userRepository.findByGoogleId(googleId);
-  }
 }
-
-// TODO: Expand social login providers (Kakao, Naver, etc.)
-// TODO: Handle user profile image upload
-// TODO: Implement user permission management system
-// TODO: Add account lock/unlock functionality
-// TODO: Add user activity log recording functionality
-// TODO: Add user search and filtering functionality
-// TODO: Add multi-social account linking functionality (Google + Kakao, etc.)

@@ -7,11 +7,17 @@ import { AuthController } from './auth.controller';
 import { GoogleStrategy } from './google.strategy';
 import { JwtAuthStrategy } from './jwt/jwt.strategy';
 import { UserModule } from '../user/user.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Auth } from './auth.entity';
+import { AuthRepository } from './auth.repository';
+import { PendingUser } from './pending-user.entity';
+import { PendingUserRepository } from './pending-user.repository';
 
 @Module({
   imports: [
     UserModule,
     PassportModule,
+    TypeOrmModule.forFeature([Auth, PendingUser]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -22,7 +28,13 @@ import { UserModule } from '../user/user.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, GoogleStrategy, JwtAuthStrategy],
-  exports: [AuthService],
+  providers: [
+    AuthService,
+    AuthRepository,
+    PendingUserRepository,
+    GoogleStrategy,
+    JwtAuthStrategy,
+  ],
+  exports: [AuthService, AuthRepository, PendingUserRepository],
 })
 export class AuthModule {}

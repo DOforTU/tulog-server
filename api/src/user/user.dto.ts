@@ -3,53 +3,122 @@ import {
   IsString,
   IsOptional,
   IsBoolean,
-  IsEnum,
+  MinLength,
+  MaxLength,
+  Matches,
 } from 'class-validator';
-import { AuthProvider } from './user.entity';
+import { Match } from 'src/common/decorator/match.decorator';
+import { UserRole } from './user.entity';
+import { TeamWithStatus } from 'src/team-member/team-member.dto';
 
 /**
  * User creation DTO
  * - Used when creating new user accounts
  * - Email and username are required, others are optional
  */
-export class CreateUserDto {
-  /** User email (required, valid email format) */
+export class CreateOauthUserDto {
+  /** User email */
   @IsEmail()
   email: string;
 
-  /** Username (required) */
+  /** Name */
   @IsString()
-  username: string;
+  name: string;
 
-  /** Password (optional, not required for Google OAuth) */
+  /** User nickname */
   @IsOptional()
   @IsString()
-  password?: string;
+  nickname: string;
 
-  /** User nickname (optional) */
-  @IsOptional()
-  @IsString()
-  nickname?: string;
-
-  /** Google OAuth ID (optional) */
-  @IsOptional()
-  @IsString()
-  googleId?: string;
-
-  /** Profile picture URL (optional) */
+  /** Profile picture URL (default: default-avatar.png) */
   @IsOptional()
   @IsString()
   profilePicture?: string;
 
-  /** Login provider (optional) */
-  @IsOptional()
-  @IsEnum(AuthProvider)
-  provider?: AuthProvider;
-
-  /** Account activation status (optional, default: true) */
+  /** Account activation status (optional, default: false) */
   @IsOptional()
   @IsBoolean()
-  isActive?: boolean;
+  isActive: boolean;
+}
+
+/**
+ * User creation DTO
+ * - Used when creating new user accounts
+ * - Email and username are required, others are optional
+ */
+export class CreateLocalUserDto {
+  /** User email (required, valid email format) */
+  @IsEmail()
+  email: string;
+
+  /** Password (required) */
+  @MinLength(8)
+  @MaxLength(20)
+  @Matches(/(?=.*[A-Z])/, {
+    message: 'Must contain at least 1 uppercase letter',
+  })
+  @Matches(/(?=.*[a-z])/, {
+    message: 'Must contain at least 1 lowercase letter',
+  })
+  @Matches(/(?=.*\d)/, {
+    message: 'Must contain at least 1 number',
+  })
+  @Matches(/(?=.*[!@#$%^&*()\-_=+{}[\]|\\:;"'<>,.?/`~])/, {
+    message: 'Must contain at least 1 special character',
+  })
+  @Matches(/^[^\s]+$/, {
+    message: 'Password must not contain spaces',
+  })
+  @IsString()
+  password: string;
+
+  @Match('password', { message: 'Passwords do not match' })
+  passwordConfirm: string;
+
+  /** Name (required) */
+  @IsString()
+  @MinLength(2)
+  @MaxLength(30)
+  @Matches(/^[^\s]+(?:\s[^\s]+)?$/, {
+    message: 'Name must contain at most one space, and not at the start or end',
+  })
+  name: string;
+
+  /** User nickname (required)*/
+  @IsString()
+  @MinLength(4)
+  @MaxLength(20)
+  @Matches(/^[^\s]+$/, {
+    message: 'Nickname must not contain spaces',
+  })
+  nickname: string;
+}
+
+export class LoginDto {
+  /** User email (required, valid email format) */
+  @IsEmail()
+  email: string;
+
+  /** Password (required) */
+  // @MinLength(8)
+  // @MaxLength(20)
+  // @Matches(/(?=.*[A-Z])/, {
+  //   message: 'Must contain at least 1 uppercase letter',
+  // })
+  // @Matches(/(?=.*[a-z])/, {
+  //   message: 'Must contain at least 1 lowercase letter',
+  // })
+  // @Matches(/(?=.*\d)/, {
+  //   message: 'Must contain at least 1 number',
+  // })
+  // @Matches(/(?=.*[!@#$%^&*()\-_=+{}[\]|\\:;"'<>,.?/`~])/, {
+  //   message: 'Must contain at least 1 special character',
+  // })
+  // @Matches(/^[^\s]+$/, {
+  //   message: 'Password must not contain spaces',
+  // })
+  @IsString()
+  password: string;
 }
 
 /**
@@ -58,40 +127,30 @@ export class CreateUserDto {
  * - All fields are optional
  */
 export class UpdateUserDto {
-  /** User email (optional, valid email format) */
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
   /** Username (optional) */
   @IsOptional()
   @IsString()
-  username?: string;
-
-  /** Password (optional) */
-  @IsOptional()
-  @IsString()
-  password?: string;
+  @MinLength(2)
+  @MaxLength(30)
+  @Matches(/^[^\s]+(?:\s[^\s]+)?$/, {
+    message: 'Name must contain at most one space, and not at the start or end',
+  })
+  name?: string;
 
   /** User nickname (optional) */
   @IsOptional()
   @IsString()
+  @MinLength(4)
+  @MaxLength(20)
+  @Matches(/^[^\s]+$/, {
+    message: 'Nickname must not contain spaces',
+  })
   nickname?: string;
-
-  /** Google OAuth ID (optional) */
-  @IsOptional()
-  @IsString()
-  googleId?: string;
 
   /** Profile picture URL (optional) */
   @IsOptional()
   @IsString()
   profilePicture?: string;
-
-  /** Login provider (optional) */
-  @IsOptional()
-  @IsEnum(AuthProvider)
-  provider?: AuthProvider;
 
   /** Account activation status (optional) */
   @IsOptional()
@@ -99,8 +158,63 @@ export class UpdateUserDto {
   isActive?: boolean;
 }
 
-// TODO: Add user search DTO
-// TODO: Add password change DTO
-// TODO: Add profile image upload DTO
-// TODO: Add user settings DTO
-// TODO: Add email verification DTO
+/**
+ * User password update DTO
+ * - Used when updating user password
+ */
+export class UpdatePasswordDto {
+  /** Password (required) */
+  @IsString()
+  oldPassword: string;
+
+  /** Password (required) */
+  @MinLength(8)
+  @MaxLength(20)
+  @Matches(/(?=.*[A-Z])/, {
+    message: 'Must contain at least 1 uppercase letter',
+  })
+  @Matches(/(?=.*[a-z])/, {
+    message: 'Must contain at least 1 lowercase letter',
+  })
+  @Matches(/(?=.*\d)/, {
+    message: 'Must contain at least 1 number',
+  })
+  @Matches(/(?=.*[!@#$%^&*()\-_=+{}[\]|\\:;"'<>,.?/`~])/, {
+    message: 'Must contain at least 1 special character',
+  })
+  @Matches(/^[^\s]+$/, {
+    message: 'Password must not contain spaces',
+  })
+  @IsString()
+  newPassword: string;
+}
+
+export class PublicUser {
+  id: number;
+  nickname: string;
+  profilePicture: string;
+  isActive: boolean;
+  role: UserRole;
+}
+
+export class MyUser {
+  id: number;
+  email: string;
+  name: string;
+  nickname: string;
+  profilePicture: string;
+  role: UserRole;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export class UserDetails {
+  id: number;
+  nickname: string;
+  profilePicture: string;
+  isActive: boolean;
+  teams: TeamWithStatus[];
+  followers: PublicUser[];
+  following: PublicUser[];
+}

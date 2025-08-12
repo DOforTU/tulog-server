@@ -65,6 +65,8 @@ src/
 
 ```bash
 npm install
+npm install --save-dev @types/multer --legacy-peer-deps
+npm install @nestjs/platform-express multer --legacy-peer-deps
 ```
 
 ### 2. Environment Configuration

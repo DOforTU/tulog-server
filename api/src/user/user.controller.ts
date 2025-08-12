@@ -1,19 +1,20 @@
 import {
   Controller,
   Get,
-  Put,
-  Delete,
   Patch,
   Body,
   Param,
   ParseIntPipe,
   UseGuards,
   Request,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './user.entity';
-import { UpdateUserDto } from './user.dto';
+import { PublicUser, UserDetails, UpdateUserDto } from './user.dto';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
+import { SmartAuthGuard } from 'src/auth/jwt';
+import { toPublicUser } from 'src/common/helper/to-public-user';
 
 /**
  * User Management Controller
@@ -25,79 +26,84 @@ import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  // ===== Basic CRUD - REST API =====
-
-  /** Get user by ID */
-  @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<User> {
-    return this.userService.getUserById(id);
-  }
-
-  /** Update user information */
-  @Put(':id')
-  @UseGuards(JwtAuthGuard)
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateUserDto: UpdateUserDto,
-  ): Promise<User> {
-    return this.userService.updateUser(id, updateUserDto);
-  }
-
-  /** Soft delete user */
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.userService.deleteUser(id);
-  }
-
-  // ===== Special Query APIs =====
+  // ===== GET requests =====
 
   /** Get current logged-in user information */
-  @Get('me/info')
+  @Get('me')
   @UseGuards(JwtAuthGuard)
   getCurrentUser(@Request() req: { user: User }): User {
     return req.user;
   }
 
-  /** Get deleted users list */
-  @Get('deleted')
-  async findDeleted(): Promise<User[]> {
-    return this.userService.getDeletedUsers();
+  /** Get user by ID */
+  @Get(':id')
+  async getUserById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<PublicUser> {
+    return toPublicUser(await this.userService.getUserById(id));
   }
 
-  /** Get active user count */
-  @Get('count')
-  async getCount(): Promise<{ count: number }> {
-    const count = await this.userService.getUserCount();
-    return { count };
+  /** Get user by nickname */
+  @Get('nickname/:nickname')
+  async getUserByNickname(
+    @Param('nickname') nickname: string,
+  ): Promise<PublicUser | null> {
+    return toPublicUser(await this.userService.getUserByNickname(nickname));
   }
 
-  // ===== Admin Only APIs =====
-
-  /** Get all active users */
-  @Get()
-  async findAll(): Promise<User[]> {
-    return this.userService.getAllUsers();
+  /**
+   * Get user details including teams, followers, and following
+   * @param id User ID: the ID of the user whose details are to be fetched
+   * @returns UserDetails object with teams, followers, and following arrays (empty arrays if no data)
+   */
+  @Get(':id/details')
+  async getUserDetailsById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<UserDetails> {
+    return await this.userService.getUserDetailsById(id);
   }
 
-  /** Permanently delete user */
-  @Delete(':id/hard')
+  @Get('nickname/:nickname/details')
+  async getUserDetailsByNickname(
+    @Param('nickname') nickname: string,
+  ): Promise<UserDetails> {
+    return await this.userService.getUserDetailsByNickname(nickname);
+  }
+
+  /** Get user by id or nickname (query) */
+  @Get('search/id-or-nickname')
+  async getUserByIdOrNickname(
+    @Query('id') id?: string,
+    @Query('nickname') nickname?: string,
+  ): Promise<PublicUser | null> {
+    if (id) {
+      const idNum = Number(id);
+      if (!isNaN(idNum)) {
+        return toPublicUser(await this.userService.getUserById(idNum));
+      }
+    }
+    if (nickname) {
+      return toPublicUser(await this.userService.getUserByNickname(nickname));
+    }
+    return null;
+  }
+
+  // ===== PATCH requests =====
+
+  /** Update user information(only active users) */
+  @Patch('me')
+  @UseGuards(SmartAuthGuard)
+  async updateUser(
+    @Request() req: { user: User },
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<User> {
+    return this.userService.updateUser(req.user.id, updateUserDto);
+  }
+
+  /** Soft delete user */
+  @Patch('me/delete')
   @UseGuards(JwtAuthGuard)
-  async hardDelete(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.userService.hardDeleteUser(id);
-  }
-
-  /** Restore deleted user */
-  @Patch(':id/restore')
-  async restore(@Param('id', ParseIntPipe) id: number): Promise<User> {
-    return this.userService.restoreUser(id);
+  async deleteUser(@Request() req: { user: User }): Promise<boolean> {
+    return this.userService.deleteUser(req.user.id);
   }
 }
-
-// TODO: Add user search API (search by name, email, nickname)
-// TODO: Add pagination API
-// TODO: Add user profile image upload API
-// TODO: Add social account linking/unlinking API
-// TODO: Add account activation/deactivation API
-// TODO: Add admin permission check middleware
-// TODO: Add user statistics dashboard API

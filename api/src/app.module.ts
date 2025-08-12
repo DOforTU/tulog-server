@@ -10,6 +10,35 @@ import { AuthModule } from './auth/auth.module';
 import { User } from './user/user.entity';
 import { LoggingMiddleware } from './common/middleware/logging.middleware';
 import { SecurityMiddleware } from './common/middleware/security.middleware';
+import { Auth } from './auth/auth.entity';
+import { FollowModule } from './follow/follow.module';
+import { Follow } from './follow/follow.entity';
+import { Team } from './team/team.entity';
+import { UserBlcokModule } from './block/user-block.module';
+import { UserBlock } from './block/user-block.entity';
+import { TeamMember } from './team-member/team-member.entity';
+import { TeamModule } from './team/team.module';
+import { TeamMemberModule } from './team-member/team-member.module';
+import { FileModule } from './file/file.module';
+import { PendingUser } from './auth/pending-user.entity';
+import { NoticeModule } from './notice/notice.module';
+import { Notice } from './notice/notice.entity';
+import { Post } from './post/post.entity';
+import { Editor } from './editor/editor.entity';
+import { PostLike } from './post-like/post-like.entity';
+import { Comment } from './comment/comment.entity';
+import { PostHide } from './post-hide/post-hide.entity';
+import { Bookmark } from './bookmark/bookmark.entity';
+import { PostModule } from './post/post.module';
+import { EditorModule } from './editor/editor.module';
+import { PostLikeModule } from './post-like/post-like.module';
+import { CommentModule } from './comment/comment.module';
+import { PostHideModule } from './post-hide/post-hide.module';
+import { BookmarkModule } from './bookmark/bookmark.module';
+import { TagModule } from './tag/tag.module';
+import { PostTagModule } from './post-tag/post-tag.module';
+import { Tag } from './tag/tag.entity';
+import { PostTag } from './post-tag/post-tag.entity';
 
 @Module({
   imports: [
@@ -32,14 +61,45 @@ import { SecurityMiddleware } from './common/middleware/security.middleware';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         schema: configService.get('DB_SCHEMA'),
-        entities: [User],
+        entities: [
+          User,
+          Auth,
+          Follow,
+          Team,
+          UserBlock,
+          TeamMember,
+          PendingUser,
+          Notice,
+          Post,
+          Editor,
+          PostLike,
+          Comment,
+          PostHide,
+          Bookmark,
+          Tag,
+          PostTag,
+        ],
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
       }),
       inject: [ConfigService],
     }),
+    FileModule,
     UserModule,
     AuthModule,
+    FollowModule,
+    TeamModule,
+    UserBlcokModule,
+    TeamMemberModule,
+    NoticeModule,
+    PostModule,
+    EditorModule,
+    PostLikeModule,
+    CommentModule,
+    PostHideModule,
+    BookmarkModule,
+    TagModule,
+    PostTagModule,
   ],
   controllers: [AppController],
   providers: [AppService],
