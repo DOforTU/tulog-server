@@ -42,6 +42,7 @@ import { PostTag } from './post-tag/post-tag.entity';
 import { TeamFollowService } from './team-follow/team-follow.service';
 import { TeamFollowModule } from './team-follow/team-follow.module';
 import { TeamFollwController } from './team-follow/team-follow.controller';
+import { TeamFollow } from './team-follow/team-follow.entity';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { TeamFollwController } from './team-follow/team-follow.controller';
           Bookmark,
           Tag,
           PostTag,
+          TeamFollow,
         ],
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
@@ -105,8 +107,8 @@ import { TeamFollwController } from './team-follow/team-follow.controller';
     PostTagModule,
     TeamFollowModule,
   ],
-  controllers: [AppController, TeamFollwController],
-  providers: [AppService, TeamFollowService],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

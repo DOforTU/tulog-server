@@ -28,6 +28,7 @@ export class TeamService {
     private readonly configService: ConfigService,
   ) {}
 
+  // ===== CREATE =====
   /**
    * create team
    */
@@ -84,7 +85,7 @@ export class TeamService {
     }
   }
 
-  // ===== Get team info Methods =====
+  // ===== READ =====
   /**
    * 팀을 가져오고 속해있는 맴버 정보 가져옴
    */
@@ -146,16 +147,7 @@ export class TeamService {
     return team;
   }
 
-  /**
-   *
-   * @param teamId 팀을 팔로우한 유저를 조회
-   */
-  async findFollowingUserById(teamId: number): Promise<Team | null> {
-    const user = await this.teamRepository.findFollowingUserById(teamId);
-    return user;
-  }
-
-  //---------------Update function-------------------------------------
+  // ===== UPDATE =====
   /**
    * 팀이 존재하는지
    * 팀 이름 중복인지
@@ -191,7 +183,7 @@ export class TeamService {
     return updatedTeam;
   }
 
-  //---------------common function-------------------------------------
+  // ===== SUB FUNCTION =====
   async existName(name: string): Promise<boolean> {
     const existingTeam = await this.teamRepository.findByName(name);
     if (existingTeam) {
@@ -202,5 +194,13 @@ export class TeamService {
 
   async leaveTeam(teamId: number, memberId: number): Promise<boolean> {
     return await this.teamMemberService.leaveTeam(teamId, memberId);
+  }
+
+  /**
+   * @param teamId 팀을 팔로우한 유저를 조회
+   */
+  async findFollowingUserById(teamId: number): Promise<Team | null> {
+    const user = await this.teamRepository.findFollowingUserById(teamId);
+    return user;
   }
 }

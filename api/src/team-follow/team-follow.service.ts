@@ -16,6 +16,8 @@ export class TeamFollowService {
     private readonly userService: UserService,
   ) {}
 
+  // ===== CREATE =====
+
   /** Follow a team
    * followerId follows followId
    */
@@ -52,6 +54,8 @@ export class TeamFollowService {
     return follow;
   }
 
+  // ===== READ =====
+
   /** Get following teams of a user
    *  유저가 팔로우한 팀 조회(유저기준)
    */
@@ -85,6 +89,8 @@ export class TeamFollowService {
 
     return team.followers.map((f) => f.user);
   }
+
+  // ===== DELETE =====
 
   /** Unfollow a user
    * followerId unfollows followId

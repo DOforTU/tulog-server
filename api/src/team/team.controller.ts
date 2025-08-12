@@ -18,6 +18,8 @@ import { SmartAuthGuard } from 'src/auth/jwt';
 export class TeamController {
   constructor(private readonly teamService: TeamService) {}
 
+  // ===== CREATE =====
+
   @Post()
   @UseGuards(SmartAuthGuard)
   async createTeam(
@@ -26,6 +28,8 @@ export class TeamController {
   ): Promise<Team> {
     return await this.teamService.createTeam(createTeamDto, req.user.id);
   }
+
+  // ===== READ =====
 
   /**
    * get 요청시
@@ -44,6 +48,8 @@ export class TeamController {
   ): Promise<PublicTeam> {
     return await this.teamService.getTeamWithMembersByName(name);
   }
+
+  // ===== UPDATE =====
 
   // 팀 정보 업데이트
   @Patch(':id')
