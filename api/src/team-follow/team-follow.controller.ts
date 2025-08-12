@@ -19,6 +19,8 @@ import { toPublicUsers } from 'src/common/helper/to-public-user';
 export class TeamFollwController {
   constructor(private readonly teamFollowService: TeamFollowService) {}
 
+  // ===== CREATE =====
+
   /** Post user follows a team  */
   @Post(':id/follow')
   @UseGuards(SmartAuthGuard)
@@ -26,16 +28,19 @@ export class TeamFollwController {
     @Request() req: { user: User },
     @Param('id') teamId: number,
   ): Promise<TeamFollow> {
-    return await this.teamFollowService.followTeam(req.user.id, teamId);
+    return await this.teamFollowService.followTeam(
+      req.user.id,
+      req.user.nickname,
+      teamId,
+    );
   }
+
+  // ===== READ =====
 
   /** Get my followed teams */
   @Get('me')
   @UseGuards(SmartAuthGuard)
-  async getMyFollowingTeams(
-    @Request() req: { user: User },
-    @Param() team: Team,
-  ): Promise<Team[]> {
+  async getMyFollowingTeams(@Request() req: { user: User }): Promise<Team[]> {
     return await this.teamFollowService.getMyFollowingTeams(req.user.id);
   }
 
@@ -44,6 +49,8 @@ export class TeamFollwController {
   async getFollowers(@Param('id') id: number): Promise<PublicUser[] | null> {
     return toPublicUsers(await this.teamFollowService.getFollowersWithTeam(id));
   }
+
+  // ===== DELETE =====
 
   @Delete(':id/unfollow')
   @UseGuards(SmartAuthGuard)

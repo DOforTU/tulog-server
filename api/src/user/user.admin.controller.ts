@@ -21,6 +21,8 @@ import { AdminGuard } from 'src/common/guards/only-admin.guard';
 export class UserAdminController {
   constructor(private readonly userService: UserService) {}
 
+  // ===== READ =====
+
   /** Get all active users */
   @Get('all')
   @UseGuards(AdminGuard)
@@ -43,17 +45,21 @@ export class UserAdminController {
     return { count };
   }
 
-  /** Permanently delete user */
-  @Delete(':id/hard')
-  @UseGuards(AdminGuard)
-  async hardDeleteUser(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.userService.hardDeleteUser(id);
-  }
+  // ===== UPDATE =====
 
   /** Restore deleted user */
   @Patch(':id/restore')
   @UseGuards(AdminGuard)
   async restoreUser(@Param('id', ParseIntPipe) id: number): Promise<User> {
     return this.userService.restoreUser(id);
+  }
+
+  // ===== DELETE =====
+
+  /** Permanently delete user */
+  @Delete(':id/hard')
+  @UseGuards(AdminGuard)
+  async hardDeleteUser(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    return this.userService.hardDeleteUser(id);
   }
 }

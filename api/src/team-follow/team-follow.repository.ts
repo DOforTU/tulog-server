@@ -10,13 +10,7 @@ export class TeamFollowRepository {
     private readonly teamFollowRepository: Repository<TeamFollow>,
   ) {}
 
-  /** check if the duplicate follow exists */
-  async isFollowing(userId: number, teamId: number): Promise<boolean> {
-    const isFollowing = await this.teamFollowRepository.findOne({
-      where: { userId, teamId },
-    });
-    return isFollowing !== null;
-  }
+  // ===== CREATE =====
 
   /** Follow a team */
   async followTeam(userId: number, teamId: number): Promise<TeamFollow> {
@@ -24,11 +18,7 @@ export class TeamFollowRepository {
     return await this.teamFollowRepository.save(followTeam);
   }
 
-  /** Unfollow a team */
-  async unfollowTeam(userId: number, teamId: number): Promise<boolean> {
-    await this.teamFollowRepository.delete({ userId, teamId });
-    return true;
-  }
+  // ===== READ =====
 
   /**
    * 팀 아이디로 팀 맴버를 가져온다 --> 사용자는 팔로우한 팀 맴버를 조회할 수 있다.
@@ -41,5 +31,21 @@ export class TeamFollowRepository {
       .leftJoinAndSelect('teamMember.user', 'user')
       .where('teamMember.teamId = :teamId', { teamId })
       .getMany();
+  }
+
+  // ===== DELETE =====
+  /** Unfollow a team */
+  async unfollowTeam(userId: number, teamId: number): Promise<boolean> {
+    await this.teamFollowRepository.delete({ userId, teamId });
+    return true;
+  }
+
+  // ===== SUB FUNCTION =====
+  /** check if the duplicate follow exists */
+  async isFollowing(userId: number, teamId: number): Promise<boolean> {
+    const isFollowing = await this.teamFollowRepository.findOne({
+      where: { userId, teamId },
+    });
+    return isFollowing !== null;
   }
 }

@@ -17,7 +17,7 @@ export class UserRepository {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  // ===== User Retrieval =====
+  // ===== READ =====
 
   /**
    * Find user by ID (ONLY active & not-deleted)
@@ -323,7 +323,7 @@ export class UserRepository {
       .getOne();
   }
 
-  // ===== Update and Delete =====
+  // ===== Update =====
   /**
    * Update user information
    * @param id
@@ -349,12 +349,6 @@ export class UserRepository {
     return await this.findByIdIncludingInactive(id);
   }
 
-  /** Permanently delete user */
-  async hardDeleteById(id: number): Promise<boolean> {
-    const result = await this.userRepository.delete(id);
-    return (result.affected ?? 0) > 0;
-  }
-
   /** Restore deleted user */
   async restoreById(id: number): Promise<boolean> {
     const result = await this.userRepository
@@ -363,6 +357,14 @@ export class UserRepository {
       .set({ isActive: true, deletedAt: null })
       .where('id = :id', { id })
       .execute();
+    return (result.affected ?? 0) > 0;
+  }
+
+  // ===== Delete =====
+
+  /** Permanently delete user */
+  async hardDeleteById(id: number): Promise<boolean> {
+    const result = await this.userRepository.delete(id);
     return (result.affected ?? 0) > 0;
   }
 

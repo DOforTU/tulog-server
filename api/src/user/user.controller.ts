@@ -26,7 +26,7 @@ import { toPublicUser } from 'src/common/helper/to-public-user';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  // ===== GET requests =====
+  // ===== READ =====
 
   /** Get current logged-in user information */
   @Get('me')
@@ -88,7 +88,7 @@ export class UserController {
     return null;
   }
 
-  // ===== PATCH requests =====
+  // ===== UPDATE =====
 
   /** Update user information(only active users) */
   @Patch('me')

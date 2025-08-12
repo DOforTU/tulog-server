@@ -11,6 +11,18 @@ export class TeamRepository {
     private readonly teamRepository: Repository<Team>,
   ) {}
 
+  // ===== UPDATE =====
+
+  async updateTeam(
+    teamId: number,
+    updateTeamInfoDto: UpdateTeamInfoDto,
+  ): Promise<Team | null> {
+    await this.teamRepository.update(teamId, updateTeamInfoDto);
+    return await this.findById(teamId);
+  }
+
+  // ===== SUB FUNCTION =====
+
   async findByName(name: string): Promise<Team | null> {
     return await this.teamRepository.findOne({
       where: { name, deletedAt: IsNull() },
@@ -68,13 +80,5 @@ export class TeamRepository {
       .leftJoinAndSelect('teamFollow.user', 'user')
       .where('team.id = :teamId', { teamId })
       .getOne();
-  }
-
-  async updateTeam(
-    teamId: number,
-    updateTeamInfoDto: UpdateTeamInfoDto,
-  ): Promise<Team | null> {
-    await this.teamRepository.update(teamId, updateTeamInfoDto);
-    return await this.findById(teamId);
   }
 }
