@@ -22,7 +22,7 @@ export class TeamFollwController {
   // ===== CREATE =====
 
   /** Post user follows a team  */
-  @Post(':id/follow')
+  @Post(':id')
   @UseGuards(SmartAuthGuard)
   async followTeam(
     @Request() req: { user: User },
@@ -52,7 +52,7 @@ export class TeamFollwController {
 
   // ===== DELETE =====
 
-  @Delete(':id/unfollow')
+  @Delete(':id')
   @UseGuards(SmartAuthGuard)
   async unfollowTeam(
     @Request() req: { user: User },
