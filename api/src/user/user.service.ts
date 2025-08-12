@@ -23,7 +23,7 @@ export class UserService {
     private readonly dataSource: DataSource,
   ) {}
 
-  // ===== User Retrieval =====
+  // ===== READ =====
 
   /**
    * Get user by ID (throws exception)
@@ -40,7 +40,7 @@ export class UserService {
 
   /** Get user by email (with throws exception, can get no isActive user) */
   async getUserByEmail(email: string): Promise<User> {
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this.findUserByEmail(email);
     if (!user) {
       throw new NotFoundException(`User with email ${email} not found`);
     }
@@ -148,16 +148,6 @@ export class UserService {
     };
   }
 
-  /**
-   *
-   * @param userId 사용자가 팔로우한 팀을 조회
-   *
-   */
-  async findMyFollowingTeams(userId: number): Promise<User | null> {
-    const followingTeams = this.userRepository.findMyFollowingTeams(userId);
-    return followingTeams;
-  }
-
   // ===== Admin Logic =====
 
   /**
@@ -176,12 +166,59 @@ export class UserService {
     return user;
   }
 
-  async findByIdIncludingInactive(id: number): Promise<User> {
-    const user = await this.userRepository.findByIdIncludingInactive(id);
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+  // ===== UPDATE =====
+
+  /**
+   * Update user information
+   * @param id User ID
+   * @param updateUserDto Update user data
+   * @returns Updated user entity
+   */
+  async updateUser(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+    // Check user existence
+    const existingUser = await this.getUserById(id);
+
+    // Business logic: Username duplication check (with other users)
+    if (
+      updateUserDto.nickname &&
+      updateUserDto.nickname !== existingUser.nickname
+    ) {
+      const userWithUsername = await this.findUserByNickname(
+        updateUserDto.nickname,
+      );
+      if (userWithUsername) {
+        throw new ConflictException('nickname already exists');
+      }
     }
-    return user;
+    const updatedUser = await this.userRepository.updateUser(id, updateUserDto);
+    if (!updatedUser) {
+      throw new NotFoundException(`Failed to update user with ID ${id}`);
+    }
+
+    return updatedUser;
+  }
+
+  /**
+   * Update user password
+   * @param id User ID
+   * @param hashedNewPassword New hashed password
+   * @returns Updated user entity
+   */
+  async updatePassword(id: number, hashedNewPassword: string): Promise<User> {
+    // Check user existence
+    await this.getUserById(id);
+
+    // Business logic: Update user password
+    const updatedUser = await this.userRepository.updatePasswordById(
+      id,
+      hashedNewPassword,
+    );
+
+    if (!updatedUser) {
+      throw new Error(`Failed to update password for user with ID ${id}`);
+    }
+
+    return updatedUser;
   }
 
   /**
@@ -208,7 +245,107 @@ export class UserService {
     return updatedUser;
   }
 
-  // ===== Find Methods - Simple Form: get user or null =====
+  /** Soft delete user */
+  async deleteUser(id: number): Promise<boolean> {
+    // Check user existence
+    const user = await this.getUserDetailsById(id);
+
+    if (user.teams.length > 0) {
+      throw new ForbiddenException(
+        `You have to leave all teams before deleting your account.`,
+      );
+    }
+
+    // Use transaction to delete user and related follow relationships
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Delete all follow relationships where user is follower
+      await queryRunner.query(
+        'DELETE FROM "server_api"."follow" WHERE "followerId" = $1',
+        [id],
+      );
+
+      // Delete all follow relationships where user is being followed
+      await queryRunner.query(
+        'DELETE FROM "server_api"."follow" WHERE "followingId" = $1',
+        [id],
+      );
+
+      // Soft delete the user
+      await queryRunner.query(
+        'UPDATE "server_api"."user" SET "deletedAt" = NOW() WHERE "id" = $1',
+        [id],
+      );
+
+      await queryRunner.commitTransaction();
+      return true;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw new Error(`Failed to delete user with ID ${id}: ${error.message}`);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /**
+   * Restore deleted user
+   * @param id User ID
+   * @returns Restored user entity
+   */
+  async restoreUser(id: number): Promise<User> {
+    // Check deleted user existence
+    await this.getDeletedUserById(id);
+
+    const restored = await this.userRepository.restoreById(id);
+    if (!restored) {
+      throw new Error(`Failed to restore user with ID ${id}`);
+    }
+
+    const restoredUser = await this.userRepository.findById(id);
+    if (!restoredUser) {
+      throw new Error(`Failed to retrieve restored user with ID ${id}`);
+    }
+
+    return restoredUser;
+  }
+
+  // ===== DELETE =====
+  /**
+   * Permanently delete user
+   * @param id User ID
+   */
+  async hardDeleteUser(id: number): Promise<void> {
+    // Business logic: Check user existence (including deleted users)
+    await this.getDeletedUserById(id);
+
+    const deleted = await this.userRepository.hardDeleteById(id);
+    if (!deleted) {
+      throw new Error(`Failed to permanently delete user with ID ${id}`);
+    }
+  }
+
+  // ===== SUB FUNCTION =====
+  // Find Methods - Simple Form: get user or null
+  /**
+   *
+   * @param userId 사용자가 팔로우한 팀을 조회
+   *
+   */
+  async findMyFollowingTeams(userId: number): Promise<User | null> {
+    const followingTeams = this.userRepository.findMyFollowingTeams(userId);
+    return followingTeams;
+  }
+
+  async findByIdIncludingInactive(id: number): Promise<User> {
+    const user = await this.userRepository.findByIdIncludingInactive(id);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return user;
+  }
 
   /**
    * Get all users
@@ -333,143 +470,5 @@ export class UserService {
    */
   async findDeletedUsers(): Promise<User[]> {
     return await this.userRepository.findAllDeleted();
-  }
-
-  // ===== Special Operations - Update and Delete =====
-
-  /** Soft delete user */
-  async deleteUser(id: number): Promise<boolean> {
-    // Check user existence
-    const user = await this.getUserDetailsById(id);
-
-    if (user.teams.length > 0) {
-      throw new ForbiddenException(
-        `You have to leave all teams before deleting your account.`,
-      );
-    }
-
-    // Use transaction to delete user and related follow relationships
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      // Delete all follow relationships where user is follower
-      await queryRunner.query(
-        'DELETE FROM "server_api"."follow" WHERE "followerId" = $1',
-        [id],
-      );
-
-      // Delete all follow relationships where user is being followed
-      await queryRunner.query(
-        'DELETE FROM "server_api"."follow" WHERE "followingId" = $1',
-        [id],
-      );
-
-      // Soft delete the user
-      await queryRunner.query(
-        'UPDATE "server_api"."user" SET "deletedAt" = NOW() WHERE "id" = $1',
-        [id],
-      );
-
-      await queryRunner.commitTransaction();
-      return true;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw new Error(`Failed to delete user with ID ${id}: ${error.message}`);
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  // ===== Update User Information =====
-
-  /**
-   * Update user information
-   * @param id User ID
-   * @param updateUserDto Update user data
-   * @returns Updated user entity
-   */
-  async updateUser(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-    // Check user existence
-    const existingUser = await this.getUserById(id);
-
-    // Business logic: Username duplication check (with other users)
-    if (
-      updateUserDto.nickname &&
-      updateUserDto.nickname !== existingUser.nickname
-    ) {
-      const userWithUsername = await this.findUserByNickname(
-        updateUserDto.nickname,
-      );
-      if (userWithUsername) {
-        throw new ConflictException('nickname already exists');
-      }
-    }
-    const updatedUser = await this.userRepository.updateUser(id, updateUserDto);
-    if (!updatedUser) {
-      throw new NotFoundException(`Failed to update user with ID ${id}`);
-    }
-
-    return updatedUser;
-  }
-
-  /**
-   * Update user password
-   * @param id User ID
-   * @param hashedNewPassword New hashed password
-   * @returns Updated user entity
-   */
-  async updatePassword(id: number, hashedNewPassword: string): Promise<User> {
-    // Check user existence
-    await this.getUserById(id);
-
-    // Business logic: Update user password
-    const updatedUser = await this.userRepository.updatePasswordById(
-      id,
-      hashedNewPassword,
-    );
-
-    if (!updatedUser) {
-      throw new Error(`Failed to update password for user with ID ${id}`);
-    }
-
-    return updatedUser;
-  }
-
-  /**
-   * Permanently delete user
-   * @param id User ID
-   */
-  async hardDeleteUser(id: number): Promise<void> {
-    // Business logic: Check user existence (including deleted users)
-    await this.getDeletedUserById(id);
-
-    const deleted = await this.userRepository.hardDeleteById(id);
-    if (!deleted) {
-      throw new Error(`Failed to permanently delete user with ID ${id}`);
-    }
-  }
-
-  /**
-   * Restore deleted user
-   * @param id User ID
-   * @returns Restored user entity
-   */
-  async restoreUser(id: number): Promise<User> {
-    // Check deleted user existence
-    await this.getDeletedUserById(id);
-
-    const restored = await this.userRepository.restoreById(id);
-    if (!restored) {
-      throw new Error(`Failed to restore user with ID ${id}`);
-    }
-
-    const restoredUser = await this.userRepository.findById(id);
-    if (!restoredUser) {
-      throw new Error(`Failed to retrieve restored user with ID ${id}`);
-    }
-
-    return restoredUser;
   }
 }

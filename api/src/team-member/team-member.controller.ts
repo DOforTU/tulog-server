@@ -15,6 +15,7 @@ import { TeamMember } from './team-member.entity';
 export class TeamMemberController {
   constructor(private readonly teamMemberService: TeamMemberService) {}
 
+  // ===== CREATE =====
   /**
    * Invite a team member
    * @param req Request object containing user information
@@ -55,24 +56,6 @@ export class TeamMemberController {
   }
 
   /**
-   * Reject team invitation from notification
-   * @param req Request object containing user information
-   * @param teamId Team ID
-   * @returns Success status
-   */
-  @Delete('invitation/reject')
-  @UseGuards(SmartAuthGuard)
-  async rejectTeamInvitation(
-    @Request() req: { user: User },
-    @Param('teamId') teamId: number,
-  ): Promise<boolean> {
-    return await this.teamMemberService.rejectTeamInvitation(
-      teamId,
-      req.user.id,
-    );
-  }
-
-  /**
    * Join a team
    * @param id Team ID: the ID is that you want to join
    * @param req Request object containing user information
@@ -105,6 +88,25 @@ export class TeamMemberController {
       teamId,
       memberId,
       req.user.id, // Leader ID
+    );
+  }
+
+  // ===== DELETE =====
+  /**
+   * Reject team invitation from notification
+   * @param req Request object containing user information
+   * @param teamId Team ID
+   * @returns Success status
+   */
+  @Delete('invitation/reject')
+  @UseGuards(SmartAuthGuard)
+  async rejectTeamInvitation(
+    @Request() req: { user: User },
+    @Param('teamId') teamId: number,
+  ): Promise<boolean> {
+    return await this.teamMemberService.rejectTeamInvitation(
+      teamId,
+      req.user.id,
     );
   }
 

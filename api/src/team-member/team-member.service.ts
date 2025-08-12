@@ -20,6 +20,130 @@ export class TeamMemberService {
     private readonly noticeService: NoticeService,
   ) {}
 
+  // ===== CREATE =====
+  /**
+   * Request a team
+   * @param memberId Member ID: the ID of the user who wants to join the team
+   * @param teamId Team ID: the ID of the team to join
+   * @returns The created TeamMember entity
+   * 요청하는 팀이(아이디) 존재하는지
+   * 그 팀이 이미 인원이 다 찼는지
+   * 내가 그 팀에 이미 존재하는지
+   * 팀 싱태가 초대만 가능한 경우 예외처리
+   */
+  async requestToTeam(teamId: number, memberId: number): Promise<TeamMember> {
+    // 팀 아이디로 팀맴버를 배열로 가져옴 --> 그 팀이 존재하는지 알 수 있음
+    const teamMembers =
+      await this.teamMemberRepository.getTeamMembersByTeamId(teamId);
+
+    const checkTeamVisibility = teamMembers[0].team.visibility;
+    if (checkTeamVisibility == TeamVisibility.ONLY_INVITE) {
+      throw new ConflictException('You can not invite that team.');
+    }
+    const teamMember = await this.findTeamMemberByPrimaryKey(teamId, memberId);
+    if (teamMember) {
+      throw new ConflictException('You are already a member of this team.');
+    }
+
+    // 팀 인원이 max일 경우 요청 불가
+    const memberCount = teamMembers.length;
+    // 팀에 속한 팀 맴버중 한명이 속한 팀에서 최대 인원수를 구함
+    const maxMember = teamMembers[0].team.maxMember;
+    if (memberCount == maxMember) {
+      throw new ConflictException('This team is already full.');
+    }
+
+    const newTeamMember = await this.teamMemberRepository.requestToTeam(
+      teamId,
+      memberId,
+    );
+
+    // Find team leader and send notification
+    const leader = teamMembers.find((tm: TeamMember) => tm.isLeader);
+    if (leader) {
+      const requesterUser = await this.userService.getUserById(memberId);
+
+      try {
+        await this.noticeService.createTeamJoinNotice(
+          Number((leader as any).memberId), // team leader receives the notification
+          teamId,
+          String((teamMembers[0] as any).team.name),
+          requesterUser.nickname,
+        );
+      } catch (error) {
+        console.error(
+          'Failed to create team join request notification:',
+          error,
+        );
+      }
+    }
+
+    return newTeamMember;
+  }
+
+  /**
+   * Invite a team member
+   * @param leaderId Leader ID: the ID of the user who is inviting the member
+   * @param teamId Team ID: the ID of the team to invite the member to
+   * @param memberId Member ID: the ID of the member to invite
+   * @returns The created TeamMember entity
+   * 예외 처리 : 초대 대상이 이미 그 팀에 존재하는지
+   * 초대 대상이 존재한지
+   * 초대 대상이 이미 팀 3개에 존재하는지
+   *
+   */
+  async inviteToTeam(
+    leaderId: number,
+    teamId: number,
+    memberId: number,
+  ): Promise<TeamMember> {
+    return await this.dataSource.transaction(async (manager) => {
+      await this.userService.getUserById(memberId); //get은 없으면 무조건 예외처리 find는 널이라도 반환
+
+      const leader = await this.getTeamMemberByPrimaryKey(teamId, leaderId);
+      if (!leader.isLeader) {
+        throw new ConflictException('Only team leaders can invite members.');
+      }
+      const ifAlreadyExist =
+        await this.teamMemberRepository.findOneByPrimaryKey(teamId, memberId);
+      if (ifAlreadyExist) {
+        throw new ConflictException('Already on the team.');
+      }
+
+      const checkTeamLimit = await this.countTeamsByMemberId(memberId);
+      if (checkTeamLimit > 3) {
+        throw new ConflictException('This member has already on three teams.');
+      }
+
+      // Proceed to invite the user from the team
+      const teamMember = await this.teamMemberRepository.inviteTeam(
+        teamId,
+        memberId,
+      );
+
+      // Get team and leader info for notification
+      const team = await manager
+        .getRepository('Team')
+        .findOne({ where: { id: teamId } });
+      const leaderUser = await this.userService.getUserById(leaderId);
+
+      // Create team invite notification
+      try {
+        await this.noticeService.createTeamInviteNotice(
+          memberId, // invited user receives the notification
+          teamId,
+          (team?.name as string) || 'Unknown Team',
+          leaderUser.nickname,
+        );
+      } catch (error) {
+        console.error('Failed to create team invite notification:', error);
+      }
+
+      return teamMember;
+    });
+  }
+
+  // ===== READ =====
   /**
    * get all teams that a user is part of
    * @param memberId Member ID: the ID of the user whose teams are to be fetched
@@ -44,25 +168,6 @@ export class TeamMemberService {
     }));
   }
 
-  //---------------Count teams function-------------------------------------
-  /**
-   * get the number of teams a user is part of
-   * @param memberId Member ID: the ID of the user whose team count is to be fetched
-   * @returns The number of teams the user is part of
-   */
-  async countTeamsByMemberId(memberId: number): Promise<number> {
-    const teamMembers =
-      await this.teamMemberRepository.findByMemberId(memberId);
-
-    if (!teamMembers) return 0;
-
-    const filteredTeams = teamMembers.filter(
-      (teamMember) => teamMember.status === TeamMemberStatus.JOINED,
-    );
-    return filteredTeams.length;
-  }
-
-  //---------------Get teams function-------------------------------------
   /**
    * get all teams that a user is invited to
    * @param memberId Member ID: the ID of the user whose invited teams are to be fetched
@@ -165,103 +270,26 @@ export class TeamMemberService {
   }
 
   /**
-   * find a team member by primary key
-   * @param memberId
-   * @param teamId
-   * @returns The found TeamMember entity or null if not found
-   */
-  async findTeamMemberByPrimaryKey(
-    teamId: number,
-    memberId: number,
-  ): Promise<TeamMember | null> {
-    return await this.teamMemberRepository.findOneByPrimaryKey(
-      teamId,
-      memberId,
-    );
-  }
-
-  /**
    * get joined team members by team ID
    * @param teamId Team ID: the ID of the team whose members are to be fetched
    * @returns An array of TeamMember objects representing the joined members
    */
   async getJoinedTeamMembersByTeamId(teamId: number): Promise<TeamMember[]> {
-    const teamMembers = await this.teamMemberRepository.getTeamMembersByTeamId(teamId);
-    
+    const teamMembers =
+      await this.teamMemberRepository.getTeamMembersByTeamId(teamId);
+
     const joinedMembers = teamMembers.filter(
-      member => member.status === TeamMemberStatus.JOINED
+      (member) => member.status === TeamMemberStatus.JOINED,
     );
-    
+
     if (!joinedMembers || joinedMembers.length === 0) {
       throw new NotFoundException('Team members not found');
     }
-    
+
     return joinedMembers;
   }
 
-  //---------------About invite and request to team function-------------------------------------
-  /**
-   * Invite a team member
-   * @param leaderId Leader ID: the ID of the user who is inviting the member
-   * @param teamId Team ID: the ID of the team to invite the member to
-   * @param memberId Member ID: the ID of the member to invite
-   * @returns The created TeamMember entity
-   * 예외 처리 : 초대 대상이 이미 그 팀에 존재하는지
-   * 초대 대상이 존재한지
-   * 초대 대상이 이미 팀 3개에 존재하는지
-   *
-   */
-  async inviteToTeam(
-    leaderId: number,
-    teamId: number,
-    memberId: number,
-  ): Promise<TeamMember> {
-    return await this.dataSource.transaction(async (manager) => {
-      await this.userService.getUserById(memberId); //get은 없으면 무조건 예외처리 find는 널이라도 반환
-
-      const leader = await this.getTeamMemberByPrimaryKey(teamId, leaderId);
-      if (!leader.isLeader) {
-        throw new ConflictException('Only team leaders can invite members.');
-      }
-      const ifAlreadyExist =
-        await this.teamMemberRepository.findOneByPrimaryKey(teamId, memberId);
-      if (ifAlreadyExist) {
-        throw new ConflictException('Already on the team.');
-      }
-
-      const checkTeamLimit = await this.countTeamsByMemberId(memberId);
-      if (checkTeamLimit > 3) {
-        throw new ConflictException('This member has already on three teams.');
-      }
-
-      // Proceed to invite the user from the team
-      const teamMember = await this.teamMemberRepository.inviteTeam(
-        teamId,
-        memberId,
-      );
-
-      // Get team and leader info for notification
-      const team = await manager
-        .getRepository('Team')
-        .findOne({ where: { id: teamId } });
-      const leaderUser = await this.userService.getUserById(leaderId);
-
-      // Create team invite notification
-      try {
-        await this.noticeService.createTeamInviteNotice(
-          memberId, // invited user receives the notification
-          teamId,
-          (team?.name as string) || 'Unknown Team',
-          leaderUser.nickname,
-        );
-      } catch (error) {
-        console.error('Failed to create team invite notification:', error);
-      }
-
-      return teamMember;
-    });
-  }
-
+  // ===== UPDATE =====
   /**
    * Accept team invitation (from notification)
    * @param teamId Team ID
@@ -319,93 +347,6 @@ export class TeamMemberService {
 
       return updatedMember as TeamMember;
     });
-  }
-
-  /**
-   * Reject team invitation (from notification)
-   * @param teamId Team ID
-   * @param memberId Member ID (who was invited)
-   * @returns Success boolean
-   */
-  async rejectTeamInvitation(
-    teamId: number,
-    memberId: number,
-  ): Promise<boolean> {
-    const invitation = await this.teamMemberRepository.findOneByPrimaryKey(
-      teamId,
-      memberId,
-    );
-    if (!invitation) {
-      throw new NotFoundException('Team invitation not found.');
-    }
-
-    if (invitation.status !== TeamMemberStatus.INVITED) {
-      throw new ConflictException('Invalid invitation status.');
-    }
-
-    // Remove the invitation
-    await this.teamMemberRepository.leaveTeam(teamId, memberId);
-    return true;
-  }
-
-  /**
-   * Request a team
-   * @param memberId Member ID: the ID of the user who wants to join the team
-   * @param teamId Team ID: the ID of the team to join
-   * @returns The created TeamMember entity
-   * 요청하는 팀이(아이디) 존재하는지
-   * 그 팀이 이미 인원이 다 찼는지
-   * 내가 그 팀에 이미 존재하는지
-   * 팀 싱태가 초대만 가능한 경우 예외처리
-   */
-  async requestToTeam(teamId: number, memberId: number): Promise<TeamMember> {
-    // 팀 아이디로 팀맴버를 배열로 가져옴 --> 그 팀이 존재하는지 알 수 있음
-    const teamMembers =
-      await this.teamMemberRepository.getTeamMembersByTeamId(teamId);
-
-    const checkTeamVisibility = teamMembers[0].team.visibility;
-    if (checkTeamVisibility == TeamVisibility.ONLY_INVITE) {
-      throw new ConflictException('You can not invite that team.');
-    }
-    const teamMember = await this.findTeamMemberByPrimaryKey(teamId, memberId);
-    if (teamMember) {
-      throw new ConflictException('You are already a member of this team.');
-    }
-
-    // 팀 인원이 max일 경우 요청 불가
-    const memberCount = teamMembers.length;
-    // 팀에 속한 팀 맴버중 한명이 속한 팀에서 최대 인원수를 구함
-    const maxMember = teamMembers[0].team.maxMember;
-    if (memberCount == maxMember) {
-      throw new ConflictException('This team is already full.');
-    }
-
-    const newTeamMember = await this.teamMemberRepository.requestToTeam(
-      teamId,
-      memberId,
-    );
-
-    // Find team leader and send notification
-    const leader = teamMembers.find((tm: TeamMember) => tm.isLeader);
-    if (leader) {
-      const requesterUser = await this.userService.getUserById(memberId);
-
-      try {
-        await this.noticeService.createTeamJoinNotice(
-          Number((leader as any).memberId), // team leader receives the notification
-          teamId,
-          String((teamMembers[0] as any).team.name),
-          requesterUser.nickname,
-        );
-      } catch (error) {
-        console.error(
-          'Failed to create team join request notification:',
-          error,
-        );
-      }
-    }
-
-    return newTeamMember;
   }
 
   /**
@@ -470,6 +411,8 @@ export class TeamMemberService {
       return updatedMember as TeamMember;
     });
   }
+
+  // ===== DELETE =====
 
   /**
    * Reject team join request (by team leader from notification)
@@ -595,5 +538,66 @@ export class TeamMemberService {
 
     // Proceed to kick the user from the team
     return await this.teamMemberRepository.leaveTeam(teamId, userId);
+  }
+
+  /**
+   * Reject team invitation (from notification)
+   * @param teamId Team ID
+   * @param memberId Member ID (who was invited)
+   * @returns Success boolean
+   */
+  async rejectTeamInvitation(
+    teamId: number,
+    memberId: number,
+  ): Promise<boolean> {
+    const invitation = await this.teamMemberRepository.findOneByPrimaryKey(
+      teamId,
+      memberId,
+    );
+    if (!invitation) {
+      throw new NotFoundException('Team invitation not found.');
+    }
+
+    if (invitation.status !== TeamMemberStatus.INVITED) {
+      throw new ConflictException('Invalid invitation status.');
+    }
+
+    // Remove the invitation
+    await this.teamMemberRepository.leaveTeam(teamId, memberId);
+    return true;
+  }
+
+  // ===== SUB FUNCTION =====
+  /**
+   * get the number of teams a user is part of
+   * @param memberId Member ID: the ID of the user whose team count is to be fetched
+   * @returns The number of teams the user is part of
+   */
+  async countTeamsByMemberId(memberId: number): Promise<number> {
+    const teamMembers =
+      await this.teamMemberRepository.findByMemberId(memberId);
+
+    if (!teamMembers) return 0;
+
+    const filteredTeams = teamMembers.filter(
+      (teamMember) => teamMember.status === TeamMemberStatus.JOINED,
+    );
+    return filteredTeams.length;
+  }
+
+  /**
+   * find a team member by primary key
+   * @param memberId
+   * @param teamId
+   * @returns The found TeamMember entity or null if not found
+   */
+  async findTeamMemberByPrimaryKey(
+    teamId: number,
+    memberId: number,
+  ): Promise<TeamMember | null> {
+    return await this.teamMemberRepository.findOneByPrimaryKey(
+      teamId,
+      memberId,
+    );
   }
 }
