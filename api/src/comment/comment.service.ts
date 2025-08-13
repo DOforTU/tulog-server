@@ -1,0 +1,48 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { CreateCommentDto, UpdateCommentDto } from './comment.dto';
+import { PostService } from 'src/post/post.service';
+import { CommentRepository } from './comment.repository';
+
+@Injectable()
+export class CommentService {
+  constructor(
+    private readonly commentRepository: CommentRepository,
+    private readonly postService: PostService,
+  ) {}
+
+  // ===== CREATE =====
+
+  async commentAtPost(
+    postId: number,
+    userId: number,
+    createCommentDto: CreateCommentDto,
+  ): Promise<Comment> {
+    await this.postService.getPostById(postId);
+
+    return await this.commentRepository.commentAtPost(
+      postId,
+      userId,
+      createCommentDto,
+    );
+  }
+
+  // ===== UPDATE =====
+
+  async changeComment(
+    commentId: number,
+    userId: number,
+    updateCommentDto: UpdateCommentDto,
+  ): Promise<Comment> {
+    // 1) 기존 댓글 조회
+    const existing = await this.commentRepository.findOneById(commentId);
+    if (!existing) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    return await this.commentRepository.changeComment(
+      commentId,
+      userId,
+      updateCommentDto,
+    );
+  }
+}
