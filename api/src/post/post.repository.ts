@@ -40,6 +40,7 @@ export class PostRepository {
       .createQueryBuilder('post')
       .select('post.id')
       .where('post.status = :status', { status: 'PUBLIC' })
+      .andWhere('post.deletedAt IS NULL')
       .orderBy('post.createdAt', 'DESC')
       .limit(limit)
       .offset(offset)

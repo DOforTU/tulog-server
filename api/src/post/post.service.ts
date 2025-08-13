@@ -233,6 +233,48 @@ export class PostService {
     }
   }
 
+  // ===== DELETE =====
+  async deletePost(id: number, userId: number): Promise<boolean> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const existingPost = await this.getPostWithEditors(id);
+
+      const userEditor = existingPost.editors.find(
+        (editor) => editor.userId === userId,
+      );
+      if (
+        !userEditor ||
+        (userEditor.role !== EditorRole.OWNER &&
+          userEditor.role !== EditorRole.EDITOR)
+      ) {
+        throw new ForbiddenException(
+          'You do not have permission to edit this post',
+        );
+      }
+
+      // TODO: Delete post
+      // transaction with to delete editor, bookmark, like, hide etc...
+      await queryRunner.manager.update(Post, id, { deletedAt: new Date() });
+      await queryRunner.manager.delete(Editor, { postId: id });
+
+      await queryRunner.commitTransaction();
+
+      return true;
+    } catch (error: any) {
+      console.error('update post error:', error);
+      await queryRunner.rollbackTransaction();
+      throw error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+        ? error
+        : new InternalServerErrorException('Failed updating post');
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
   // ===== SUB FUNCTIONS =====
 
   private async handleEditorsCreation(
