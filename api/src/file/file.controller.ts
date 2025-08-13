@@ -23,6 +23,7 @@ export class FileController {
 
           if (type === 'user') folder = 'uploads/user-profile';
           else if (type === 'team') folder = 'uploads/team-image';
+          else if (type === 'post') folder = 'uploads/post-image';
 
           cb(null, folder);
         },
@@ -42,8 +43,10 @@ export class FileController {
       throw new BadRequestException('No file uploaded');
     }
 
-    let folder = 'user-profile';
-    if (type === 'team') folder = 'team-image';
+    let folder = 'others';
+    if (type === 'user') folder = 'user-profile';
+    else if (type === 'team') folder = 'team-image';
+    else if (type === 'post') folder = 'post-image';
 
     const fileUrl = `${process.env.SERVER_URL}/uploads/${folder}/${file.filename}`;
     return { url: fileUrl };
