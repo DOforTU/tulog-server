@@ -31,6 +31,37 @@ export class PostRepository {
       .getOne();
   }
 
+  async findPublicPostsOrderByLatest(
+    limit: number = 20,
+    offset: number = 0,
+  ): Promise<Post[]> {
+    // 먼저 포스트 ID만 가져오기
+    const postIds = await this.postRepository
+      .createQueryBuilder('post')
+      .select('post.id')
+      .where('post.status = :status', { status: 'PUBLIC' })
+      .orderBy('post.createdAt', 'DESC')
+      .limit(limit)
+      .offset(offset)
+      .getMany();
+
+    if (postIds.length === 0) {
+      return [];
+    }
+
+    // 해당 ID의 포스트들을 관계와 함께 조회
+    return await this.postRepository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.team', 'team')
+      .leftJoinAndSelect('post.editors', 'editors')
+      .leftJoinAndSelect('editors.user', 'user')
+      .leftJoinAndSelect('post.postTags', 'postTags')
+      .leftJoinAndSelect('postTags.tag', 'tag')
+      .where('post.id IN (:...ids)', { ids: postIds.map((p) => p.id) })
+      .orderBy('post.createdAt', 'DESC')
+      .getMany();
+  }
+
   async findByIdWithEditors(id: number): Promise<Post | null> {
     return await this.postRepository
       .createQueryBuilder('post')
