@@ -6,13 +6,19 @@ import {
 } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Post, PostStatus } from './post.entity';
-import { CreatePostDto, DraftPostDto, UpdatePostDto } from './post.dto';
+import {
+  CreatePostDto,
+  DraftPostDto,
+  UpdatePostDto,
+  PublicPostDto,
+} from './post.dto';
 import { PostRepository } from './post.repository';
 import { TeamMemberService } from 'src/team-member/team-member.service';
 import { Editor, EditorRole } from 'src/editor/editor.entity';
 import { Tag } from 'src/tag/tag.entity';
 import { PostTag } from 'src/post-tag/post-tag.entity';
 import { ConfigService } from '@nestjs/config';
+import { toPublicUser } from 'src/common/helper/to-public-user';
 
 @Injectable()
 export class PostService {
@@ -128,6 +134,20 @@ export class PostService {
       throw new NotFoundException('Post not found');
     }
     return post;
+  }
+
+  async getPublicPosts(
+    limit: number = 20,
+    offset: number = 0,
+  ): Promise<PublicPostDto[]> {
+    console.log(`getPublicPosts 호출: limit=${limit}, offset=${offset}`);
+
+    const posts = await this.postRepository.findPublicPostsOrderByLatest(
+      limit,
+      offset,
+    );
+
+    return posts.map((post) => this.transformToPublicPostDto(post));
   }
 
   // ===== UPDATE =====
@@ -319,5 +339,35 @@ export class PostService {
         role: EditorRole.OWNER,
       });
     }
+  }
+
+  private transformToPublicPostDto(post: Post): PublicPostDto {
+    const owners = post.editors.filter(
+      (editor) => editor.role === EditorRole.OWNER,
+    );
+    const editors = post.editors.filter(
+      (editor) => editor.role === EditorRole.EDITOR,
+    );
+
+    const authors = [
+      ...owners.map((editor) => toPublicUser(editor.user)),
+      ...editors.map((editor) => toPublicUser(editor.user)),
+    ];
+
+    return {
+      id: post.id,
+      title: post.title,
+      excerpt: post.excerpt,
+      thumbnailImage: post.thumbnailImage,
+      viewCount: post.viewCount,
+      likeCount: post.likeCount,
+      commentCount: post.commentCount,
+      teamId: post.teamId,
+      teamName: post.team?.name,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
+      tags: post.postTags.map((postTag) => postTag.tag.name),
+      authors,
+    };
   }
 }

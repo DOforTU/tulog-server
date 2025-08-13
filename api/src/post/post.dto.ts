@@ -8,6 +8,23 @@ import {
   MaxLength,
 } from 'class-validator';
 import { PostStatus } from './post.entity';
+import { PublicUser } from 'src/user/user.dto';
+
+export class PublicPostDto {
+  id: number;
+  title: string;
+  excerpt: string;
+  thumbnailImage: string;
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  teamId?: number;
+  teamName?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  tags: string[];
+  authors: PublicUser[];
+}
 
 export class CreatePostDto {
   @IsString()

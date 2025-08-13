@@ -5,14 +5,20 @@ import {
   Param,
   Patch,
   Post as PostMapping,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
 import { PostService } from './post.service';
-import { CreatePostDto, DraftPostDto, UpdatePostDto } from './post.dto';
+import {
+  CreatePostDto,
+  DraftPostDto,
+  UpdatePostDto,
+  PublicPostDto,
+} from './post.dto';
 import { Post } from './post.entity';
 import { User } from 'src/user/user.entity';
-import { SmartAuthGuard } from 'src/auth/jwt';
+import { JwtAuthGuard, SmartAuthGuard } from 'src/auth/jwt';
 
 @Controller('posts')
 export class PostController {
@@ -21,7 +27,7 @@ export class PostController {
   // ===== CREATE =====
 
   @PostMapping()
-  @UseGuards(SmartAuthGuard)
+  @UseGuards(JwtAuthGuard)
   async createPost(
     @Body() createPostDto: CreatePostDto,
     @Request() req: { user: User },
@@ -30,7 +36,7 @@ export class PostController {
   }
 
   @PostMapping('draft')
-  @UseGuards(SmartAuthGuard)
+  @UseGuards(JwtAuthGuard)
   async draftPost(
     @Body() draftPostDto: DraftPostDto,
     @Request() req: { user: User },
@@ -39,6 +45,17 @@ export class PostController {
   }
 
   // ===== READ =====
+
+  @Get()
+  async getPublicPosts(
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ): Promise<PublicPostDto[]> {
+    return await this.postService.getPublicPosts(
+      limit ? Number(limit) : 20,
+      offset ? Number(offset) : 0,
+    );
+  }
 
   @Get(':id')
   async getPostById(@Param('id') id: number): Promise<Post> {
