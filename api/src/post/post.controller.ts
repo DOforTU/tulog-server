@@ -59,8 +59,11 @@ export class PostController {
   }
 
   @Get(':id')
-  async getPostById(@Param('id') id: number): Promise<Post> {
-    return await this.postService.getPostById(id);
+  async getPostById(
+    @Param('id') id: number,
+    @Request() req?: { user: User },
+  ): Promise<Post> {
+    return await this.postService.getPostById(id, req?.user?.id);
   }
 
   // ===== UPDATE =====

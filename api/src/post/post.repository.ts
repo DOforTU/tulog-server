@@ -31,6 +31,18 @@ export class PostRepository {
       .getOne();
   }
 
+  // async findByIdWithEditors(id: number): Promise<Post | null> {
+  //   return await this.postRepository
+  //     .createQueryBuilder('post')
+  //     .leftJoinAndSelect('post.team', 'team')
+  //     .leftJoinAndSelect('post.editors', 'editors')
+  //     .leftJoinAndSelect('editors.user', 'user')
+  //     .leftJoinAndSelect('post.postTags', 'postTags')
+  //     .leftJoinAndSelect('postTags.tag', 'tag')
+  //     .where('post.id = :id', { id })
+  //     .getOne();
+  // }
+
   async findPublicPostsOrderByLatest(
     limit: number = 20,
     offset: number = 0,
@@ -61,18 +73,6 @@ export class PostRepository {
       .where('post.id IN (:...ids)', { ids: postIds.map((p) => p.id) })
       .orderBy('post.createdAt', 'DESC')
       .getMany();
-  }
-
-  async findByIdWithEditors(id: number): Promise<Post | null> {
-    return await this.postRepository
-      .createQueryBuilder('post')
-      .leftJoinAndSelect('post.editors', 'editors')
-      .leftJoinAndSelect('editors.user', 'user')
-      .leftJoinAndSelect('post.team', 'team')
-      .leftJoinAndSelect('post.postTags', 'postTags')
-      .leftJoinAndSelect('postTags.tag', 'tag')
-      .where('post.id = :id', { id })
-      .getOne();
   }
 
   // ===== UPDATE =====
