@@ -10,7 +10,6 @@ import { TeamService } from 'src/team/team.service';
 import { Team } from 'src/team/team.entity';
 import { User } from 'src/user/user.entity';
 import { TeamFollowRepository } from './team-follow.repository';
-import { NotFoundError } from 'rxjs';
 
 @Injectable()
 export class TeamFollowService {
