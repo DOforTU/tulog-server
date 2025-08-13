@@ -47,7 +47,7 @@ export class UserController {
   @Get('nickname/:nickname')
   async getUserByNickname(
     @Param('nickname') nickname: string,
-  ): Promise<PublicUser | null> {
+  ): Promise<PublicUser> {
     return toPublicUser(await this.userService.getUserByNickname(nickname));
   }
 

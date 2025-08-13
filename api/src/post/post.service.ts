@@ -67,7 +67,7 @@ export class PostService {
 
       await queryRunner.commitTransaction();
 
-      return await this.getPostWithEditors(createdPost.id);
+      return await this.getPostById(createdPost.id);
     } catch (error: any) {
       console.error('create post error:', error);
       await queryRunner.rollbackTransaction();
@@ -108,7 +108,7 @@ export class PostService {
 
       await queryRunner.commitTransaction();
 
-      return await this.getPostWithEditors(createdPost.id);
+      return await this.getPostById(createdPost.id);
     } catch (error: any) {
       console.error('draft post error:', error);
       await queryRunner.rollbackTransaction();
@@ -120,21 +120,34 @@ export class PostService {
 
   // ===== READ =====
 
-  async getPostById(id: number): Promise<Post> {
+  async getPostById(id: number, userId?: number): Promise<Post> {
     const post = await this.postRepository.findById(id);
     if (!post) {
       throw new NotFoundException('Post not found');
     }
+
+    // view count increment(only public posts and not owned by user)
+    if (
+      post.status === PostStatus.PUBLIC &&
+      userId &&
+      !post.editors.some((editor) => editor.userId === userId)
+    ) {
+      post.viewCount += 1;
+      await this.postRepository.updatePost(post.id, {
+        viewCount: post.viewCount,
+      });
+    }
+
     return post;
   }
 
-  async getPostWithEditors(id: number): Promise<Post> {
-    const post = await this.postRepository.findByIdWithEditors(id);
-    if (!post) {
-      throw new NotFoundException('Post not found');
-    }
-    return post;
-  }
+  // async getPostWithEditors(id: number): Promise<Post> {
+  //   const post = await this.postRepository.findByIdWithEditors(id);
+  //   if (!post) {
+  //     throw new NotFoundException('Post not found');
+  //   }
+  //   return post;
+  // }
 
   async getPublicPosts(
     limit: number = 20,
@@ -162,10 +175,7 @@ export class PostService {
     await queryRunner.startTransaction();
 
     try {
-      const existingPost = await this.postRepository.findByIdWithEditors(id);
-      if (!existingPost) {
-        throw new NotFoundException('Post not found');
-      }
+      const existingPost = await this.getPostById(id);
 
       const userEditor = existingPost.editors.find(
         (editor) => editor.userId === userId,
@@ -220,7 +230,49 @@ export class PostService {
 
       await queryRunner.commitTransaction();
 
-      return await this.getPostWithEditors(id);
+      return await this.getPostById(id);
+    } catch (error: any) {
+      console.error('update post error:', error);
+      await queryRunner.rollbackTransaction();
+      throw error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+        ? error
+        : new InternalServerErrorException('Failed updating post');
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  // ===== DELETE =====
+  async deletePost(id: number, userId: number): Promise<boolean> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const existingPost = await this.getPostById(id);
+
+      const userEditor = existingPost.editors.find(
+        (editor) => editor.userId === userId,
+      );
+      if (
+        !userEditor ||
+        (userEditor.role !== EditorRole.OWNER &&
+          userEditor.role !== EditorRole.EDITOR)
+      ) {
+        throw new ForbiddenException(
+          'You do not have permission to edit this post',
+        );
+      }
+
+      // TODO: Delete post
+      // transaction with to delete editor, bookmark, like, hide etc...
+      await queryRunner.manager.update(Post, id, { deletedAt: new Date() });
+      await queryRunner.manager.delete(Editor, { postId: id });
+
+      await queryRunner.commitTransaction();
+
+      return true;
     } catch (error: any) {
       console.error('update post error:', error);
       await queryRunner.rollbackTransaction();

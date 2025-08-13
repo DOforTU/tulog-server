@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -58,8 +59,11 @@ export class PostController {
   }
 
   @Get(':id')
-  async getPostById(@Param('id') id: number): Promise<Post> {
-    return await this.postService.getPostById(id);
+  async getPostById(
+    @Param('id') id: number,
+    @Request() req?: { user: User },
+  ): Promise<Post> {
+    return await this.postService.getPostById(id, req?.user?.id);
   }
 
   // ===== UPDATE =====
@@ -72,5 +76,16 @@ export class PostController {
     @Request() req: { user: User },
   ): Promise<Post> {
     return await this.postService.updatePost(id, updatePostDto, req.user.id);
+  }
+
+  // ===== DELETE =====
+
+  @Delete(':id')
+  @UseGuards(SmartAuthGuard)
+  async deletePost(
+    @Param('id') id: number,
+    @Request() req: { user: User },
+  ): Promise<boolean> {
+    return await this.postService.deletePost(id, req.user.id);
   }
 }
