@@ -30,8 +30,8 @@ export class PostHideRepository {
   ): Promise<PostHide | null> {
     return this.postHideRepository
       .createQueryBuilder('post_hide')
-      .where('hide.postId = :postId', { postId })
-      .andWhere('hide.userId = :userId', { userId })
+      .where('post_hide.postId = :postId', { postId })
+      .andWhere('post_hide.userId = :userId', { userId })
       .getOne();
   }
 }

@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PostHide } from './post-hide.entity';
-import { Post } from 'src/post/post.entity';
-import { CreateCommentDto } from './comment.dto';
+import { CreateCommentDto, UpdateCommentDto } from './comment.dto';
+import { Comment } from './comment.entity';
 
 @Injectable()
 export class CommentRepository {
@@ -13,15 +12,16 @@ export class CommentRepository {
   ) {}
 
   // ===== CREATE =====
+
   async commentAtPost(
     postId: number,
     userId: number,
     createCommentDto: CreateCommentDto,
   ): Promise<Comment> {
     const comment = this.commentRepository.create({
-      post: { id: postId }, // 올바른 필드
-      authorId: userId, // 오타 수정: autorId → authorId
-      content: createCommentDto.comment, // DTO 필드명 확인 필요
+      post: { id: postId },
+      authorId: userId,
+      content: createCommentDto.comment,
     });
     return await this.commentRepository.save(comment);
   }
@@ -31,11 +31,32 @@ export class CommentRepository {
   async changeComment(
     postId: number,
     userId: number,
-  ): Promise<PostHide | null> {
+    updateCommentDto: UpdateCommentDto,
+  ): Promise<Comment | null> {
+    await this.commentRepository
+      .createQueryBuilder()
+      .update(Comment)
+      .set({
+        content: updateCommentDto.comment,
+        updatedAt: new Date(), // Common 엔티티에서 상속받는 경우
+      })
+      .where('postId = :postId', { postId })
+      .andWhere('authorId = :userId', { userId }) // ⚠️ 엔티티에서는 authorId였죠
+      .execute();
+
     return this.commentRepository
-      .createQueryBuilder('post_hide')
-      .where('hide.postId = :postId', { postId })
-      .andWhere('hide.userId = :userId', { userId })
+      .createQueryBuilder('comment')
+      .where('comment.postId = :postId', { postId })
+      .andWhere('comment.authorId = :userId', { userId })
+      .getOne();
+  }
+
+  // ===== SUB FUNCTION =====
+
+  async findOneById(commentId: number): Promise<Comment | null> {
+    return this.commentRepository
+      .createQueryBuilder('comment')
+      .where('comment.id = :commentId', { commentId })
       .getOne();
   }
 }

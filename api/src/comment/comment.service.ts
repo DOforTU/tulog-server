@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCommentDto, UpdateCommentDto } from './comment.dto';
 import { PostService } from 'src/post/post.service';
 import { CommentRepository } from './comment.repository';
+import { Comment } from './comment.entity';
+import { EntityManager } from 'typeorm';
 
 @Injectable()
 export class CommentService {
@@ -32,7 +34,7 @@ export class CommentService {
     commentId: number,
     userId: number,
     updateCommentDto: UpdateCommentDto,
-  ): Promise<Comment> {
+  ): Promise<Comment | null> {
     // 1) 기존 댓글 조회
     const existing = await this.commentRepository.findOneById(commentId);
     if (!existing) {
@@ -44,5 +46,18 @@ export class CommentService {
       userId,
       updateCommentDto,
     );
+  }
+
+  // ===== SUB FUNCTION =====
+
+  async hideCommentsForPost(
+    manager: EntityManager,
+    postId: number,
+    userId: number,
+  ): Promise<boolean> {
+    await manager
+      .getRepository(Comment)
+      .update({ postId, authorId: userId }, { hiddenAt: new Date() });
+    return true;
   }
 }

@@ -45,7 +45,7 @@ export class CommentController {
     @Param('id') id: number,
     @Request() req: { user: User },
     @Body() updateCommentDto: UpdateCommentDto,
-  ): Promise<Comment> {
+  ): Promise<Comment | null> {
     return await this.commentService.changeComment(
       id,
       req.user.id,
