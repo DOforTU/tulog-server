@@ -68,6 +68,28 @@ export class PostController {
     return await this.postService.readPostById(id, String(clientIp));
   }
 
+  @Get('teams/:id/public')
+  async getPublicPostsByTeamId(
+    @Param('id') id: number,
+  ): Promise<PostCardDto[]> {
+    return await this.postService.getPublicPostsByTeamId(id);
+  }
+
+  @Get('teams/:id/private')
+  @UseGuards(SmartAuthGuard)
+  async getPrivatePostsByTeamId(
+    @Param('id') id: number,
+  ): Promise<PostCardDto[]> {
+    return await this.postService.getPrivatePostsByTeamId(id);
+  }
+
+  // Team 설정된 임시 글은 팀 페이지에서 못 보도록 함
+  // @Get('teams/:id/draft')
+  // @UseGuards(SmartAuthGuard)
+  // async getDraftPostsByTeamId(@Param('id') id: number): Promise<PostCardDto[]> {
+  //   return await this.postService.getDraftPostsByTeamId(id);
+  // }
+
   // ===== UPDATE =====
 
   @Patch(':id')

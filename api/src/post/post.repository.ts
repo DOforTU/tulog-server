@@ -75,6 +75,51 @@ export class PostRepository {
       .getMany();
   }
 
+  async findPublicPostsByTeamId(teamId: number): Promise<Post[]> {
+    return await this.postRepository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.team', 'team')
+      .leftJoinAndSelect('post.editors', 'editors')
+      .leftJoinAndSelect('editors.user', 'user')
+      .leftJoinAndSelect('post.postTags', 'postTags')
+      .leftJoinAndSelect('postTags.tag', 'tag')
+      .where('post.teamId = :teamId', { teamId })
+      .andWhere('post.status = :status', { status: 'PUBLIC' })
+      .andWhere('post.deletedAt IS NULL')
+      .orderBy('post.createdAt', 'DESC')
+      .getMany();
+  }
+
+  async findPrivatePostsByTeamId(teamId: number): Promise<Post[]> {
+    return await this.postRepository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.team', 'team')
+      .leftJoinAndSelect('post.editors', 'editors')
+      .leftJoinAndSelect('editors.user', 'user')
+      .leftJoinAndSelect('post.postTags', 'postTags')
+      .leftJoinAndSelect('postTags.tag', 'tag')
+      .where('post.teamId = :teamId', { teamId })
+      .andWhere('post.status = :status', { status: 'PRIVATE' })
+      .andWhere('post.deletedAt IS NULL')
+      .orderBy('post.createdAt', 'DESC')
+      .getMany();
+  }
+
+  async findDraftPostsByTeamId(teamId: number): Promise<Post[]> {
+    return await this.postRepository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.team', 'team')
+      .leftJoinAndSelect('post.editors', 'editors')
+      .leftJoinAndSelect('editors.user', 'user')
+      .leftJoinAndSelect('post.postTags', 'postTags')
+      .leftJoinAndSelect('postTags.tag', 'tag')
+      .where('post.teamId = :teamId', { teamId })
+      .andWhere('post.status = :status', { status: 'DRAFT' })
+      .andWhere('post.deletedAt IS NULL')
+      .orderBy('post.createdAt', 'DESC')
+      .getMany();
+  }
+
   // ===== UPDATE =====
 
   async updatePost(id: number, updateData: Partial<Post>): Promise<void> {

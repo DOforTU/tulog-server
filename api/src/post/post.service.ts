@@ -89,7 +89,9 @@ export class PostService {
         title: draftPostDto.title,
         content: draftPostDto.content,
         excerpt: draftPostDto.excerpt,
-        thumbnailImage: draftPostDto.thumbnailImage,
+        thumbnailImage:
+          draftPostDto.thumbnailImage ||
+          this.configService.get('DEFAULT_THUMBNAIL_IMAGE_URL'),
         status: PostStatus.DRAFT,
         teamId: draftPostDto.teamId,
       };
@@ -174,6 +176,21 @@ export class PostService {
       offset,
     );
 
+    return posts.map((post) => this.transformToPublicPostDto(post));
+  }
+
+  async getPublicPostsByTeamId(teamId: number): Promise<PostCardDto[]> {
+    const posts = await this.postRepository.findPublicPostsByTeamId(teamId);
+    return posts.map((post) => this.transformToPublicPostDto(post));
+  }
+
+  async getPrivatePostsByTeamId(teamId: number): Promise<PostCardDto[]> {
+    const posts = await this.postRepository.findPrivatePostsByTeamId(teamId);
+    return posts.map((post) => this.transformToPublicPostDto(post));
+  }
+
+  async getDraftPostsByTeamId(teamId: number): Promise<PostCardDto[]> {
+    const posts = await this.postRepository.findDraftPostsByTeamId(teamId);
     return posts.map((post) => this.transformToPublicPostDto(post));
   }
 
