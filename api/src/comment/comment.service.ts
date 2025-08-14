@@ -29,14 +29,12 @@ export class CommentService {
 
     const isHidden = await this.postHideService.isHidden(postId);
     if (isHidden) {
-      throw new ForbiddenException(
-        '숨김 처리된 게시글에는 댓글을 작성할 수 없습니다.',
-      );
+      throw new ForbiddenException('You can not comment this post.');
     }
 
     // 3) 게시글 상태 확인 (예: PRIVATE이면 작성자만 가능)
     if (post.status === 'PRIVATE' && post.editors) {
-      throw new ForbiddenException('이 게시글에는 댓글을 작성할 수 없습니다.');
+      throw new ForbiddenException('You can not comment this post.');
     }
 
     return await this.commentRepository.commentAtPost(
