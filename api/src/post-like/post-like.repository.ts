@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { PostLike } from './post-like.entity';
 import { User } from 'src/user/user.entity';
+import { PostCardDto } from 'src/post/post.dto';
+import { Post } from 'src/post/post.entity';
 
 @Injectable()
 export class PostLikeRepository {
@@ -50,6 +52,22 @@ export class PostLikeRepository {
       .getMany();
 
     return likes.map((like) => like.user);
+  }
+
+  /** Get posts user liked */
+  async findLikedPostsByUser(userId: number): Promise<Post[]> {
+    const likedPost = await this.postLikeRepository
+      .createQueryBuilder('post_like')
+      .leftJoinAndSelect('post_like.user', 'likeUser') // 편집자랑 이름이 같아서 구분하기 위해 좋아요 누른 유저
+      .leftJoinAndSelect('post_like.post', 'post')
+      .leftJoinAndSelect('post.team', 'team')
+      .leftJoinAndSelect('post.editors', 'editors')
+      .leftJoinAndSelect('editors.user', 'editorUser') // 편집자 유저
+      .leftJoinAndSelect('post.postTags', 'postTags')
+      .leftJoinAndSelect('postTags.tag', 'tag')
+      .where('likeUser.id = :userId', { userId }) // 여기서 likeUser를 사용
+      .getMany();
+    return likedPost.map((l) => l.post);
   }
 
   // ===== DELETE =====
