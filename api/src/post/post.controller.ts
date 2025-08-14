@@ -61,9 +61,11 @@ export class PostController {
   @Get(':id')
   async getPostById(
     @Param('id') id: number,
-    @Request() req?: { user: User },
+    @Request() req: any,
   ): Promise<Post> {
-    return await this.postService.getPostById(id, req?.user?.id);
+    const clientIp =
+      req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
+    return await this.postService.readPostById(id, String(clientIp));
   }
 
   // ===== UPDATE =====

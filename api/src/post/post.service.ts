@@ -22,6 +22,8 @@ import { toPublicUser } from 'src/common/helper/to-public-user';
 
 @Injectable()
 export class PostService {
+  private viewCache = new Map<string, number>();
+
   constructor(
     private readonly configService: ConfigService,
     private readonly postRepository: PostRepository,
@@ -120,22 +122,44 @@ export class PostService {
 
   // ===== READ =====
 
-  async getPostById(id: number, userId?: number): Promise<Post> {
+  async readPostById(id: number, clientIp?: string): Promise<Post> {
     const post = await this.postRepository.findById(id);
     if (!post) {
       throw new NotFoundException('Post not found');
     }
 
-    // view count increment(only public posts and not owned by user)
-    if (
-      post.status === PostStatus.PUBLIC &&
-      userId &&
-      !post.editors.some((editor) => editor.userId === userId)
-    ) {
+    // view count increment with duplicate prevention
+    if (clientIp) {
+      const cacheKey = `view:${id}:${clientIp}`;
+      const now = Date.now();
+      const lastView = this.viewCache.get(cacheKey);
+
+      // Only increment if no recent view from same IP (within 10 minutes)
+      if (!lastView || now - lastView > 10 * 60 * 1000) {
+        post.viewCount += 1;
+        await this.postRepository.updatePost(post.id, {
+          viewCount: post.viewCount,
+        });
+        this.viewCache.set(cacheKey, now);
+
+        // Clean old cache entries (older than 1 hour)
+        this.cleanOldCacheEntries();
+      }
+    } else {
+      // Fallback: increment anyway if no IP
       post.viewCount += 1;
       await this.postRepository.updatePost(post.id, {
         viewCount: post.viewCount,
       });
+    }
+
+    return post;
+  }
+
+  async getPostById(id: number): Promise<Post> {
+    const post = await this.postRepository.findById(id);
+    if (!post) {
+      throw new NotFoundException('Post not found');
     }
 
     return post;
@@ -286,6 +310,15 @@ export class PostService {
   }
 
   // ===== SUB FUNCTIONS =====
+
+  private cleanOldCacheEntries(): void {
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
+    for (const [key, timestamp] of this.viewCache.entries()) {
+      if (timestamp < oneHourAgo) {
+        this.viewCache.delete(key);
+      }
+    }
+  }
 
   private async handleEditorsCreation(
     manager: any,
