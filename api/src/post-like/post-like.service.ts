@@ -6,6 +6,7 @@ import {
 import { PostLike } from './post-like.entity';
 import { User } from 'src/user/user.entity';
 import { PostLikeRepository } from './post-like.repository';
+import { EntityManager } from 'typeorm';
 
 @Injectable()
 export class PostLikeService {
@@ -52,5 +53,18 @@ export class PostLikeService {
     }
 
     return await this.postLikeRepository.deleteLike(userId, postId);
+  }
+
+  // ===== SUB FUNCTION =====
+  async hideLikesForPost(
+    manager: EntityManager,
+    postId: number,
+    userId: number,
+  ): Promise<boolean> {
+    return await this.postLikeRepository.hideLikesForPost(
+      manager,
+      postId,
+      userId,
+    );
   }
 }

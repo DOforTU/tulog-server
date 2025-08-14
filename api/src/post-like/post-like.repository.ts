@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { PostLike } from './post-like.entity';
 import { User } from 'src/user/user.entity';
 
@@ -65,5 +65,15 @@ export class PostLikeRepository {
       .execute();
 
     return result.affected ? result.affected > 0 : false;
+  }
+
+  // ===== SUB FUNCTION =====
+  async hideLikesForPost(
+    manager: EntityManager,
+    postId: number,
+    userId: number,
+  ): Promise<boolean> {
+    await manager.getRepository(PostLike).save({ postId, userId });
+    return true;
   }
 }
