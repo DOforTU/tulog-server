@@ -67,6 +67,8 @@ src/
 npm install
 npm install --save-dev @types/multer --legacy-peer-deps
 npm install @nestjs/platform-express multer --legacy-peer-deps
+npm install --save @nestjs/swagger swagger-ui-express --legacy-peer-deps
+npm install --save-dev @types/swagger-ui-express --legacy-peer-deps
 ```
 
 ### 2. Environment Configuration
