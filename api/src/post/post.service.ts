@@ -10,7 +10,7 @@ import {
   CreatePostDto,
   DraftPostDto,
   UpdatePostDto,
-  PublicPostDto,
+  PostCardDto,
 } from './post.dto';
 import { PostRepository } from './post.repository';
 import { TeamMemberService } from 'src/team-member/team-member.service';
@@ -22,6 +22,8 @@ import { toPublicUser } from 'src/common/helper/to-public-user';
 
 @Injectable()
 export class PostService {
+  private viewCache = new Map<string, number>();
+
   constructor(
     private readonly configService: ConfigService,
     private readonly postRepository: PostRepository,
@@ -87,7 +89,9 @@ export class PostService {
         title: draftPostDto.title,
         content: draftPostDto.content,
         excerpt: draftPostDto.excerpt,
-        thumbnailImage: draftPostDto.thumbnailImage,
+        thumbnailImage:
+          draftPostDto.thumbnailImage ||
+          this.configService.get('DEFAULT_THUMBNAIL_IMAGE_URL'),
         status: PostStatus.DRAFT,
         teamId: draftPostDto.teamId,
       };
@@ -120,18 +124,31 @@ export class PostService {
 
   // ===== READ =====
 
-  async getPostById(id: number, userId?: number): Promise<Post> {
+  async readPostById(id: number, clientIp?: string): Promise<Post> {
     const post = await this.postRepository.findById(id);
     if (!post) {
       throw new NotFoundException('Post not found');
     }
 
-    // view count increment(only public posts and not owned by user)
-    if (
-      post.status === PostStatus.PUBLIC &&
-      userId &&
-      !post.editors.some((editor) => editor.userId === userId)
-    ) {
+    // view count increment with duplicate prevention
+    if (clientIp) {
+      const cacheKey = `view:${id}:${clientIp}`;
+      const now = Date.now();
+      const lastView = this.viewCache.get(cacheKey);
+
+      // Only increment if no recent view from same IP (within 10 minutes)
+      if (!lastView || now - lastView > 10 * 60 * 1000) {
+        post.viewCount += 1;
+        await this.postRepository.updatePost(post.id, {
+          viewCount: post.viewCount,
+        });
+        this.viewCache.set(cacheKey, now);
+
+        // Clean old cache entries (older than 1 hour)
+        this.cleanOldCacheEntries();
+      }
+    } else {
+      // Fallback: increment anyway if no IP
       post.viewCount += 1;
       await this.postRepository.updatePost(post.id, {
         viewCount: post.viewCount,
@@ -141,25 +158,39 @@ export class PostService {
     return post;
   }
 
-  // async getPostWithEditors(id: number): Promise<Post> {
-  //   const post = await this.postRepository.findByIdWithEditors(id);
-  //   if (!post) {
-  //     throw new NotFoundException('Post not found');
-  //   }
-  //   return post;
-  // }
+  async getPostById(id: number): Promise<Post> {
+    const post = await this.postRepository.findById(id);
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
 
-  async getPublicPosts(
+    return post;
+  }
+
+  async getRecentPosts(
     limit: number = 20,
     offset: number = 0,
-  ): Promise<PublicPostDto[]> {
-    console.log(`getPublicPosts 호출: limit=${limit}, offset=${offset}`);
-
+  ): Promise<PostCardDto[]> {
     const posts = await this.postRepository.findPublicPostsOrderByLatest(
       limit,
       offset,
     );
 
+    return posts.map((post) => this.transformToPublicPostDto(post));
+  }
+
+  async getPublicPostsByTeamId(teamId: number): Promise<PostCardDto[]> {
+    const posts = await this.postRepository.findPublicPostsByTeamId(teamId);
+    return posts.map((post) => this.transformToPublicPostDto(post));
+  }
+
+  async getPrivatePostsByTeamId(teamId: number): Promise<PostCardDto[]> {
+    const posts = await this.postRepository.findPrivatePostsByTeamId(teamId);
+    return posts.map((post) => this.transformToPublicPostDto(post));
+  }
+
+  async getDraftPostsByTeamId(teamId: number): Promise<PostCardDto[]> {
+    const posts = await this.postRepository.findDraftPostsByTeamId(teamId);
     return posts.map((post) => this.transformToPublicPostDto(post));
   }
 
@@ -287,6 +318,15 @@ export class PostService {
 
   // ===== SUB FUNCTIONS =====
 
+  private cleanOldCacheEntries(): void {
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
+    for (const [key, timestamp] of this.viewCache.entries()) {
+      if (timestamp < oneHourAgo) {
+        this.viewCache.delete(key);
+      }
+    }
+  }
+
   private async handleEditorsCreation(
     manager: any,
     postId: number,
@@ -393,7 +433,7 @@ export class PostService {
     }
   }
 
-  private transformToPublicPostDto(post: Post): PublicPostDto {
+  private transformToPublicPostDto(post: Post): PostCardDto {
     const owners = post.editors.filter(
       (editor) => editor.role === EditorRole.OWNER,
     );
