@@ -21,9 +21,6 @@ export class PostLike {
   @CreateDateColumn()
   createdAt: Date;
 
-  @Column({ type: 'time', nullable: true })
-  hiddenAt?: Date;
-
   @PrimaryColumn()
   userId: number;
 

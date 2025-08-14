@@ -21,7 +21,7 @@ export class PostHideController {
 
   // ===== UPDATE =====
 
-  @Patch('id')
+  @Patch(':postId')
   @UseGuards(JwtAuthGuard)
   async hidePost(
     @Param('id') id: number,

@@ -55,9 +55,7 @@ export class CommentService {
     postId: number,
     userId: number,
   ): Promise<boolean> {
-    await manager
-      .getRepository(Comment)
-      .update({ postId, authorId: userId }, { hiddenAt: new Date() });
+    await manager.getRepository(Comment).save({ postId, authorId: userId });
     return true;
   }
 }

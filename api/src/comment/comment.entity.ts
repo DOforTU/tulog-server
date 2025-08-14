@@ -44,7 +44,4 @@ export class Comment extends Common {
 
   @OneToMany(() => Comment, (comment) => comment.parentComment)
   replies: Comment[];
-
-  @Column()
-  hiddenAt: Date;
 }

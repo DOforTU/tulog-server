@@ -49,22 +49,7 @@ export class PostHideService {
       await queryRunner.manager.save(PostHide, {
         postId,
         userId,
-        hiddenAt: new Date(),
       });
-
-      // 4) 좋아요 숨김 처리 (다른 서비스 메서드 호출 가능)
-      await this.postLikeService.hideLikesForPost(
-        queryRunner.manager,
-        postId,
-        userId,
-      );
-
-      // 5) 댓글 숨김 처리
-      await this.commentService.hideCommentsForPost(
-        queryRunner.manager,
-        postId,
-        userId,
-      );
 
       // 6) 커밋
       await queryRunner.commitTransaction();

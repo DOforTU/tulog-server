@@ -73,9 +73,7 @@ export class PostLikeRepository {
     postId: number,
     userId: number,
   ): Promise<boolean> {
-    await manager
-      .getRepository(PostLike)
-      .update({ postId, userId }, { hiddenAt: new Date() });
+    await manager.getRepository(PostLike).save({ postId, userId });
     return true;
   }
 }
