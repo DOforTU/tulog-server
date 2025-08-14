@@ -32,7 +32,7 @@ export class CommentService {
       throw new ForbiddenException('You can not comment this post.');
     }
 
-    // 3) 게시글 상태 확인 (예: PRIVATE이면 작성자만 가능)
+    // 3) 게시글 상태 확인
     if (post.status === 'PRIVATE' && post.editors) {
       throw new ForbiddenException('You can not comment this post.');
     }

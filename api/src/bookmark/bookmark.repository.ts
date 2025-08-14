@@ -14,11 +14,11 @@ export class BookmarkRepository {
 
   /** bookmark a post */
   async bookmarkPost(userId: number, postId: number): Promise<Bookmark> {
-    const like = this.bookmarkRepository.create({
+    const bookmark = this.bookmarkRepository.create({
       userId,
       postId,
     });
-    return await this.bookmarkRepository.save(like);
+    return await this.bookmarkRepository.save(bookmark);
   }
 
   // ===== DELETE =====

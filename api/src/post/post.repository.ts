@@ -1,13 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Post } from './post.entity';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class PostRepository {
   constructor(
     @InjectRepository(Post)
     private readonly postRepository: Repository<Post>,
+    private readonly dataSource: DataSource,
   ) {}
 
   // ===== CREATE =====
@@ -83,5 +85,19 @@ export class PostRepository {
       .set(updateData)
       .where('id = :id', { id })
       .execute();
+  }
+
+  // ===== SUB FUNCTION =====
+
+  async isOwner(postId: number, userId: number): Promise<User | null> {
+    return await this.dataSource
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .innerJoin('user.editors', 'editor')
+      .innerJoin('editor.post', 'post')
+      .where('post.id = :postId', { postId })
+      .andWhere('user.id = :userId', { userId })
+      .andWhere('editor.role = :role', { role: 'OWNER' })
+      .getOne();
   }
 }

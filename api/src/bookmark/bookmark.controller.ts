@@ -22,7 +22,7 @@ export class BookmarkController {
   @UseGuards(JwtAuthGuard)
   async bookmarkPost(
     @Request() req: { user: User },
-    @Param('id') postId: number,
+    @Param('postId') postId: number,
   ): Promise<Bookmark> {
     return await this.bookmarkService.bookmarkPost(req.user.id, postId);
   }
@@ -33,7 +33,7 @@ export class BookmarkController {
   @UseGuards(JwtAuthGuard)
   async deleteBookMark(
     @Request() req: { user: User },
-    @Param('id') postId: number,
+    @Param('pstId') postId: number,
   ): Promise<boolean> {
     return await this.bookmarkService.deleteBookMark(req.user.id, postId);
   }
