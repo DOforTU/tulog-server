@@ -33,11 +33,6 @@ export class PostHideService {
     }
     await this.postService.getPostById(postId);
 
-    const isOwner = await this.postService.isOwner(postId, userId);
-    if (!isOwner) {
-      throw new ForbiddenException('게시글 작성자만 숨김 처리할 수 있습니다.');
-    }
-
     return await this.postHideRepository.hidePost(postId, userId);
   }
 
@@ -74,7 +69,7 @@ export class PostHideService {
         throw new InternalServerErrorException('Failed to unhide the post.');
       }
 
-      // 6) 커밋
+      // 4) 커밋
       await queryRunner.commitTransaction();
       return true;
     } catch (err) {

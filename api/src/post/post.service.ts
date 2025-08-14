@@ -372,7 +372,7 @@ export class PostService {
     };
   }
 
-  async isOwner(postId: number, userId: number): Promise<User | null> {
-    return await this.postRepository.isOwner(postId, userId);
-  }
+  //async isOwner(postId: number, userId: number): Promise<User | null> {
+  //  return await this.postRepository.isOwner(postId, userId);
+  //}
 }
