@@ -1,6 +1,7 @@
 import {
   Controller,
   Delete,
+  Get,
   Param,
   Patch,
   Post,
@@ -17,10 +18,14 @@ import { PostHideService } from './post-hide.service';
 export class PostHideController {
   constructor(private readonly postHideService: PostHideService) {}
 
-  // ===== CREATE =====
+  @Post(':postId')
+  @UseGuards(JwtAuthGuard)
+
+  // ===== READ =====
+  @Get()
+  @UseGuards(JwtAuthGuard)
 
   // ===== UPDATE =====
-
   @Patch(':postId')
   @UseGuards(JwtAuthGuard)
   async hidePost(

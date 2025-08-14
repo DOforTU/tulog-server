@@ -1,14 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateCommentDto, UpdateCommentDto } from './comment.dto';
 import { PostService } from 'src/post/post.service';
 import { CommentRepository } from './comment.repository';
 import { Comment } from './comment.entity';
 import { EntityManager } from 'typeorm';
+import { PostHideService } from 'src/post-hide/post-hide.service';
 
 @Injectable()
 export class CommentService {
   constructor(
     private readonly commentRepository: CommentRepository,
+    private readonly postHideService: PostHideService,
     private readonly postService: PostService,
   ) {}
 
@@ -19,7 +25,19 @@ export class CommentService {
     userId: number,
     createCommentDto: CreateCommentDto,
   ): Promise<Comment> {
-    await this.postService.getPostById(postId);
+    const post = await this.postService.getPostById(postId);
+
+    const isHidden = await this.postHideService.isHidden(postId);
+    if (isHidden) {
+      throw new ForbiddenException(
+        '숨김 처리된 게시글에는 댓글을 작성할 수 없습니다.',
+      );
+    }
+
+    // 3) 게시글 상태 확인 (예: PRIVATE이면 작성자만 가능)
+    if (post.status === 'PRIVATE' && post.editors) {
+      throw new ForbiddenException('이 게시글에는 댓글을 작성할 수 없습니다.');
+    }
 
     return await this.commentRepository.commentAtPost(
       postId,
