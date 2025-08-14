@@ -24,9 +24,9 @@ export class PostHideController {
   @Patch(':postId')
   @UseGuards(JwtAuthGuard)
   async hidePost(
-    @Param('id') id: number,
+    @Param('postId') postId: number,
     @Request() req: { user: User },
   ): Promise<boolean> {
-    return await this.postHideService.hidePost(id, req.user.id);
+    return await this.postHideService.hidePost(postId, req.user.id);
   }
 }
