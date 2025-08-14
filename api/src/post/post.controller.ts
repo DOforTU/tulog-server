@@ -15,7 +15,7 @@ import {
   CreatePostDto,
   DraftPostDto,
   UpdatePostDto,
-  PublicPostDto,
+  PostCardDto,
 } from './post.dto';
 import { Post } from './post.entity';
 import { User } from 'src/user/user.entity';
@@ -48,11 +48,11 @@ export class PostController {
   // ===== READ =====
 
   @Get()
-  async getPublicPosts(
+  async getRecentPosts(
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
-  ): Promise<PublicPostDto[]> {
-    return await this.postService.getPublicPosts(
+  ): Promise<PostCardDto[]> {
+    return await this.postService.getRecentPosts(
       limit ? Number(limit) : 20,
       offset ? Number(offset) : 0,
     );

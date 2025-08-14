@@ -10,7 +10,7 @@ import {
 import { PostStatus } from './post.entity';
 import { PublicUser } from 'src/user/user.dto';
 
-export class PublicPostDto {
+export class PostCardDto {
   id: number;
   title: string;
   excerpt: string;

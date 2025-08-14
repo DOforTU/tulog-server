@@ -10,7 +10,7 @@ import {
   CreatePostDto,
   DraftPostDto,
   UpdatePostDto,
-  PublicPostDto,
+  PostCardDto,
 } from './post.dto';
 import { PostRepository } from './post.repository';
 import { TeamMemberService } from 'src/team-member/team-member.service';
@@ -165,20 +165,10 @@ export class PostService {
     return post;
   }
 
-  // async getPostWithEditors(id: number): Promise<Post> {
-  //   const post = await this.postRepository.findByIdWithEditors(id);
-  //   if (!post) {
-  //     throw new NotFoundException('Post not found');
-  //   }
-  //   return post;
-  // }
-
-  async getPublicPosts(
+  async getRecentPosts(
     limit: number = 20,
     offset: number = 0,
-  ): Promise<PublicPostDto[]> {
-    console.log(`getPublicPosts 호출: limit=${limit}, offset=${offset}`);
-
+  ): Promise<PostCardDto[]> {
     const posts = await this.postRepository.findPublicPostsOrderByLatest(
       limit,
       offset,
@@ -426,7 +416,7 @@ export class PostService {
     }
   }
 
-  private transformToPublicPostDto(post: Post): PublicPostDto {
+  private transformToPublicPostDto(post: Post): PostCardDto {
     const owners = post.editors.filter(
       (editor) => editor.role === EditorRole.OWNER,
     );
