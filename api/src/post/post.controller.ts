@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -14,7 +15,7 @@ import {
   CreatePostDto,
   DraftPostDto,
   UpdatePostDto,
-  PublicPostDto,
+  PostCardDto,
 } from './post.dto';
 import { Post } from './post.entity';
 import { User } from 'src/user/user.entity';
@@ -47,20 +48,47 @@ export class PostController {
   // ===== READ =====
 
   @Get()
-  async getPublicPosts(
+  async getRecentPosts(
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
-  ): Promise<PublicPostDto[]> {
-    return await this.postService.getPublicPosts(
+  ): Promise<PostCardDto[]> {
+    return await this.postService.getRecentPosts(
       limit ? Number(limit) : 20,
       offset ? Number(offset) : 0,
     );
   }
 
   @Get(':id')
-  async getPostById(@Param('id') id: number): Promise<Post> {
-    return await this.postService.getPostById(id);
+  async getPostById(
+    @Param('id') id: number,
+    @Request() req: any,
+  ): Promise<Post> {
+    const clientIp =
+      req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
+    return await this.postService.readPostById(id, String(clientIp));
   }
+
+  @Get('teams/:id/public')
+  async getPublicPostsByTeamId(
+    @Param('id') id: number,
+  ): Promise<PostCardDto[]> {
+    return await this.postService.getPublicPostsByTeamId(id);
+  }
+
+  @Get('teams/:id/private')
+  @UseGuards(SmartAuthGuard)
+  async getPrivatePostsByTeamId(
+    @Param('id') id: number,
+  ): Promise<PostCardDto[]> {
+    return await this.postService.getPrivatePostsByTeamId(id);
+  }
+
+  // Team 설정된 임시 글은 팀 페이지에서 못 보도록 함
+  // @Get('teams/:id/draft')
+  // @UseGuards(SmartAuthGuard)
+  // async getDraftPostsByTeamId(@Param('id') id: number): Promise<PostCardDto[]> {
+  //   return await this.postService.getDraftPostsByTeamId(id);
+  // }
 
   // ===== UPDATE =====
 
@@ -72,5 +100,16 @@ export class PostController {
     @Request() req: { user: User },
   ): Promise<Post> {
     return await this.postService.updatePost(id, updatePostDto, req.user.id);
+  }
+
+  // ===== DELETE =====
+
+  @Delete(':id')
+  @UseGuards(SmartAuthGuard)
+  async deletePost(
+    @Param('id') id: number,
+    @Request() req: { user: User },
+  ): Promise<boolean> {
+    return await this.postService.deletePost(id, req.user.id);
   }
 }

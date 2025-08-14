@@ -39,9 +39,7 @@ import { TagModule } from './tag/tag.module';
 import { PostTagModule } from './post-tag/post-tag.module';
 import { Tag } from './tag/tag.entity';
 import { PostTag } from './post-tag/post-tag.entity';
-import { TeamFollowService } from './team-follow/team-follow.service';
 import { TeamFollowModule } from './team-follow/team-follow.module';
-import { TeamFollwController } from './team-follow/team-follow.controller';
 import { TeamFollow } from './team-follow/team-follow.entity';
 
 @Module({

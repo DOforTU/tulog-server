@@ -10,7 +10,7 @@ import {
   CreatePostDto,
   DraftPostDto,
   UpdatePostDto,
-  PublicPostDto,
+  PostCardDto,
 } from './post.dto';
 import { PostRepository } from './post.repository';
 import { TeamMemberService } from 'src/team-member/team-member.service';
@@ -23,6 +23,8 @@ import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class PostService {
+  private viewCache = new Map<string, number>();
+
   constructor(
     private readonly configService: ConfigService,
     private readonly postRepository: PostRepository,
@@ -68,7 +70,7 @@ export class PostService {
 
       await queryRunner.commitTransaction();
 
-      return await this.getPostWithEditors(createdPost.id);
+      return await this.getPostById(createdPost.id);
     } catch (error: any) {
       console.error('create post error:', error);
       await queryRunner.rollbackTransaction();
@@ -88,7 +90,9 @@ export class PostService {
         title: draftPostDto.title,
         content: draftPostDto.content,
         excerpt: draftPostDto.excerpt,
-        thumbnailImage: draftPostDto.thumbnailImage,
+        thumbnailImage:
+          draftPostDto.thumbnailImage ||
+          this.configService.get('DEFAULT_THUMBNAIL_IMAGE_URL'),
         status: PostStatus.DRAFT,
         teamId: draftPostDto.teamId,
       };
@@ -109,7 +113,7 @@ export class PostService {
 
       await queryRunner.commitTransaction();
 
-      return await this.getPostWithEditors(createdPost.id);
+      return await this.getPostById(createdPost.id);
     } catch (error: any) {
       console.error('draft post error:', error);
       await queryRunner.rollbackTransaction();
@@ -121,33 +125,73 @@ export class PostService {
 
   // ===== READ =====
 
+  async readPostById(id: number, clientIp?: string): Promise<Post> {
+    const post = await this.postRepository.findById(id);
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    // view count increment with duplicate prevention
+    if (clientIp) {
+      const cacheKey = `view:${id}:${clientIp}`;
+      const now = Date.now();
+      const lastView = this.viewCache.get(cacheKey);
+
+      // Only increment if no recent view from same IP (within 10 minutes)
+      if (!lastView || now - lastView > 10 * 60 * 1000) {
+        post.viewCount += 1;
+        await this.postRepository.updatePost(post.id, {
+          viewCount: post.viewCount,
+        });
+        this.viewCache.set(cacheKey, now);
+
+        // Clean old cache entries (older than 1 hour)
+        this.cleanOldCacheEntries();
+      }
+    } else {
+      // Fallback: increment anyway if no IP
+      post.viewCount += 1;
+      await this.postRepository.updatePost(post.id, {
+        viewCount: post.viewCount,
+      });
+    }
+
+    return post;
+  }
+
   async getPostById(id: number): Promise<Post> {
     const post = await this.postRepository.findById(id);
     if (!post) {
       throw new NotFoundException('Post not found');
     }
+
     return post;
   }
 
-  async getPostWithEditors(id: number): Promise<Post> {
-    const post = await this.postRepository.findByIdWithEditors(id);
-    if (!post) {
-      throw new NotFoundException('Post not found');
-    }
-    return post;
-  }
-
-  async getPublicPosts(
+  async getRecentPosts(
     limit: number = 20,
     offset: number = 0,
-  ): Promise<PublicPostDto[]> {
-    console.log(`getPublicPosts 호출: limit=${limit}, offset=${offset}`);
-
+  ): Promise<PostCardDto[]> {
     const posts = await this.postRepository.findPublicPostsOrderByLatest(
       limit,
       offset,
     );
 
+    return posts.map((post) => this.transformToPublicPostDto(post));
+  }
+
+  async getPublicPostsByTeamId(teamId: number): Promise<PostCardDto[]> {
+    const posts = await this.postRepository.findPublicPostsByTeamId(teamId);
+    return posts.map((post) => this.transformToPublicPostDto(post));
+  }
+
+  async getPrivatePostsByTeamId(teamId: number): Promise<PostCardDto[]> {
+    const posts = await this.postRepository.findPrivatePostsByTeamId(teamId);
+    return posts.map((post) => this.transformToPublicPostDto(post));
+  }
+
+  async getDraftPostsByTeamId(teamId: number): Promise<PostCardDto[]> {
+    const posts = await this.postRepository.findDraftPostsByTeamId(teamId);
     return posts.map((post) => this.transformToPublicPostDto(post));
   }
 
@@ -163,10 +207,7 @@ export class PostService {
     await queryRunner.startTransaction();
 
     try {
-      const existingPost = await this.postRepository.findByIdWithEditors(id);
-      if (!existingPost) {
-        throw new NotFoundException('Post not found');
-      }
+      const existingPost = await this.getPostById(id);
 
       const userEditor = existingPost.editors.find(
         (editor) => editor.userId === userId,
@@ -221,7 +262,49 @@ export class PostService {
 
       await queryRunner.commitTransaction();
 
-      return await this.getPostWithEditors(id);
+      return await this.getPostById(id);
+    } catch (error: any) {
+      console.error('update post error:', error);
+      await queryRunner.rollbackTransaction();
+      throw error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+        ? error
+        : new InternalServerErrorException('Failed updating post');
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  // ===== DELETE =====
+  async deletePost(id: number, userId: number): Promise<boolean> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const existingPost = await this.getPostById(id);
+
+      const userEditor = existingPost.editors.find(
+        (editor) => editor.userId === userId,
+      );
+      if (
+        !userEditor ||
+        (userEditor.role !== EditorRole.OWNER &&
+          userEditor.role !== EditorRole.EDITOR)
+      ) {
+        throw new ForbiddenException(
+          'You do not have permission to edit this post',
+        );
+      }
+
+      // TODO: Delete post
+      // transaction with to delete editor, bookmark, like, hide etc...
+      await queryRunner.manager.update(Post, id, { deletedAt: new Date() });
+      await queryRunner.manager.delete(Editor, { postId: id });
+
+      await queryRunner.commitTransaction();
+
+      return true;
     } catch (error: any) {
       console.error('update post error:', error);
       await queryRunner.rollbackTransaction();
@@ -235,6 +318,15 @@ export class PostService {
   }
 
   // ===== SUB FUNCTIONS =====
+
+  private cleanOldCacheEntries(): void {
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
+    for (const [key, timestamp] of this.viewCache.entries()) {
+      if (timestamp < oneHourAgo) {
+        this.viewCache.delete(key);
+      }
+    }
+  }
 
   private async handleEditorsCreation(
     manager: any,
@@ -342,7 +434,7 @@ export class PostService {
     }
   }
 
-  private transformToPublicPostDto(post: Post): PublicPostDto {
+  private transformToPublicPostDto(post: Post): PostCardDto {
     const owners = post.editors.filter(
       (editor) => editor.role === EditorRole.OWNER,
     );
