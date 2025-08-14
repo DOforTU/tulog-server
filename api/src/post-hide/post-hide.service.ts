@@ -1,7 +1,8 @@
 import {
+  ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
-  NotFoundException,
 } from '@nestjs/common';
 import { PostService } from 'src/post/post.service';
 import { PostHideRepository } from './post-hide.repository';
@@ -9,49 +10,66 @@ import { DataSource } from 'typeorm';
 import { PostHide } from './post-hide.entity';
 import { PostLikeService } from 'src/post-like/post-like.service';
 import { CommentService } from 'src/comment/comment.service';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class PostHideService {
   constructor(
-    private readonly postService: PostService,
-    private readonly postLikeService: PostLikeService,
-    private readonly commentService: CommentService,
     private readonly postHideRepository: PostHideRepository,
+    private readonly postService: PostService,
     private readonly dataSource: DataSource,
   ) {}
+
+  // ===== CREATE =====
+  /**
+   * 게시글 주인인지
+   * 이미 숨김처리인지
+   */
+  async hidePost(postId: number, userId: number): Promise<PostHide> {
+    // Check if already hide
+    const bookmarkingPost = await this.isHidden(postId);
+    if (bookmarkingPost) {
+      throw new ConflictException('Post is already hidden');
+    }
+    await this.postService.getPostById(postId);
+
+    return await this.postHideRepository.hidePost(postId, userId);
+  }
 
   // ===== UPDATE =====
 
   /** Hide a post
    * 게시글이 있는지
-   *
    */
-  async hidePost(postId: number, userId: number): Promise<boolean> {
-    // 게시글 숨길때 좋아요,댓글,게시글이 다같이 숨겨져야해서 트랜잭션으로
+  async deleteHide(postId: number, userId: number): Promise<boolean> {
+    // 2) 이미 숨겨진 게시글인지 확인 (manager사용했는데 이게 쿼리 러너에 포함인가)
+    const existing = await this.postHideRepository.existingHiddenPost(
+      postId,
+      userId,
+    );
+
+    if (!existing) {
+      throw new ConflictException('There is no hidden post.');
+    }
+
+    // 1) 게시글 존재 확인
+    await this.postService.getPostById(postId);
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      // 1) 게시글 존재 확인
-      await this.postService.getPostById(postId);
-
-      // 2) 이미 숨겨진 게시글인지 확인 (manager사용했는데 이게 쿼리 러너에 포함인가)
-      const existing = await queryRunner.manager.findOne(PostHide, {
-        where: { postId, userId },
-      });
-      if (existing) {
-        await queryRunner.rollbackTransaction();
-        return true;
-      }
-
       // 3) 숨김 처리 저장
-      await queryRunner.manager.save(PostHide, {
+      const result = await queryRunner.manager.delete(PostHide, {
         postId,
         userId,
       });
+      if (result.affected === 0) {
+        throw new InternalServerErrorException('Failed to unhide the post.');
+      }
 
-      // 6) 커밋
+      // 4) 커밋
       await queryRunner.commitTransaction();
       return true;
     } catch (err) {
@@ -60,5 +78,11 @@ export class PostHideService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  // ===== SUB FUNCTION =====
+
+  async isHidden(postId: number): Promise<boolean> {
+    return await this.postHideRepository.isHidden(postId);
   }
 }
