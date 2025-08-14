@@ -11,12 +11,7 @@ import { PostLikeModule } from 'src/post-like/post-like.module';
 import { CommentModule } from 'src/comment/comment.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([PostHide, User]),
-    PostModule,
-    PostLikeModule,
-    CommentModule,
-  ],
+  imports: [TypeOrmModule.forFeature([PostHide]), PostModule],
   providers: [PostHideService, PostHideRepository],
   controllers: [PostHideController],
   exports: [PostHideService, PostHideRepository],

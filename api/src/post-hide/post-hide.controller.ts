@@ -1,4 +1,13 @@
-import { Controller, Param, Patch, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt';
 import { User } from 'src/user/user.entity';
 import { PostHideService } from './post-hide.service';
@@ -9,14 +18,22 @@ export class PostHideController {
 
   // ===== CREATE =====
 
-  // ===== UPDATE =====
-
-  @Patch(':postId')
+  @Post(':postId')
   @UseGuards(JwtAuthGuard)
   async hidePost(
     @Param('postId') postId: number,
     @Request() req: { user: User },
-  ): Promise<boolean> {
+  ) {
     return await this.postHideService.hidePost(postId, req.user.id);
+  }
+
+  // ===== UPDATE =====
+  @Patch(':postId')
+  @UseGuards(JwtAuthGuard)
+  async deleteHide(
+    @Param('postId') postId: number,
+    @Request() req: { user: User },
+  ): Promise<boolean> {
+    return await this.postHideService.deleteHide(postId, req.user.id);
   }
 }

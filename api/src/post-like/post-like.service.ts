@@ -8,11 +8,14 @@ import { User } from 'src/user/user.entity';
 import { PostLikeRepository } from './post-like.repository';
 import { DataSource, EntityManager } from 'typeorm';
 import { Post } from 'src/post/post.entity';
+import { PostCardDto } from 'src/post/post.dto';
+import { PostService } from 'src/post/post.service';
 
 @Injectable()
 export class PostLikeService {
   constructor(
     private readonly postLikeRepository: PostLikeRepository,
+    private readonly postService: PostService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -63,6 +66,19 @@ export class PostLikeService {
   /** Get users who liked a post */
   async getLikes(postId: number): Promise<User[]> {
     return await this.postLikeRepository.getLikes(postId);
+  }
+
+  /** Get posts user liked */
+  async getLikedPostsByUser(userId: number): Promise<PostCardDto[] | null> {
+    const post = await this.findLikedPostsByUser(userId);
+    if (!post) {
+      throw new NotFoundException('Can not found.');
+    }
+    return post.map((post) => this.postService.transformToPublicPostDto(post));
+  }
+
+  private async findLikedPostsByUser(userId: number): Promise<Post[]> {
+    return this.postLikeRepository.findLikedPostsByUser(userId);
   }
 
   // ===== DELETE =====

@@ -19,6 +19,7 @@ import { Tag } from 'src/tag/tag.entity';
 import { PostTag } from 'src/post-tag/post-tag.entity';
 import { ConfigService } from '@nestjs/config';
 import { toPublicUser } from 'src/common/helper/to-public-user';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class PostService {
@@ -433,7 +434,7 @@ export class PostService {
     }
   }
 
-  private transformToPublicPostDto(post: Post): PostCardDto {
+  public transformToPublicPostDto(post: Post): PostCardDto {
     const owners = post.editors.filter(
       (editor) => editor.role === EditorRole.OWNER,
     );
@@ -462,4 +463,8 @@ export class PostService {
       authors,
     };
   }
+
+  //async isOwner(postId: number, userId: number): Promise<User | null> {
+  //  return await this.postRepository.isOwner(postId, userId);
+  //}
 }
