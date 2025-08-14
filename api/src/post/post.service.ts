@@ -434,7 +434,7 @@ export class PostService {
     }
   }
 
-  private transformToPublicPostDto(post: Post): PostCardDto {
+  public transformToPublicPostDto(post: Post): PostCardDto {
     const owners = post.editors.filter(
       (editor) => editor.role === EditorRole.OWNER,
     );

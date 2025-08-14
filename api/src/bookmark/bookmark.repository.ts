@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Bookmark } from './bookmark.entity';
 import { Repository } from 'typeorm';
+import { Post } from 'src/post/post.entity';
 
 @Injectable()
 export class BookmarkRepository {
@@ -20,6 +21,10 @@ export class BookmarkRepository {
     });
     return await this.bookmarkRepository.save(bookmark);
   }
+
+  // ===== READ =====
+
+  async getMarkedPost() {}
 
   // ===== DELETE =====
 
@@ -45,5 +50,19 @@ export class BookmarkRepository {
       .where('bookmark.userId = :userId', { userId })
       .andWhere('bookmark.postId = :postId', { postId })
       .getOne();
+  }
+
+  async findBookmarkedPostsByUser(userId: number): Promise<Post[] | null> {
+    const bookmarks = await this.bookmarkRepository
+      .createQueryBuilder('bookmark')
+      .leftJoinAndSelect('bookmark.post', 'post')
+      .leftJoinAndSelect('post.editors', 'editors')
+      .leftJoinAndSelect('editors.user', 'user')
+      .leftJoinAndSelect('post.team', 'team')
+      .leftJoinAndSelect('post.postTags', 'postTags')
+      .leftJoinAndSelect('postTags.tag', 'tag')
+      .where('bookmark.user.id = :userId', { userId })
+      .getMany();
+    return bookmarks.map((b) => b.post);
   }
 }
