@@ -1,9 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CommentWithAuthor, CreateCommentDto } from './comment.dto';
 import { PostService } from 'src/post/post.service';
 import { CommentRepository } from './comment.repository';
 import { Comment } from './comment.entity';
 import { DataSource } from 'typeorm';
+import { UserRole } from 'src/user/user.entity';
 
 @Injectable()
 export class CommentService {
@@ -11,6 +13,7 @@ export class CommentService {
     private readonly commentRepository: CommentRepository,
     private readonly postService: PostService,
     private readonly dataSource: DataSource,
+    private readonly configService: ConfigService,
   ) {}
 
   // ===== CREATE =====
@@ -166,18 +169,28 @@ export class CommentService {
   }
 
   private toCommentWithAuthor(comment: Comment): CommentWithAuthor {
+    const defaultAvatarUrl = this.configService.get('USER_DEFAULT_AVATAR_URL');
+
     return {
       id: comment.id,
       content: comment.content,
       postId: comment.postId,
       createdAt: comment.createdAt,
-      author: {
-        id: comment.authorId,
-        nickname: comment.author.nickname,
-        profilePicture: comment.author.profilePicture,
-        isActive: comment.author.isActive,
-        role: comment.author.role,
-      },
+      author: comment.author
+        ? {
+            id: comment.author.id,
+            nickname: comment.author.nickname,
+            profilePicture: comment.author.profilePicture,
+            isActive: comment.author.isActive,
+            role: comment.author.role,
+          }
+        : {
+            id: 0,
+            nickname: 'Deleted User',
+            profilePicture: defaultAvatarUrl,
+            isActive: false,
+            role: UserRole.USER,
+          },
       replies: comment.replies?.map((reply) => this.toCommentWithAuthor(reply)),
     };
   }

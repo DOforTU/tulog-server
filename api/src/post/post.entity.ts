@@ -10,6 +10,7 @@ import { Common } from 'src/common/entity/common.entity';
 import { Team } from 'src/team/team.entity';
 import { Editor } from 'src/editor/editor.entity';
 import { PostTag } from 'src/post-tag/post-tag.entity';
+import { Comment } from 'src/comment/comment.entity';
 
 export enum PostStatus {
   DRAFT = 'DRAFT',
@@ -63,4 +64,9 @@ export class Post extends Common {
 
   @OneToMany(() => PostTag, (postTag) => postTag.post)
   postTags: PostTag[];
+
+  @OneToMany(() => Comment, (comment) => comment.post, {
+    cascade: true,
+  })
+  comments: Comment[];
 }

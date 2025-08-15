@@ -28,10 +28,10 @@ export class Comment extends Common {
   @JoinColumn({ name: 'postId' })
   post: Post;
 
-  @Column()
+  @Column({ nullable: true })
   authorId: number;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'authorId' })
   author: User;
 
