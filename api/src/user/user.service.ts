@@ -4,6 +4,7 @@ import {
   ConflictException,
   ForbiddenException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { UserRepository } from './user.repository';
 import { User } from './user.entity';
@@ -21,6 +22,7 @@ export class UserService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly dataSource: DataSource,
+    private readonly configService: ConfigService,
   ) {}
 
   // ===== READ =====
@@ -262,6 +264,9 @@ export class UserService {
     await queryRunner.startTransaction();
 
     try {
+      // Anonymize user content before deletion
+      await this.anonymizeUserContent(queryRunner, id);
+
       // Delete all follow relationships where user is follower
       await queryRunner.query(
         'DELETE FROM "server_api"."follow" WHERE "followerId" = $1',
@@ -274,10 +279,18 @@ export class UserService {
         [id],
       );
 
-      // Soft delete the user
+      // Soft delete and anonymize the user
+      const defaultAvatarUrl = this.configService.get(
+        'USER_DEFAULT_AVATAR_URL',
+      );
       await queryRunner.query(
-        'UPDATE "server_api"."user" SET "deletedAt" = NOW() WHERE "id" = $1',
-        [id],
+        `UPDATE "server_api"."user" SET 
+         "deletedAt" = NOW(), 
+         "nickname" = 'Deleted User', 
+         "profilePicture" = $2, 
+         "isActive" = false 
+         WHERE "id" = $1`,
+        [id, defaultAvatarUrl],
       );
 
       await queryRunner.commitTransaction();
@@ -470,5 +483,59 @@ export class UserService {
    */
   async findDeletedUsers(): Promise<User[]> {
     return await this.userRepository.findAllDeleted();
+  }
+
+  async findUserInfo(userId: number): Promise<User | null> {
+    return await this.userRepository.findUserInfo(userId);
+  }
+
+  /**
+   * Anonymize user's content (posts, comments) before deletion
+   * @param queryRunner Database transaction runner
+   * @param userId User ID to anonymize
+   */
+  private async anonymizeUserContent(
+    queryRunner: any,
+    userId: number,
+  ): Promise<void> {
+    const userInfo = await this.userRepository.findUserInfo(userId);
+
+    if (!userInfo) return;
+
+    // 1. Hard delete all social relationships
+    await queryRunner.query(
+      'DELETE FROM "server_api"."follow" WHERE "followerId" = $1 OR "followingId" = $1',
+      [userId],
+    );
+
+    await queryRunner.query(
+      'DELETE FROM "server_api"."user_block" WHERE "blockerId" = $1 OR "blockedId" = $1',
+      [userId],
+    );
+
+    await queryRunner.query(
+      'DELETE FROM "server_api"."team_follow" WHERE "userId" = $1',
+      [userId],
+    );
+
+    // 2. Update editor roles to VIEWER for all posts
+    if (userInfo.editors && userInfo.editors.length > 0) {
+      const editorPostIds = userInfo.editors.map(editor => editor.postId);
+      await queryRunner.query(
+        'UPDATE "server_api"."editor" SET "role" = $1 WHERE "postId" = ANY($2) AND "userId" = $3',
+        ['VIEWER', editorPostIds, userId],
+      );
+    }
+
+    // 3. Set authorId to NULL for comments (break FK relationship)
+    if (userInfo.comments && userInfo.comments.length > 0) {
+      const commentIds = userInfo.comments.map(comment => comment.id);
+      await queryRunner.query(
+        'UPDATE "server_api"."comment" SET "authorId" = NULL WHERE "id" = ANY($1)',
+        [commentIds],
+      );
+    }
+
+    // Note: User will be anonymized in the main deleteUser function
   }
 }

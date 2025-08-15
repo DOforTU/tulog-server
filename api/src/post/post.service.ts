@@ -19,7 +19,6 @@ import { Tag } from 'src/tag/tag.entity';
 import { PostTag } from 'src/post-tag/post-tag.entity';
 import { ConfigService } from '@nestjs/config';
 import { toPublicUser } from 'src/common/helper/to-public-user';
-import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class PostService {
@@ -276,7 +275,7 @@ export class PostService {
   }
 
   // ===== DELETE =====
-  async deletePost(id: number, userId: number): Promise<boolean> {
+  async softDeletePost(id: number, userId: number): Promise<boolean> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();

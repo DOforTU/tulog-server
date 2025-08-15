@@ -1,9 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CommentWithAuthor, CreateCommentDto } from './comment.dto';
 import { PostService } from 'src/post/post.service';
 import { CommentRepository } from './comment.repository';
 import { Comment } from './comment.entity';
 import { DataSource } from 'typeorm';
+import { UserRole } from 'src/user/user.entity';
 
 @Injectable()
 export class CommentService {
@@ -11,6 +13,7 @@ export class CommentService {
     private readonly commentRepository: CommentRepository,
     private readonly postService: PostService,
     private readonly dataSource: DataSource,
+    private readonly configService: ConfigService,
   ) {}
 
   // ===== CREATE =====
@@ -80,6 +83,14 @@ export class CommentService {
     return comment;
   }
 
+  async getCommentByIdWithReplies(commentId: number): Promise<Comment> {
+    const comment = await this.commentRepository.findByIdWithReplies(commentId);
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+    return comment as Comment;
+  }
+
   async getCommentsByPostId(postId: number): Promise<CommentWithAuthor[]> {
     const comments = await this.commentRepository.findByPostId(postId);
     if (!comments || comments.length === 0) {
@@ -109,13 +120,33 @@ export class CommentService {
       throw new NotFoundException('Comment not found');
     }
 
+    // Get comment with replies to calculate total deletion count
+    const commentWithReplies = await this.getCommentByIdWithReplies(commentId);
+    const totalDeletedCount =
+      this.calculateTotalCommentCount(commentWithReplies);
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      await queryRunner.manager.remove(comment);
-      post.commentCount--;
+      const deletedAt = new Date();
+
+      // Soft delete the parent comment
+      await queryRunner.manager.update(Comment, comment.id, {
+        deletedAt,
+      });
+
+      // Soft delete all replies if they exist
+      if (commentWithReplies.replies && commentWithReplies.replies.length > 0) {
+        const replyIds = commentWithReplies.replies.map((reply) => reply.id);
+        await queryRunner.manager.update(Comment, replyIds, {
+          deletedAt,
+        });
+      }
+
+      // Decrease comment count by the total number of deleted comments (parent + replies)
+      post.commentCount -= totalDeletedCount;
       await queryRunner.manager.save(post);
       await queryRunner.commitTransaction();
     } catch (error) {
@@ -132,19 +163,34 @@ export class CommentService {
     return comment.authorId === userId;
   }
 
+  private calculateTotalCommentCount(comment: Comment): number {
+    // Count the comment itself + all its replies
+    return 1 + (comment.replies?.length || 0);
+  }
+
   private toCommentWithAuthor(comment: Comment): CommentWithAuthor {
+    const defaultAvatarUrl = this.configService.get('USER_DEFAULT_AVATAR_URL');
+
     return {
       id: comment.id,
       content: comment.content,
       postId: comment.postId,
       createdAt: comment.createdAt,
-      author: {
-        id: comment.authorId,
-        nickname: comment.author.nickname,
-        profilePicture: comment.author.profilePicture,
-        isActive: comment.author.isActive,
-        role: comment.author.role,
-      },
+      author: comment.author
+        ? {
+            id: comment.author.id,
+            nickname: comment.author.nickname,
+            profilePicture: comment.author.profilePicture,
+            isActive: comment.author.isActive,
+            role: comment.author.role,
+          }
+        : {
+            id: 0,
+            nickname: 'Deleted User',
+            profilePicture: defaultAvatarUrl,
+            isActive: false,
+            role: UserRole.USER,
+          },
       replies: comment.replies?.map((reply) => this.toCommentWithAuthor(reply)),
     };
   }

@@ -19,6 +19,14 @@ export class CommentRepository {
       .getOne();
   }
 
+  async findByIdWithReplies(commentId: number): Promise<Comment | null> {
+    return await this.commentRepository
+      .createQueryBuilder('comment')
+      .leftJoinAndSelect('comment.replies', 'replies')
+      .where('comment.id = :id', { id: commentId })
+      .getOne();
+  }
+
   async findByPostId(postId: number): Promise<Comment[]> {
     return await this.commentRepository
       .createQueryBuilder('comment')
