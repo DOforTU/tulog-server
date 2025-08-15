@@ -64,10 +64,10 @@ export class TeamMemberController {
   @Post('join')
   @UseGuards(SmartAuthGuard)
   async requestToTeam(
+    @Param('teamId') id: number,
     @Request() req: { user: User },
-    @Param('id') id: number,
   ): Promise<TeamMember> {
-    return await this.teamMemberService.requestToTeam(req.user.id, id);
+    return await this.teamMemberService.requestToTeam(id, req.user.id);
   }
 
   /**

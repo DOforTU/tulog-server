@@ -83,8 +83,13 @@ export class TeamMemberRepository {
     teamId: number,
     memberId: number,
   ): Promise<TeamMember | null> {
-    return await this.teamMemberRepository.findOne({
-      where: { teamId, memberId },
-    });
+    return await this.teamMemberRepository
+      .createQueryBuilder('teamMember')
+      .where('teamMember.teamId = :teamId', { teamId })
+      .andWhere('teamMember.memberId = :memberId', { memberId })
+      .andWhere('teamMember.status = :status', {
+        status: TeamMemberStatus.JOINED,
+      })
+      .getOne();
   }
 }

@@ -3,6 +3,7 @@ import { TeamWithStatus } from './team-member.dto';
 import { TeamMemberRepository } from './team-member.repository';
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -37,9 +38,11 @@ export class TeamMemberService {
       await this.teamMemberRepository.getTeamMembersByTeamId(teamId);
 
     const checkTeamVisibility = teamMembers[0].team.visibility;
-    if (checkTeamVisibility == TeamVisibility.ONLY_INVITE) {
-      throw new ConflictException('You can not invite that team.');
+
+    if (checkTeamVisibility === TeamVisibility.ONLY_INVITE) {
+      throw new ForbiddenException('You can not invite that team.');
     }
+
     const teamMember = await this.findTeamMemberByPrimaryKey(teamId, memberId);
     if (teamMember) {
       throw new ConflictException('You are already a member of this team.');
@@ -49,6 +52,7 @@ export class TeamMemberService {
     const memberCount = teamMembers.length;
     // 팀에 속한 팀 맴버중 한명이 속한 팀에서 최대 인원수를 구함
     const maxMember = teamMembers[0].team.maxMember;
+
     if (memberCount == maxMember) {
       throw new ConflictException('This team is already full.');
     }

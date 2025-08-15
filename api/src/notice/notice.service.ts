@@ -74,9 +74,9 @@ export class NoticeService {
   ): Promise<Notice> {
     const createNoticeDto: CreateNoticeDto = {
       userId: teamOwnerId,
-      type: NoticeType.TEAM_JOIN,
+      type: NoticeType.TEAM_REQUEST,
       title: '새로운 팀원',
-      content: `${newMemberNickname}님이 '${teamName}' 팀에 가입했습니다.`,
+      content: `${newMemberNickname}님이 '${teamName}' 팀에 참여 요청을 보냈습니다.`,
       relatedEntityId: teamId,
       metadata: {
         teamId,
