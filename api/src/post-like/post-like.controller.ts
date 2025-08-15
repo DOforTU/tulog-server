@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Controller,
   Delete,
   Get,
@@ -10,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { User } from 'src/user/user.entity';
 import { PostLike } from './post-like.entity';
-import { JwtAuthGuard, SmartAuthGuard } from 'src/auth/jwt';
+import { SmartAuthGuard } from 'src/auth/jwt';
 import { PostLikeService } from './post-like.service';
 import { PostCardDto } from 'src/post/post.dto';
 
@@ -37,7 +36,12 @@ export class PostLikeController {
     return await this.postLikeService.getLikeCount(postId);
   }
 
-  /** Check if user liked a post */
+  /**
+   * Check if user liked a post
+   * @param req Request object containing user information
+   * @param postId ID of the post
+   * @returns True if the user liked the post, false otherwise
+   */
   @Get(':id/likes/me')
   @UseGuards(SmartAuthGuard)
   async isLiked(
@@ -53,14 +57,16 @@ export class PostLikeController {
     return await this.postLikeService.getLikes(postId);
   }
 
-  /** Get posts user liked */
-  @Get('liked')
+  /**
+   * Get posts liked by the user
+   * @param req Request object containing user information
+   * @returns Array of liked posts
+   */
+  @Get('liked/me')
   @UseGuards(SmartAuthGuard)
   async getLikedPostsByUser(
     @Request() req: { user: User },
   ): Promise<PostCardDto[] | null> {
-    console.log('req.user:', req.user);
-    console.log('req.user.id:', req.user?.id);
     return await this.postLikeService.getLikedPostsByUser(req.user.id);
   }
 

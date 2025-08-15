@@ -5,6 +5,7 @@ import { Follow } from 'src/follow/follow.entity';
 import { TeamFollow } from 'src/team-follow/team-follow.entity';
 import { TeamMember } from 'src/team-member/team-member.entity';
 import { Editor } from 'src/editor/editor.entity';
+import { Comment } from 'src/comment/comment.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -100,4 +101,8 @@ export class User extends Common {
 
   @OneToMany(() => CommentLike, (commentLike) => commentLike.user)
   commentLike: CommentLike[];
+
+  @OneToMany(() => Comment, (comment) => comment.author)
+  comments: Comment[];
+
 }

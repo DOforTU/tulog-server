@@ -20,6 +20,26 @@ export class UserRepository {
   // ===== READ =====
 
   /**
+   * user's all info, Join everthing for deleting user
+   * @param userId
+   * @returns
+   */
+  async findUserInfo(userId: number): Promise<User | null> {
+    return await this.userRepository
+      .createQueryBuilder('user')
+      .where('user.id = :userId', { userId })
+      .leftJoinAndSelect('user.followers', 'follower')
+      .leftJoinAndSelect('user.followings', 'following')
+      .leftJoinAndSelect('user.blockers', 'blocker')
+      .leftJoinAndSelect('user.blocked', 'blocked')
+      .leftJoinAndSelect('user.editors', 'editor')
+      .leftJoinAndSelect('editor.post', 'post')
+      .leftJoinAndSelect('user.comments', 'comment')
+      .leftJoinAndSelect('user.teamFollows', 'teamFollow')
+      .getOne();
+  }
+
+  /**
    * Find user by ID (ONLY active & not-deleted)
    * @param id User ID
    * @returns User entity or null

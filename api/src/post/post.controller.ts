@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   Param,
   Patch,
@@ -83,13 +82,6 @@ export class PostController {
     return await this.postService.getPrivatePostsByTeamId(id);
   }
 
-  // Team 설정된 임시 글은 팀 페이지에서 못 보도록 함
-  // @Get('teams/:id/draft')
-  // @UseGuards(SmartAuthGuard)
-  // async getDraftPostsByTeamId(@Param('id') id: number): Promise<PostCardDto[]> {
-  //   return await this.postService.getDraftPostsByTeamId(id);
-  // }
-
   // ===== UPDATE =====
 
   @Patch(':id')
@@ -102,14 +94,12 @@ export class PostController {
     return await this.postService.updatePost(id, updatePostDto, req.user.id);
   }
 
-  // ===== DELETE =====
-
-  @Delete(':id')
+  @Patch(':id/delete')
   @UseGuards(SmartAuthGuard)
-  async deletePost(
+  async softDeletePost(
     @Param('id') id: number,
     @Request() req: { user: User },
   ): Promise<boolean> {
-    return await this.postService.deletePost(id, req.user.id);
+    return await this.postService.softDeletePost(id, req.user.id);
   }
 }

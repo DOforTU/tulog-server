@@ -1,9 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
-  Patch,
   Post,
   Query,
   Request,
@@ -18,6 +18,7 @@ import {
   CreateCommentDto,
   UpdateCommentDto,
 } from './comment.dto';
+import { CommentWithAuthor, CreateCommentDto } from './comment.dto';
 
 @Controller('comment')
 export class CommentController {
@@ -45,6 +46,31 @@ export class CommentController {
   async getCommentsByPostId(
     @Param('postId') postId: number,
   ): Promise<CommentWithAuthor[]> {
-    return this.commentService.getCommentsByPostId(postId);
+    return await this.commentService.getCommentsByPostId(postId);
+  }
+
+  // ===== UPDATE =====
+
+  // ===== DELETE =====
+
+  /**
+   * soft delete comment
+   * @param commentId
+   * @param postId
+   * @param req
+   * @returns
+   */
+  @Delete(':id/posts/:postId')
+  @UseGuards(JwtAuthGuard)
+  async softDeleteComment(
+    @Param('id') commentId: number,
+    @Param('postId') postId: number,
+    @Request() req: { user: User },
+  ): Promise<void> {
+    return await this.commentService.softDeleteComment(
+      commentId,
+      postId,
+      req.user.id,
+    );
   }
 }

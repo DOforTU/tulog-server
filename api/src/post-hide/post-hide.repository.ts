@@ -33,7 +33,10 @@ export class PostHideRepository {
   // ===== DELETE =====
 
   async deleteHide(postId: number, userId: number): Promise<boolean> {
-    const result = await this.postHideRepository.delete({ postId, userId });
+    const result = await this.postHideRepository.delete({
+      postId,
+      userId,
+    });
     return result.affected ? result.affected > 0 : false;
   }
 
@@ -55,7 +58,7 @@ export class PostHideRepository {
     const post = await this.postHideRepository
       .createQueryBuilder('post_hide')
       .where('post_hide.userId = :userId', { userId })
-      .where('post_hide.postId = :postId', { postId })
+      .andWhere('post_hide.postId = :postId', { postId })
       .getOne();
 
     return post !== null;

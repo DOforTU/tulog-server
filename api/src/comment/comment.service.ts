@@ -14,6 +14,13 @@ import { Comment } from './comment.entity';
 import { DataSource, EntityManager } from 'typeorm';
 import { PostHideService } from 'src/post-hide/post-hide.service';
 import { ConfigService } from '@nestjs/config';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { CommentWithAuthor, CreateCommentDto } from './comment.dto';
+import { PostService } from 'src/post/post.service';
+import { CommentRepository } from './comment.repository';
+import { Comment } from './comment.entity';
+import { DataSource } from 'typeorm';
 import { UserRole } from 'src/user/user.entity';
 
 @Injectable()
@@ -31,12 +38,14 @@ export class CommentService {
     postId: number,
     userId: number,
     createCommentDto: CreateCommentDto,
-    parentCommentId?: number, // 부모 댓글은 어디서 가져오는거지?
+    parentCommentId?: number,
   ): Promise<Comment> {
     const post = await this.postService.getPostById(postId);
 
+    // If parentCommentId is provided, validate that it's not already a reply
     if (parentCommentId) {
       const parentComment = await this.getCommentById(parentCommentId);
+
       // Check if the parent comment is already a reply (has a parentCommentId)
       if (parentComment.parentCommentId !== null) {
         throw new NotFoundException(
@@ -44,9 +53,10 @@ export class CommentService {
         );
       }
 
+      // Check if the parent comment belongs to the same post
       if (parentComment.postId !== postId) {
         throw new NotFoundException(
-          'Parent comment does not belong to this post.',
+          'Parent comment does not belong to this post',
         );
       }
     }
@@ -56,6 +66,7 @@ export class CommentService {
     await queryRunner.startTransaction();
 
     try {
+      // create comment
       const comment = queryRunner.manager.create(Comment, {
         ...createCommentDto,
         parentCommentId,
@@ -63,6 +74,7 @@ export class CommentService {
         authorId: userId,
       });
 
+      // increase post's comment count
       post.commentCount++;
       await queryRunner.manager.save(post);
       await queryRunner.manager.save(comment);
@@ -77,12 +89,21 @@ export class CommentService {
     }
   }
 
+
   // ===== READ =====
 
   async getCommentById(commentId: number): Promise<Comment> {
     const comment = await this.commentRepository.findOneById(commentId);
     if (!comment) {
       throw new NotFoundException('Comment not found.');
+
+
+  // ===== READ =====
+
+  async getCommentById(commentId: number): Promise<Comment> {
+    const comment = await this.commentRepository.findById(commentId);
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
     }
     return comment;
   }
@@ -106,22 +127,39 @@ export class CommentService {
     return comment as Comment;
   }
 
+  async getCommentByIdWithReplies(commentId: number): Promise<Comment> {
+    const comment = await this.commentRepository.findByIdWithReplies(commentId);
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+    return comment;
+  }
+
+  async getCommentsByPostId(postId: number): Promise<CommentWithAuthor[]> {
+    const comments = await this.commentRepository.findByPostId(postId);
+    if (!comments || comments.length === 0) {
+      return [];
+    }
+    return comments.map((comment) => this.toCommentWithAuthor(comment));
+  }
+
   // ===== DELETE =====
 
-  async deleteComment(
+  async softDeleteComment(
     commentId: number,
     postId: number,
     userId: number,
   ): Promise<void> {
-    // 1) 기존 댓글 및 게시글 조회
+    // check if comment belongs to post
     const comment = await this.getCommentById(commentId);
     const post = await this.postService.getPostById(postId);
 
-    // 게시글이랑 댓글단 게시글 아이디를 비교
     if (comment.postId !== post.id) {
-      throw new NotFoundException('Comment not found in this post.');
+      throw new NotFoundException('Comment not found in this post');
     }
 
+    // is comment mine?
+    // TODO: isMyComment has getCommentById. It's duplication problem
     if (!(await this.isMyComment(commentId, userId))) {
       throw new NotFoundException('Comment not found');
     }
@@ -142,8 +180,16 @@ export class CommentService {
       await queryRunner.manager.update(Comment, comment.id, {
         deletedAt,
       });
+
       if (commentWithReplies.replies && commentWithReplies.replies.length > 0) {
         const replyId = commentWithReplies.replies.map((reply) => reply.id);
+
+      // Soft delete all replies if they exist
+      if (commentWithReplies.replies && commentWithReplies.replies.length > 0) {
+        const replyIds = commentWithReplies.replies.map((reply) => reply.id);
+        await queryRunner.manager.update(Comment, replyIds, {
+          deletedAt,
+        });
       }
 
       // Decrease comment count by the total number of deleted comments (parent + replies)
@@ -156,18 +202,20 @@ export class CommentService {
     } finally {
       await queryRunner.release();
     }
+
   }
 
-  // ===== SUB FUNCTION =====
-
+  // ===== SUB FUNCTIONS =====
   async isMyComment(commentId: number, userId: number): Promise<boolean> {
     const comment = await this.getCommentById(commentId);
     return comment.authorId === userId;
   }
+
   private calculateTotalCommentCount(comment: Comment): number {
     // Count the comment itself + all its replies
     return 1 + (comment.replies?.length || 0);
   }
+
 
   private toCommentWithAuthor(comment: Comment): CommentWithAuthor {
     const defaultAvatarUrl = this.configService.get('USER_DEFAULT_AVATAR_URL');

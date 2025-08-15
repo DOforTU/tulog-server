@@ -1,8 +1,8 @@
 import { UserService } from 'src/user/user.service';
-import { TeamWithStatus } from './team-member.dto';
 import { TeamMemberRepository } from './team-member.repository';
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -30,6 +30,7 @@ export class TeamMemberService {
    * 그 팀이 이미 인원이 다 찼는지
    * 내가 그 팀에 이미 존재하는지
    * 팀 싱태가 초대만 가능한 경우 예외처리
+   * 참여하지 않았다면 중복 가입 요청 가능
    */
   async requestToTeam(teamId: number, memberId: number): Promise<TeamMember> {
     // 팀 아이디로 팀맴버를 배열로 가져옴 --> 그 팀이 존재하는지 알 수 있음
@@ -37,11 +38,14 @@ export class TeamMemberService {
       await this.teamMemberRepository.getTeamMembersByTeamId(teamId);
 
     const checkTeamVisibility = teamMembers[0].team.visibility;
-    if (checkTeamVisibility == TeamVisibility.ONLY_INVITE) {
-      throw new ConflictException('You can not invite that team.');
+
+    if (checkTeamVisibility === TeamVisibility.ONLY_INVITE) {
+      throw new ForbiddenException('You can not invite that team.');
     }
+
+    // 이미 참여 상태라면 가입 요청 못함
     const teamMember = await this.findTeamMemberByPrimaryKey(teamId, memberId);
-    if (teamMember) {
+    if (teamMember?.status === TeamMemberStatus.JOINED) {
       throw new ConflictException('You are already a member of this team.');
     }
 
@@ -49,6 +53,7 @@ export class TeamMemberService {
     const memberCount = teamMembers.length;
     // 팀에 속한 팀 맴버중 한명이 속한 팀에서 최대 인원수를 구함
     const maxMember = teamMembers[0].team.maxMember;
+
     if (memberCount == maxMember) {
       throw new ConflictException('This team is already full.');
     }
@@ -90,7 +95,7 @@ export class TeamMemberService {
    * 예외 처리 : 초대 대상이 이미 그 팀에 존재하는지
    * 초대 대상이 존재한지
    * 초대 대상이 이미 팀 3개에 존재하는지
-   *
+   * 참여 상태가 아니라면 중복 초대 가능
    */
   async inviteToTeam(
     leaderId: number,
@@ -104,9 +109,13 @@ export class TeamMemberService {
       if (!leader.isLeader) {
         throw new ConflictException('Only team leaders can invite members.');
       }
-      const ifAlreadyExist =
-        await this.teamMemberRepository.findOneByPrimaryKey(teamId, memberId);
-      if (ifAlreadyExist) {
+
+      // 이미 참여 상태라면 초대 못함
+      const ifAlreadyExist = await this.findTeamMemberByPrimaryKey(
+        teamId,
+        memberId,
+      );
+      if (ifAlreadyExist?.status === TeamMemberStatus.JOINED) {
         throw new ConflictException('Already on the team.');
       }
 
@@ -144,107 +153,6 @@ export class TeamMemberService {
   }
 
   // ===== READ =====
-  /**
-   * get all teams that a user is part of
-   * @param memberId Member ID: the ID of the user whose teams are to be fetched
-   * @returns An array of TeamWithStatus objects representing the teams
-   */
-  async getAllTeamsByMemberId(memberId: number): Promise<TeamWithStatus[]> {
-    // check if user exists
-    await this.userService.getUserById(memberId);
-
-    const teamMembers =
-      await this.teamMemberRepository.findWithTeamsByMemberId(memberId);
-
-    // If no teams found, throw an exception
-    if (!teamMembers || teamMembers.length === 0) {
-      throw new NotFoundException(`${memberId} does not have any teams`);
-    }
-
-    return teamMembers.map((tm) => ({
-      team: tm.team,
-      status: tm.status,
-      isLeader: tm.isLeader,
-    }));
-  }
-
-  /**
-   * get all teams that a user is invited to
-   * @param memberId Member ID: the ID of the user whose invited teams are to be fetched
-   * @returns An array of TeamWithStatus objects representing the teams
-   */
-  async getInvitedTeamsByMemberId(memberId: number): Promise<TeamWithStatus[]> {
-    // check if user exists
-    await this.userService.getUserById(memberId);
-
-    const teamMembers =
-      await this.teamMemberRepository.findWithTeamsByMemberId(memberId);
-
-    // If no teams found, throw an exception
-    if (!teamMembers || teamMembers.length === 0) {
-      throw new NotFoundException(`${memberId} does not have any teams`);
-    }
-
-    return teamMembers
-      .filter((tm) => tm.status === TeamMemberStatus.INVITED)
-      .map((tm) => ({
-        team: tm.team,
-        status: TeamMemberStatus.INVITED,
-        isLeader: tm.isLeader,
-      }));
-  }
-
-  /**
-   * get all teams that a user is part of
-   * @param memberId Member ID: the ID of the user whose teams are to be fetched
-   * @returns An array of TeamWithStatus objects representing the teams
-   */
-  async getJoinedTeamsByMemberId(memberId: number): Promise<TeamWithStatus[]> {
-    // check if user exists
-    await this.userService.getUserById(memberId);
-
-    const teamMembers =
-      await this.teamMemberRepository.findWithTeamsByMemberId(memberId);
-
-    // If no teams found, throw an exception
-    if (!teamMembers || teamMembers.length === 0) {
-      throw new NotFoundException(`${memberId} does not have any teams`);
-    }
-
-    return teamMembers
-      .filter((tm) => tm.status === TeamMemberStatus.JOINED)
-      .map((tm) => ({
-        team: tm.team,
-        status: TeamMemberStatus.JOINED,
-        isLeader: tm.isLeader,
-      }));
-  }
-
-  /**
-   * get all teams that a user is pending to join
-   * @param memberId Member ID: the ID of the user whose pending teams are to be fetched
-   * @returns An array of TeamWithStatus objects representing the teams
-   */
-  async getPendingTeamsByMemberId(memberId: number): Promise<TeamWithStatus[]> {
-    // check if user exists
-    await this.userService.getUserById(memberId);
-
-    const teamMembers =
-      await this.teamMemberRepository.findWithTeamsByMemberId(memberId);
-
-    // If no teams found, throw an exception
-    if (!teamMembers || teamMembers.length === 0) {
-      throw new NotFoundException(`${memberId} does not have any teams`);
-    }
-
-    return teamMembers
-      .filter((tm) => tm.status === TeamMemberStatus.PENDING)
-      .map((tm) => ({
-        team: tm.team,
-        status: TeamMemberStatus.PENDING,
-        isLeader: tm.isLeader,
-      }));
-  }
 
   /**
    *
@@ -256,10 +164,7 @@ export class TeamMemberService {
     teamId: number,
     memberId: number,
   ): Promise<TeamMember> {
-    const teamMember = await this.teamMemberRepository.findOneByPrimaryKey(
-      teamId,
-      memberId,
-    );
+    const teamMember = await this.findTeamMemberByPrimaryKey(teamId, memberId);
 
     if (!teamMember) {
       throw new NotFoundException(
@@ -302,15 +207,8 @@ export class TeamMemberService {
   ): Promise<TeamMember> {
     return await this.dataSource.transaction(async (manager) => {
       // Find the invitation
-      const invitation = await this.teamMemberRepository.findOneByPrimaryKey(
-        teamId,
-        memberId,
-      );
-      if (!invitation) {
-        throw new NotFoundException('Team invitation not found.');
-      }
-
-      if (invitation.status !== TeamMemberStatus.INVITED) {
+      const teamMember = await this.getTeamMemberByPrimaryKey(teamId, memberId);
+      if (teamMember.status !== TeamMemberStatus.INVITED) {
         throw new ConflictException('Invalid invitation status.');
       }
 
@@ -320,7 +218,7 @@ export class TeamMemberService {
         .update({ teamId, memberId }, { status: TeamMemberStatus.JOINED });
 
       // Get updated team member
-      const updatedMember = await this.teamMemberRepository.findOneByPrimaryKey(
+      const updatedMember = await this.findTeamMemberByPrimaryKey(
         teamId,
         memberId,
       );
@@ -371,10 +269,8 @@ export class TeamMemberService {
       }
 
       // Find the join request
-      const request = await this.teamMemberRepository.findOneByPrimaryKey(
-        teamId,
-        memberId,
-      );
+      const request = await this.findTeamMemberByPrimaryKey(teamId, memberId);
+      console.log(request);
       if (!request) {
         throw new NotFoundException('Team join request not found.');
       }
@@ -389,7 +285,7 @@ export class TeamMemberService {
         .update({ teamId, memberId }, { status: TeamMemberStatus.JOINED });
 
       // Get updated team member
-      const updatedMember = await this.teamMemberRepository.findOneByPrimaryKey(
+      const updatedMember = await this.teamMemberRepository.findByPrimaryKey(
         teamId,
         memberId,
       );
@@ -397,12 +293,13 @@ export class TeamMemberService {
       // Send notification to the new member about acceptance
       const teamMembers =
         await this.teamMemberRepository.getTeamMembersByTeamId(teamId);
+      const leaderUser = await this.userService.getUserById(leaderId);
       try {
         await this.noticeService.createTeamJoinNotice(
           memberId, // notify the person who requested
           teamId,
           String((teamMembers[0] as any).team.name),
-          'team',
+          leaderUser.nickname, // 팀장의 실제 닉네임 사용
         );
       } catch (error) {
         console.error('Failed to create join acceptance notification:', error);
@@ -435,10 +332,7 @@ export class TeamMemberService {
     }
 
     // Find the join request
-    const request = await this.teamMemberRepository.findOneByPrimaryKey(
-      teamId,
-      memberId,
-    );
+    const request = await this.findTeamMemberByPrimaryKey(teamId, memberId);
     if (!request) {
       throw new NotFoundException('Team join request not found.');
     }
@@ -449,6 +343,7 @@ export class TeamMemberService {
 
     // Remove the request
     await this.teamMemberRepository.leaveTeam(teamId, memberId);
+
     return true;
   }
 
@@ -472,13 +367,12 @@ export class TeamMemberService {
     if (!leavingMember) {
       throw new NotFoundException('해당 멤버가 팀에 존재하지 않습니다.');
     }
-    console.log(teamMembers);
-    // If only one team member exists: delete team after leaving (transaction)
-    if (teamMembers.length === 1) {
-      const queryRunner = this.dataSource.createQueryRunner();
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
+    // If only one team member exists: delete team and leaving team(transaction)
+    if (teamMembers.length === 1) {
       try {
         // 1. delete team member
         await queryRunner.query(
@@ -489,6 +383,42 @@ export class TeamMemberService {
         // 2. soft delete team
         await queryRunner.query(
           'UPDATE "server_api"."team" SET "deletedAt" = NOW() WHERE "id" = $1',
+          [teamId],
+        );
+
+        // 3. delete editor of team
+        await queryRunner.query(
+          'DELETE FROM "server_api"."editor" WHERE "postId" IN \
+          (SELECT "id" FROM "server_api"."post" WHERE "teamId" = $1) AND "userId" = $2',
+          [teamId, memberId],
+        );
+
+        // 4. soft delete posts
+        await queryRunner.query(
+          'UPDATE "server_api"."post" SET "deletedAt" = NOW() WHERE "teamId" = $1',
+          [teamId],
+        );
+
+        // 5. delete bookmarks, likes, hide
+        await queryRunner.query(
+          'DELETE FROM "server_api"."bookmark" WHERE "postId" IN \
+            (SELECT "id" FROM "server_api"."post" WHERE "teamId" = $1)',
+          [teamId],
+        );
+        await queryRunner.query(
+          'DELETE FROM "server_api"."post_like" WHERE "postId" IN \
+            (SELECT "id" FROM "server_api"."post" WHERE "teamId" = $1)',
+          [teamId],
+        );
+        await queryRunner.query(
+          'DELETE FROM "server_api"."post_hide" WHERE "postId" IN \
+            (SELECT "id" FROM "server_api"."post" WHERE "teamId" = $1)',
+          [teamId],
+        );
+
+        // 6. delete team follows
+        await queryRunner.query(
+          'DELETE FROM "server_api"."team_follow" WHERE "teamId" = $1',
           [teamId],
         );
 
@@ -511,8 +441,30 @@ export class TeamMemberService {
       );
     }
 
-    await this.teamMemberRepository.leaveTeam(teamId, memberId);
-    return true;
+    // Remove the member from the team and editor status to VIEWER
+    try {
+      // 1. leave team
+      await queryRunner.query(
+        'DELETE FROM "server_api"."team_member" WHERE "teamId" = $1 AND "memberId" = $2',
+        [teamId, memberId],
+      );
+
+      // 2. delete editor
+      await queryRunner.query(
+        'DELETE FROM "server_api"."editor" WHERE "postId" IN \
+          (SELECT "id" FROM "server_api"."post" WHERE "teamId" = $1) AND "userId" = $2',
+        [teamId, memberId],
+      );
+
+      await queryRunner.commitTransaction(); // 트랜잭션 커밋 추가!
+      console.log(`User ${memberId} left team ${teamId}`);
+      return true;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw new Error(`Failed to leave team and delete team: ${error.message}`);
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   /**
@@ -550,10 +502,7 @@ export class TeamMemberService {
     teamId: number,
     memberId: number,
   ): Promise<boolean> {
-    const invitation = await this.teamMemberRepository.findOneByPrimaryKey(
-      teamId,
-      memberId,
-    );
+    const invitation = await this.findTeamMemberByPrimaryKey(teamId, memberId);
     if (!invitation) {
       throw new NotFoundException('Team invitation not found.');
     }
@@ -564,6 +513,7 @@ export class TeamMemberService {
 
     // Remove the invitation
     await this.teamMemberRepository.leaveTeam(teamId, memberId);
+
     return true;
   }
 
@@ -595,9 +545,6 @@ export class TeamMemberService {
     teamId: number,
     memberId: number,
   ): Promise<TeamMember | null> {
-    return await this.teamMemberRepository.findOneByPrimaryKey(
-      teamId,
-      memberId,
-    );
+    return await this.teamMemberRepository.findByPrimaryKey(teamId, memberId);
   }
 }

@@ -1,16 +1,8 @@
-import {
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { PostService } from 'src/post/post.service';
 import { PostHideRepository } from './post-hide.repository';
 import { DataSource } from 'typeorm';
 import { PostHide } from './post-hide.entity';
-import { PostLikeService } from 'src/post-like/post-like.service';
-import { CommentService } from 'src/comment/comment.service';
-import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class PostHideService {
@@ -29,10 +21,10 @@ export class PostHideService {
     await this.postService.getPostById(postId);
 
     // Check if already hide
+
     const hiddenPost = await this.isHidden(userId, postId);
     if (hiddenPost) {
       throw new ConflictException('You already hided this post.');
-    }
 
     return await this.postHideRepository.hidePost(postId, userId);
   }
@@ -43,11 +35,12 @@ export class PostHideService {
    * 게시글이 있는지
    */
   async deleteHide(postId: number, userId: number): Promise<boolean> {
-    // 2) 이미 숨겨진 게시글인지 확인 (manager사용했는데 이게 쿼리 러너에 포함인가)
+
+    await this.postService.getPostById(postId);
+    
     const hiddenPost = await this.isHidden(userId, postId);
     if (hiddenPost) {
       throw new ConflictException('You already hided this post.');
-    }
 
     return await this.postHideRepository.deleteHide(postId, userId);
   }

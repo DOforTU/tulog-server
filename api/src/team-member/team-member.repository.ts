@@ -79,14 +79,14 @@ export class TeamMemberRepository {
       .getMany();
   }
 
-  async findOneByPrimaryKey(
+  async findByPrimaryKey(
     teamId: number,
     memberId: number,
   ): Promise<TeamMember | null> {
-    return await this.teamMemberRepository.findOne({
-      where: { teamId, memberId },
-    });
+    return await this.teamMemberRepository
+      .createQueryBuilder('teamMember')
+      .where('teamMember.teamId = :teamId', { teamId })
+      .andWhere('teamMember.memberId = :memberId', { memberId })
+      .getOne();
   }
-
-
 }

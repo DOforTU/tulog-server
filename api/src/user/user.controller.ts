@@ -27,6 +27,13 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   // ===== READ =====
+  /** Get user by ID */
+  @Get(':id/all-info')
+  async findUserInfo(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<PublicUser | null> {
+    return await this.userService.findUserInfo(id);
+  }
 
   /** Get current logged-in user information */
   @Get('me')

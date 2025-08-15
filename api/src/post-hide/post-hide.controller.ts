@@ -1,7 +1,5 @@
 import {
   Controller,
-  Delete,
-  Get,
   Param,
   Patch,
   Post,
@@ -13,7 +11,7 @@ import { User } from 'src/user/user.entity';
 import { PostHideService } from './post-hide.service';
 import { PostHide } from './post-hide.entity';
 
-@Controller('post-hide')
+@Controller('hide/posts')
 export class PostHideController {
   constructor(private readonly postHideService: PostHideService) {}
 
