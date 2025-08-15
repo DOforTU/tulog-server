@@ -41,6 +41,9 @@ import { Tag } from './tag/tag.entity';
 import { PostTag } from './post-tag/post-tag.entity';
 import { TeamFollowModule } from './team-follow/team-follow.module';
 import { TeamFollow } from './team-follow/team-follow.entity';
+import { CommentLikeController } from './comment-like/comment-like.controller';
+import { CommentLikeService } from './comment-like/comment-like.service';
+import { CommentLikeModule } from './comment-like/comment-like.module';
 
 @Module({
   imports: [
@@ -104,9 +107,10 @@ import { TeamFollow } from './team-follow/team-follow.entity';
     TagModule,
     PostTagModule,
     TeamFollowModule,
+    CommentLikeModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, CommentLikeController],
+  providers: [AppService, CommentLikeService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

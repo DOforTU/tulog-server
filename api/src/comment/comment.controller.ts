@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Get,
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -11,45 +13,38 @@ import { CommentService } from './comment.service';
 import { JwtAuthGuard } from 'src/auth/jwt';
 import { User } from 'src/user/user.entity';
 import { Comment } from './comment.entity';
-import { CreateCommentDto, UpdateCommentDto } from './comment.dto';
+import {
+  CommentWithAuthor,
+  CreateCommentDto,
+  UpdateCommentDto,
+} from './comment.dto';
 
 @Controller('comment')
 export class CommentController {
   constructor(private readonly commentService: CommentService) {}
 
   // ===== CREATE =====
-  @Post(':postId/comments')
+  @Post()
   @UseGuards(JwtAuthGuard)
-  async commentAtPost(
-    @Param('postId') postId: number,
+  async createComment(
+    @Query('postId') postId: number,
     @Request() req: { user: User },
     @Body() createCommentDto: CreateCommentDto,
+    @Query('commentId') commentId?: number,
   ): Promise<Comment> {
-    return await this.commentService.commentAtPost(
+    return await this.commentService.createComment(
       postId,
       req.user.id,
       createCommentDto,
+      commentId,
     );
   }
 
-  // ===== UPDATE =====
-  /**
-   *
-   * @param id 게시글 아이디
-   * @param req 유저 아이디
-   * @returns
-   */
-  @Patch(':id')
-  @UseGuards(JwtAuthGuard)
-  async changeComment(
-    @Param('id') id: number,
-    @Request() req: { user: User },
-    @Body() updateCommentDto: UpdateCommentDto,
-  ): Promise<Comment | null> {
-    return await this.commentService.changeComment(
-      id,
-      req.user.id,
-      updateCommentDto,
-    );
+  // ===== READ =====
+  @Get('post/:postId')
+  async getCommentsByPostId(
+    @Param('postId') postId: number,
+  ): Promise<CommentWithAuthor[]> {
+    return this.commentService.getCommentsByPostId(postId);
   }
 }

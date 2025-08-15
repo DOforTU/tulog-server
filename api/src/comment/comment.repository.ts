@@ -11,47 +11,26 @@ export class CommentRepository {
     private readonly commentRepository: Repository<Comment>,
   ) {}
 
-  // ===== CREATE =====
+  // ===== READ =====
 
-  async commentAtPost(
-    postId: number,
-    userId: number,
-    createCommentDto: CreateCommentDto,
-  ): Promise<Comment> {
-    const comment = this.commentRepository.create({
-      post: { id: postId },
-      authorId: userId,
-      content: createCommentDto.comment,
-    });
-    return await this.commentRepository.save(comment);
+  async findByPostId(postId: number): Promise<Comment[]> {
+    return await this.commentRepository
+      .createQueryBuilder('comment')
+      .leftJoinAndSelect('comment.author', 'author')
+      .leftJoinAndSelect('comment.replies', 'replies')
+      .leftJoinAndSelect('replies.author', 'replyAuthor')
+      .where('comment.postId = :postId', { postId })
+      .andWhere('comment.parentCommentId IS NULL')
+      .getMany();
   }
 
-  // =====  UPDATE FUNCTION =====
-
-  async changeComment(
-    postId: number,
-    userId: number,
-    updateCommentDto: UpdateCommentDto,
-  ): Promise<Comment | null> {
-    await this.commentRepository
-      .createQueryBuilder()
-      .update(Comment)
-      .set({
-        content: updateCommentDto.comment,
-        updatedAt: new Date(), // Common 엔티티에서 상속받는 경우
-      })
-      .where('postId = :postId', { postId })
-      .andWhere('authorId = :userId', { userId }) // ⚠️ 엔티티에서는 authorId였죠
-      .execute();
-
-    return this.commentRepository
+  async findByIdWithReplies(commentId: number): Promise<Comment | null> {
+    return await this.commentRepository
       .createQueryBuilder('comment')
-      .where('comment.postId = :postId', { postId })
-      .andWhere('comment.authorId = :userId', { userId })
+      .leftJoinAndSelect('comment.replies', 'replies')
+      .where('comment.id = :id', { id: commentId })
       .getOne();
   }
-
-  // ===== SUB FUNCTION =====
 
   async findOneById(commentId: number): Promise<Comment | null> {
     return this.commentRepository

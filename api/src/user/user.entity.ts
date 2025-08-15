@@ -13,6 +13,7 @@ import {
   OneToOne,
   OneToMany,
 } from 'typeorm';
+import { CommentLike } from 'src/comment-like/comment-like.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -96,4 +97,7 @@ export class User extends Common {
 
   @OneToMany(() => TeamFollow, (teamFollow) => teamFollow.user)
   teamFollows: TeamFollow[];
+
+  @OneToMany(() => CommentLike, (commentLike) => commentLike.user)
+  commentLike: CommentLike[];
 }
