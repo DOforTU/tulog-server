@@ -80,6 +80,14 @@ export class CommentService {
     return comment;
   }
 
+  async getCommentByIdWithReplies(commentId: number): Promise<Comment> {
+    const comment = await this.commentRepository.findByIdWithReplies(commentId);
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+    return comment as Comment;
+  }
+
   async getCommentsByPostId(postId: number): Promise<CommentWithAuthor[]> {
     const comments = await this.commentRepository.findByPostId(postId);
     if (!comments || comments.length === 0) {
@@ -109,13 +117,33 @@ export class CommentService {
       throw new NotFoundException('Comment not found');
     }
 
+    // Get comment with replies to calculate total deletion count
+    const commentWithReplies = await this.getCommentByIdWithReplies(commentId);
+    const totalDeletedCount =
+      this.calculateTotalCommentCount(commentWithReplies);
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      await queryRunner.manager.remove(comment);
-      post.commentCount--;
+      const deletedAt = new Date();
+
+      // Soft delete the parent comment
+      await queryRunner.manager.update(Comment, comment.id, {
+        deletedAt,
+      });
+
+      // Soft delete all replies if they exist
+      if (commentWithReplies.replies && commentWithReplies.replies.length > 0) {
+        const replyIds = commentWithReplies.replies.map((reply) => reply.id);
+        await queryRunner.manager.update(Comment, replyIds, {
+          deletedAt,
+        });
+      }
+
+      // Decrease comment count by the total number of deleted comments (parent + replies)
+      post.commentCount -= totalDeletedCount;
       await queryRunner.manager.save(post);
       await queryRunner.commitTransaction();
     } catch (error) {
@@ -130,6 +158,11 @@ export class CommentService {
   async isMyComment(commentId: number, userId: number): Promise<boolean> {
     const comment = await this.getCommentById(commentId);
     return comment.authorId === userId;
+  }
+
+  private calculateTotalCommentCount(comment: Comment): number {
+    // Count the comment itself + all its replies
+    return 1 + (comment.replies?.length || 0);
   }
 
   private toCommentWithAuthor(comment: Comment): CommentWithAuthor {
