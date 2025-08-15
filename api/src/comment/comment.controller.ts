@@ -44,15 +44,25 @@ export class CommentController {
     return await this.commentService.getCommentsByPostId(postId);
   }
 
+  // ===== UPDATE =====
+
   // ===== DELETE =====
+
+  /**
+   * soft delete comment
+   * @param commentId
+   * @param postId
+   * @param req
+   * @returns
+   */
   @Delete(':id/posts/:postId')
   @UseGuards(JwtAuthGuard)
-  async deleteComment(
+  async softDeleteComment(
     @Param('id') commentId: number,
     @Param('postId') postId: number,
     @Request() req: { user: User },
   ): Promise<void> {
-    return await this.commentService.deleteComment(
+    return await this.commentService.softDeleteComment(
       commentId,
       postId,
       req.user.id,

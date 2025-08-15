@@ -88,7 +88,7 @@ export class CommentService {
     if (!comment) {
       throw new NotFoundException('Comment not found');
     }
-    return comment as Comment;
+    return comment;
   }
 
   async getCommentsByPostId(postId: number): Promise<CommentWithAuthor[]> {
@@ -101,7 +101,7 @@ export class CommentService {
 
   // ===== DELETE =====
 
-  async deleteComment(
+  async softDeleteComment(
     commentId: number,
     postId: number,
     userId: number,
