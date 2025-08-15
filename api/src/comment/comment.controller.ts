@@ -13,7 +13,6 @@ import { JwtAuthGuard } from 'src/auth/jwt';
 import { User } from 'src/user/user.entity';
 import { Comment } from './comment.entity';
 import { CreateCommentDto } from './comment.dto';
-import { userInfo } from 'os';
 
 @Controller('comment')
 export class CommentController {
