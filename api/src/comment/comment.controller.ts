@@ -26,11 +26,13 @@ export class CommentController {
     @Query('postId') postId: number,
     @Request() req: { user: User },
     @Body() createCommentDto: CreateCommentDto,
+    @Query('commentId') commentId?: number,
   ): Promise<Comment> {
     return await this.commentService.createComment(
       postId,
       req.user.id,
       createCommentDto,
+      commentId,
     );
   }
 

@@ -16,4 +16,6 @@ export class CommentWithAuthor {
   content: string;
   postId: number;
   author: PublicUser;
+  createdAt: Date;
+  replies?: CommentWithAuthor[];
 }

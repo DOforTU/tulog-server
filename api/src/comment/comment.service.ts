@@ -19,8 +19,28 @@ export class CommentService {
     postId: number,
     userId: number,
     createCommentDto: CreateCommentDto,
+    parentCommentId?: number,
   ): Promise<Comment> {
     const post = await this.postService.getPostById(postId);
+
+    // If parentCommentId is provided, validate that it's not already a reply
+    if (parentCommentId) {
+      const parentComment = await this.getCommentById(parentCommentId);
+
+      // Check if the parent comment is already a reply (has a parentCommentId)
+      if (parentComment.parentCommentId !== null) {
+        throw new NotFoundException(
+          'Cannot reply to a reply. Only one level of replies is allowed.',
+        );
+      }
+
+      // Check if the parent comment belongs to the same post
+      if (parentComment.postId !== postId) {
+        throw new NotFoundException(
+          'Parent comment does not belong to this post',
+        );
+      }
+    }
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -30,6 +50,7 @@ export class CommentService {
       // create comment
       const comment = queryRunner.manager.create(Comment, {
         ...createCommentDto,
+        parentCommentId,
         postId,
         authorId: userId,
       });
@@ -116,6 +137,7 @@ export class CommentService {
       id: comment.id,
       content: comment.content,
       postId: comment.postId,
+      createdAt: comment.createdAt,
       author: {
         id: comment.authorId,
         nickname: comment.author.nickname,
@@ -123,6 +145,7 @@ export class CommentService {
         isActive: comment.author.isActive,
         role: comment.author.role,
       },
+      replies: comment.replies?.map((reply) => this.toCommentWithAuthor(reply)),
     };
   }
 }

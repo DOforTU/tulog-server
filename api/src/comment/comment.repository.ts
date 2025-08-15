@@ -22,7 +22,11 @@ export class CommentRepository {
   async findByPostId(postId: number): Promise<Comment[]> {
     return await this.commentRepository
       .createQueryBuilder('comment')
+      .leftJoinAndSelect('comment.author', 'author')
+      .leftJoinAndSelect('comment.replies', 'replies')
+      .leftJoinAndSelect('replies.author', 'replyAuthor')
       .where('comment.postId = :postId', { postId })
+      .andWhere('comment.parentCommentId IS NULL')
       .getMany();
   }
 }
