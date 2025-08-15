@@ -2,6 +2,7 @@ import {
   Controller,
   Delete,
   Param,
+  Patch,
   Post,
   Request,
   UseGuards,
@@ -64,10 +65,10 @@ export class TeamMemberController {
   @Post('join')
   @UseGuards(SmartAuthGuard)
   async requestToTeam(
+    @Param('teamId') id: number,
     @Request() req: { user: User },
-    @Param('id') id: number,
   ): Promise<TeamMember> {
-    return await this.teamMemberService.requestToTeam(req.user.id, id);
+    return await this.teamMemberService.requestToTeam(id, req.user.id);
   }
 
   /**
@@ -77,7 +78,7 @@ export class TeamMemberController {
    * @param memberId Member ID who requested to join
    * @returns Updated TeamMember entity
    */
-  @Post('join-request/members/:memberId/accept')
+  @Patch('join-request/members/:memberId/accept')
   @UseGuards(SmartAuthGuard)
   async acceptTeamJoinRequest(
     @Request() req: { user: User },
