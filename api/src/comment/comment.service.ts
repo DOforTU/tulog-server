@@ -1,3 +1,19 @@
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  CommentWithAuthor,
+  CreateCommentDto,
+  UpdateCommentDto,
+} from './comment.dto';
+import { PostService } from 'src/post/post.service';
+import { CommentRepository } from './comment.repository';
+import { Comment } from './comment.entity';
+import { DataSource, EntityManager } from 'typeorm';
+import { PostHideService } from 'src/post-hide/post-hide.service';
+import { ConfigService } from '@nestjs/config';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CommentWithAuthor, CreateCommentDto } from './comment.dto';
@@ -73,6 +89,15 @@ export class CommentService {
     }
   }
 
+
+  // ===== READ =====
+
+  async getCommentById(commentId: number): Promise<Comment> {
+    const comment = await this.commentRepository.findOneById(commentId);
+    if (!comment) {
+      throw new NotFoundException('Comment not found.');
+
+
   // ===== READ =====
 
   async getCommentById(commentId: number): Promise<Comment> {
@@ -81,6 +106,25 @@ export class CommentService {
       throw new NotFoundException('Comment not found');
     }
     return comment;
+  }
+
+  // 포스트로 댓글을 조회하는데 댓글이 없으면 포스트는 보여져야하기 때문에 빈배열 반환
+  // commentwithauthor은 게시글에 댓글작성한 사용자를 보여지기 위함
+  // 그 사용자는public user로 보임
+  async getCommentsByPostId(postId: number): Promise<CommentWithAuthor[]> {
+    const comment = await this.commentRepository.findByPostId(postId);
+    if (!comment || comment.length === 0) {
+      return [];
+    }
+    return comment;
+  }
+
+  async getCommentByIdWithReplies(commetnId: number): Promise<Comment> {
+    const comment = await this.commentRepository.findByIdWithReplies(commetnId);
+    if (!comment) {
+      throw new NotFoundException('Comment not found.');
+    }
+    return comment as Comment;
   }
 
   async getCommentByIdWithReplies(commentId: number): Promise<Comment> {
@@ -137,6 +181,9 @@ export class CommentService {
         deletedAt,
       });
 
+      if (commentWithReplies.replies && commentWithReplies.replies.length > 0) {
+        const replyId = commentWithReplies.replies.map((reply) => reply.id);
+
       // Soft delete all replies if they exist
       if (commentWithReplies.replies && commentWithReplies.replies.length > 0) {
         const replyIds = commentWithReplies.replies.map((reply) => reply.id);
@@ -155,6 +202,7 @@ export class CommentService {
     } finally {
       await queryRunner.release();
     }
+
   }
 
   // ===== SUB FUNCTIONS =====
@@ -167,6 +215,7 @@ export class CommentService {
     // Count the comment itself + all its replies
     return 1 + (comment.replies?.length || 0);
   }
+
 
   private toCommentWithAuthor(comment: Comment): CommentWithAuthor {
     const defaultAvatarUrl = this.configService.get('USER_DEFAULT_AVATAR_URL');

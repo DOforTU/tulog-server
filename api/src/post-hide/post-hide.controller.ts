@@ -9,6 +9,7 @@ import {
 import { JwtAuthGuard } from 'src/auth/jwt';
 import { User } from 'src/user/user.entity';
 import { PostHideService } from './post-hide.service';
+import { PostHide } from './post-hide.entity';
 
 @Controller('hide/posts')
 export class PostHideController {
@@ -21,11 +22,12 @@ export class PostHideController {
   async hidePost(
     @Param('postId') postId: number,
     @Request() req: { user: User },
-  ) {
+  ): Promise<PostHide> {
     return await this.postHideService.hidePost(postId, req.user.id);
   }
 
   // ===== UPDATE =====
+
   @Patch(':postId')
   @UseGuards(JwtAuthGuard)
   async deleteHide(
