@@ -47,6 +47,27 @@ export class NoticeService {
     teamName: string,
     inviterNickname: string,
   ): Promise<Notice> {
+    // 기존 팀 초대 알림이 있는지 확인
+    const existingNotice = await this.findExistingTeamNotice(
+      userId,
+      teamId,
+      NoticeType.TEAM_INVITE,
+    );
+
+    if (existingNotice) {
+      // 기존 알림 업데이트
+      return await this.updateExistingNotice(
+        existingNotice.id,
+        `${inviterNickname}님이 '${teamName}' 팀에 초대했습니다.`,
+        {
+          teamId,
+          teamName,
+          inviterNickname,
+        },
+      );
+    }
+
+    // 새 알림 생성
     const createNoticeDto: CreateNoticeDto = {
       userId,
       type: NoticeType.TEAM_INVITE,
@@ -72,6 +93,27 @@ export class NoticeService {
     teamName: string,
     newMemberNickname: string,
   ): Promise<Notice> {
+    // 기존 팀 가입 요청 알림이 있는지 확인
+    const existingNotice = await this.findExistingTeamNotice(
+      teamOwnerId,
+      teamId,
+      NoticeType.TEAM_REQUEST,
+    );
+
+    if (existingNotice) {
+      // 기존 알림 업데이트
+      return await this.updateExistingNotice(
+        existingNotice.id,
+        `${newMemberNickname}님이 '${teamName}' 팀에 참여 요청을 보냈습니다.`,
+        {
+          teamId,
+          teamName,
+          newMemberNickname,
+        },
+      );
+    }
+
+    // 새 알림 생성
     const createNoticeDto: CreateNoticeDto = {
       userId: teamOwnerId,
       type: NoticeType.TEAM_REQUEST,
@@ -266,11 +308,74 @@ export class NoticeService {
     }
   }
 
+  /** Delete team-related notices when invitation/join request is accepted or rejected */
+  async deleteTeamNoticesByTeamAndUser(
+    userId: number,
+    teamId: number,
+    type: NoticeType,
+  ): Promise<void> {
+    try {
+      await this.dataSource
+        .getRepository(Notice)
+        .createQueryBuilder()
+        .delete()
+        .from(Notice)
+        .where('userId = :userId', { userId })
+        .andWhere('relatedEntityId = :teamId', { teamId })
+        .andWhere('type = :type', { type })
+        .execute();
+    } catch (error) {
+      console.error('Failed to delete team notices:', error);
+      // 알림 삭제 실패는 중요한 기능에 영향을 주지 않도록 에러를 던지지 않음
+    }
+  }
+
   /** Cleanup old notices (for scheduled job) */
   async cleanupOldNotices(
     daysOld: number = 30,
   ): Promise<{ deletedCount: number }> {
     const deletedCount = await this.noticeRepository.deleteOldNotices(daysOld);
     return { deletedCount };
+  }
+
+  // ===== HELPER METHODS =====
+
+  /** Find existing team notice by userId, teamId, and type */
+  private async findExistingTeamNotice(
+    userId: number,
+    teamId: number,
+    type: NoticeType,
+  ): Promise<Notice | null> {
+    return await this.dataSource
+      .getRepository(Notice)
+      .createQueryBuilder('notice')
+      .where('notice.userId = :userId', { userId })
+      .andWhere('notice.type = :type', { type })
+      .andWhere('notice.relatedEntityId = :teamId', { teamId })
+      .getOne();
+  }
+
+  /** Update existing notice with new content and reset read status */
+  private async updateExistingNotice(
+    noticeId: number,
+    newContent: string,
+    newMetadata: any,
+  ): Promise<Notice> {
+    await this.dataSource.getRepository(Notice).update(noticeId, {
+      content: newContent,
+      metadata: newMetadata,
+      isRead: false,
+      updatedAt: new Date(),
+    });
+
+    const notice = await this.dataSource
+      .getRepository(Notice)
+      .findOne({ where: { id: noticeId } });
+
+    if (!notice) {
+      throw new NotFoundException(`Notice with id ${noticeId} not found`);
+    }
+
+    return notice;
   }
 }

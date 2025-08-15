@@ -2,6 +2,7 @@ import {
   Controller,
   Delete,
   Param,
+  Patch,
   Post,
   Request,
   UseGuards,
@@ -77,7 +78,7 @@ export class TeamMemberController {
    * @param memberId Member ID who requested to join
    * @returns Updated TeamMember entity
    */
-  @Post('join-request/members/:memberId/accept')
+  @Patch('join-request/members/:memberId/accept')
   @UseGuards(SmartAuthGuard)
   async acceptTeamJoinRequest(
     @Request() req: { user: User },
