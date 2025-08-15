@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateCommentDto } from './comment.dto';
+import { CommentWithAuthor, CreateCommentDto } from './comment.dto';
 import { PostService } from 'src/post/post.service';
 import { CommentRepository } from './comment.repository';
 import { Comment } from './comment.entity';
@@ -59,6 +59,14 @@ export class CommentService {
     return comment;
   }
 
+  async getCommentsByPostId(postId: number): Promise<CommentWithAuthor[]> {
+    const comments = await this.commentRepository.findByPostId(postId);
+    if (!comments || comments.length === 0) {
+      return [];
+    }
+    return comments.map((comment) => this.toCommentWithAuthor(comment));
+  }
+
   // ===== DELETE =====
 
   async deleteComment(
@@ -101,5 +109,20 @@ export class CommentService {
   async isMyComment(commentId: number, userId: number): Promise<boolean> {
     const comment = await this.getCommentById(commentId);
     return comment.authorId === userId;
+  }
+
+  private toCommentWithAuthor(comment: Comment): CommentWithAuthor {
+    return {
+      id: comment.id,
+      content: comment.content,
+      postId: comment.postId,
+      author: {
+        id: comment.authorId,
+        nickname: comment.author.nickname,
+        profilePicture: comment.author.profilePicture,
+        isActive: comment.author.isActive,
+        role: comment.author.role,
+      },
+    };
   }
 }

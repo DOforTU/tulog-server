@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   Param,
   Post,
   Query,
@@ -12,7 +13,7 @@ import { CommentService } from './comment.service';
 import { JwtAuthGuard } from 'src/auth/jwt';
 import { User } from 'src/user/user.entity';
 import { Comment } from './comment.entity';
-import { CreateCommentDto } from './comment.dto';
+import { CommentWithAuthor, CreateCommentDto } from './comment.dto';
 
 @Controller('comment')
 export class CommentController {
@@ -31,6 +32,14 @@ export class CommentController {
       req.user.id,
       createCommentDto,
     );
+  }
+
+  // ===== READ =====
+  @Get('post/:postId')
+  async getCommentsByPostId(
+    @Param('postId') postId: number,
+  ): Promise<CommentWithAuthor[]> {
+    return await this.commentService.getCommentsByPostId(postId);
   }
 
   // ===== DELETE =====
