@@ -69,10 +69,10 @@ export class PostLikeService {
   }
 
   /** Get posts user liked */
-  async getLikedPostsByUser(userId: number): Promise<PostCardDto[] | null> {
+  async getLikedPostsByUser(userId: number): Promise<PostCardDto[]> {
     const post = await this.findLikedPostsByUser(userId);
     if (!post) {
-      throw new NotFoundException('Can not found.');
+      return [];
     }
     return post.map((post) => this.postService.transformToPublicPostDto(post));
   }

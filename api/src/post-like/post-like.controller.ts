@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Controller,
   Delete,
   Get,
@@ -10,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { User } from 'src/user/user.entity';
 import { PostLike } from './post-like.entity';
-import { JwtAuthGuard, SmartAuthGuard } from 'src/auth/jwt';
+import { SmartAuthGuard } from 'src/auth/jwt';
 import { PostLikeService } from './post-like.service';
 import { PostCardDto } from 'src/post/post.dto';
 
@@ -54,7 +53,7 @@ export class PostLikeController {
   }
 
   /** Get posts user liked */
-  @Get('liked')
+  @Get('liked/me')
   @UseGuards(SmartAuthGuard)
   async getLikedPostsByUser(
     @Request() req: { user: User },
