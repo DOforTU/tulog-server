@@ -1,7 +1,5 @@
 import {
   Controller,
-  Delete,
-  Get,
   Param,
   Patch,
   Post,
@@ -12,7 +10,7 @@ import { JwtAuthGuard } from 'src/auth/jwt';
 import { User } from 'src/user/user.entity';
 import { PostHideService } from './post-hide.service';
 
-@Controller('post-hide')
+@Controller('hide/posts')
 export class PostHideController {
   constructor(private readonly postHideService: PostHideService) {}
 

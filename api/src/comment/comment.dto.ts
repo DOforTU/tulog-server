@@ -1,23 +1,21 @@
-import { ArrayMaxSize, IsArray, IsOptional, IsString } from 'class-validator';
+import { IsString } from 'class-validator';
+import { PublicUser } from 'src/user/user.dto';
 
 export class CreateCommentDto {
   @IsString()
-  comment: string;
-
-  @IsOptional()
-  @IsArray()
-  @ArrayMaxSize(10)
-  @IsString({ each: true })
-  tags?: string[];
+  content: string;
 }
 
 export class UpdateCommentDto {
   @IsString()
-  comment: string;
+  content: string;
+}
 
-  @IsOptional()
-  @IsArray()
-  @ArrayMaxSize(10)
-  @IsString({ each: true })
-  tags?: string[];
+export class CommentWithAuthor {
+  id: number;
+  content: string;
+  postId: number;
+  author: PublicUser;
+  createdAt: Date;
+  replies?: CommentWithAuthor[];
 }
