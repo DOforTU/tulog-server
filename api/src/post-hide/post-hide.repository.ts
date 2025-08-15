@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PostHide } from './post-hide.entity';
-import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class PostHideRepository {

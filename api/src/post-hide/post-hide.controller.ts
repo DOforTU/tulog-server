@@ -2,7 +2,6 @@ import {
   Controller,
   Delete,
   Param,
-  Patch,
   Post,
   Request,
   UseGuards,
