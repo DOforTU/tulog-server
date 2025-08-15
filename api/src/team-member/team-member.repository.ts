@@ -87,6 +87,4 @@ export class TeamMemberRepository {
       where: { teamId, memberId },
     });
   }
-
-
 }

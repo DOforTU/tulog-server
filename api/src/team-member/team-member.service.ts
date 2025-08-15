@@ -472,13 +472,12 @@ export class TeamMemberService {
     if (!leavingMember) {
       throw new NotFoundException('해당 멤버가 팀에 존재하지 않습니다.');
     }
-    console.log(teamMembers);
-    // If only one team member exists: delete team after leaving (transaction)
-    if (teamMembers.length === 1) {
-      const queryRunner = this.dataSource.createQueryRunner();
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
+    // If only one team member exists: delete team and leaving team(transaction)
+    if (teamMembers.length === 1) {
       try {
         // 1. delete team member
         await queryRunner.query(
@@ -489,6 +488,42 @@ export class TeamMemberService {
         // 2. soft delete team
         await queryRunner.query(
           'UPDATE "server_api"."team" SET "deletedAt" = NOW() WHERE "id" = $1',
+          [teamId],
+        );
+
+        // 3. delete editor of team
+        await queryRunner.query(
+          'DELETE FROM "server_api"."editor" WHERE "postId" IN \
+          (SELECT "id" FROM "server_api"."post" WHERE "teamId" = $1) AND "userId" = $2',
+          [teamId, memberId],
+        );
+
+        // 4. soft delete posts
+        await queryRunner.query(
+          'UPDATE "server_api"."post" SET "deletedAt" = NOW() WHERE "teamId" = $1',
+          [teamId],
+        );
+
+        // 5. delete bookmarks, likes, hide
+        await queryRunner.query(
+          'DELETE FROM "server_api"."bookmark" WHERE "postId" IN \
+            (SELECT "id" FROM "server_api"."post" WHERE "teamId" = $1)',
+          [teamId],
+        );
+        await queryRunner.query(
+          'DELETE FROM "server_api"."post_like" WHERE "postId" IN \
+            (SELECT "id" FROM "server_api"."post" WHERE "teamId" = $1)',
+          [teamId],
+        );
+        await queryRunner.query(
+          'DELETE FROM "server_api"."post_hide" WHERE "postId" IN \
+            (SELECT "id" FROM "server_api"."post" WHERE "teamId" = $1)',
+          [teamId],
+        );
+
+        // 6. delete team follows
+        await queryRunner.query(
+          'DELETE FROM "server_api"."team_follow" WHERE "teamId" = $1',
           [teamId],
         );
 
@@ -511,8 +546,27 @@ export class TeamMemberService {
       );
     }
 
-    await this.teamMemberRepository.leaveTeam(teamId, memberId);
-    return true;
+    // Remove the member from the team and editor status to VIEWER
+    try {
+      // 1. leave team
+      await queryRunner.query(
+        'DELETE FROM "server_api"."team_member" WHERE "teamId" = $1 AND "memberId" = $2',
+        [teamId, memberId],
+      );
+
+      // 2. delete editor
+      await queryRunner.query(
+        'DELETE FROM "server_api"."editor" WHERE "postId" IN \
+          (SELECT "id" FROM "server_api"."post" WHERE "teamId" = $1) AND "userId" = $2',
+        [teamId, memberId],
+      );
+      return true;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw new Error(`Failed to leave team and delete team: ${error.message}`);
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   /**
