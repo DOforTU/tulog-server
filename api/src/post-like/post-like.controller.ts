@@ -67,8 +67,6 @@ export class PostLikeController {
   async getLikedPostsByUser(
     @Request() req: { user: User },
   ): Promise<PostCardDto[] | null> {
-    console.log('req.user:', req.user);
-    console.log('req.user.id:', req.user?.id);
     return await this.postLikeService.getLikedPostsByUser(req.user.id);
   }
 

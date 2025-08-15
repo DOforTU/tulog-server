@@ -42,7 +42,7 @@ export class BookmarkService {
   async getMarkedPost(userId: number): Promise<PostCardDto[] | null> {
     const post = await this.findBookmarkedPostsByUser(userId);
     if (!post) {
-      throw new NotFoundException('Can not found.');
+      return [];
     }
     return post.map((post) => this.postService.transformToPublicPostDto(post));
   }
