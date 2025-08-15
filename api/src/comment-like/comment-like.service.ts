@@ -41,9 +41,20 @@ export class CommentLikeService {
 
   // ===== DELETE =====
   /**
-   * 그냥 댓글 좋아요 취소
+   * 댓글 좋아요 취소
+   * 내가 좋아요한 댓글인지
+   * 댓글이 살아있는지
    */
   async deleteLike(userId: number, commentId: number) {
+    await this.commentService.getCommentById(commentId);
+    const likedComment = await this.commentLikeRepository.findLikedComment(
+      userId,
+      commentId,
+    );
+    if (!likedComment) {
+      throw new NotFoundException('Can not found.');
+    }
+
     return await this.commentLikeRepository.deleteLike(userId, commentId);
   }
 

@@ -52,4 +52,15 @@ export class CommentLikeRepository {
       .andWhere('commentId = :commentId', { commentId })
       .execute();
   }
+
+  async findLikedComment(
+    userId: number,
+    commentId: number,
+  ): Promise<CommentLike | null> {
+    return await this.commentLikeRepository
+      .createQueryBuilder('commentLike')
+      .where('commentLike.userId = :userId', { userId })
+      .andWhere('commentLike.commentId = :commentId', { commentId })
+      .getOne();
+  }
 }
