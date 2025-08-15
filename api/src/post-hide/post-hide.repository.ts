@@ -14,7 +14,7 @@ export class PostHideRepository {
   // ===== CREATE =====
 
   async hidePost(postId: number, userId: number): Promise<PostHide> {
-    const post = await this.postHideRepository.create({ postId, userId });
+    const post = this.postHideRepository.create({ postId, userId });
     return await this.postHideRepository.save(post);
   }
 
@@ -28,6 +28,16 @@ export class PostHideRepository {
       where: { postId, userId },
     });
     return post;
+  }
+
+  // ===== DELETE =====
+
+  async deleteHide(postId: number, userId: number): Promise<boolean> {
+    const result = await this.postHideRepository.delete({
+      postId,
+      userId,
+    });
+    return result.affected ? result.affected > 0 : false;
   }
 
   // ===== SUB FUNCTION =====
@@ -44,10 +54,11 @@ export class PostHideRepository {
   }
 
   // Check if it hide
-  async isHidden(postId: number): Promise<boolean> {
+  async isHidden(userId: number, postId: number): Promise<boolean> {
     const post = await this.postHideRepository
       .createQueryBuilder('post_hide')
-      .where('post_hide.postId = :postId', { postId })
+      .where('post_hide.userId = :userId', { userId })
+      .andWhere('post_hide.postId = :postId', { postId })
       .getOne();
 
     return post !== null;
