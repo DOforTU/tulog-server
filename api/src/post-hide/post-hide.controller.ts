@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Param,
   Patch,
   Post,
@@ -26,9 +27,9 @@ export class PostHideController {
     return await this.postHideService.hidePost(postId, req.user.id);
   }
 
-  // ===== UPDATE =====
+  // ===== DELETE =====
 
-  @Patch(':postId')
+  @Delete(':postId')
   @UseGuards(JwtAuthGuard)
   async deleteHide(
     @Param('postId') postId: number,
