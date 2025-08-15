@@ -44,7 +44,7 @@ export class BookmarkController {
   @UseGuards(JwtAuthGuard)
   async deleteBookMark(
     @Request() req: { user: User },
-    @Param('pstId') postId: number,
+    @Param('postId') postId: number,
   ): Promise<boolean> {
     return await this.bookmarkService.deleteBookMark(req.user.id, postId);
   }

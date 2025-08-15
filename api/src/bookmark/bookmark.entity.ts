@@ -17,13 +17,13 @@ export class Bookmark {
   @JoinColumn({ name: 'postId' })
   post: Post;
 
-  @CreateDateColumn()
-  createdAt: Date;
-
   @PrimaryColumn()
   userId: number;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'userId' })
   user: User;
+
+  @CreateDateColumn()
+  createdAt: Date;
 }
