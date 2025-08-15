@@ -1,7 +1,6 @@
 import {
   Controller,
   Delete,
-  Get,
   Param,
   Post,
   Request,
@@ -11,7 +10,6 @@ import { CommentLikeService } from './comment-like.service';
 import { JwtAuthGuard } from 'src/auth/jwt';
 import { User } from 'src/user/user.entity';
 import { CommentLike } from './comment-like.entity';
-import { CommentLikeCardDto } from './comment-like.dto';
 
 @Controller('comment-like')
 export class CommentLikeController {

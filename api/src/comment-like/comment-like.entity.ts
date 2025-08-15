@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 import { User } from 'src/user/user.entity';
+import { Comment } from 'src/comment/comment.entity';
 
 @Entity('comment-like')
 export class CommentLike {

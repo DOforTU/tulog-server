@@ -25,6 +25,7 @@ export class PostHideService {
     const hiddenPost = await this.isHidden(userId, postId);
     if (hiddenPost) {
       throw new ConflictException('You already hided this post.');
+    }
 
     return await this.postHideRepository.hidePost(postId, userId);
   }
@@ -35,12 +36,12 @@ export class PostHideService {
    * 게시글이 있는지
    */
   async deleteHide(postId: number, userId: number): Promise<boolean> {
-
     await this.postService.getPostById(postId);
-    
+
     const hiddenPost = await this.isHidden(userId, postId);
     if (hiddenPost) {
       throw new ConflictException('You already hided this post.');
+    }
 
     return await this.postHideRepository.deleteHide(postId, userId);
   }

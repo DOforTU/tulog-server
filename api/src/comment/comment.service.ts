@@ -1,26 +1,10 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import {
-  CommentWithAuthor,
-  CreateCommentDto,
-  UpdateCommentDto,
-} from './comment.dto';
-import { PostService } from 'src/post/post.service';
-import { CommentRepository } from './comment.repository';
-import { Comment } from './comment.entity';
-import { DataSource, EntityManager } from 'typeorm';
-import { PostHideService } from 'src/post-hide/post-hide.service';
-import { ConfigService } from '@nestjs/config';
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { CommentWithAuthor, CreateCommentDto } from './comment.dto';
 import { PostService } from 'src/post/post.service';
 import { CommentRepository } from './comment.repository';
 import { Comment } from './comment.entity';
 import { DataSource } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 import { UserRole } from 'src/user/user.entity';
 
 @Injectable()
@@ -89,15 +73,6 @@ export class CommentService {
     }
   }
 
-
-  // ===== READ =====
-
-  async getCommentById(commentId: number): Promise<Comment> {
-    const comment = await this.commentRepository.findOneById(commentId);
-    if (!comment) {
-      throw new NotFoundException('Comment not found.');
-
-
   // ===== READ =====
 
   async getCommentById(commentId: number): Promise<Comment> {
@@ -119,28 +94,12 @@ export class CommentService {
     return comment;
   }
 
-  async getCommentByIdWithReplies(commetnId: number): Promise<Comment> {
-    const comment = await this.commentRepository.findByIdWithReplies(commetnId);
-    if (!comment) {
-      throw new NotFoundException('Comment not found.');
-    }
-    return comment as Comment;
-  }
-
   async getCommentByIdWithReplies(commentId: number): Promise<Comment> {
     const comment = await this.commentRepository.findByIdWithReplies(commentId);
     if (!comment) {
-      throw new NotFoundException('Comment not found');
+      throw new NotFoundException('Comment not found.');
     }
     return comment;
-  }
-
-  async getCommentsByPostId(postId: number): Promise<CommentWithAuthor[]> {
-    const comments = await this.commentRepository.findByPostId(postId);
-    if (!comments || comments.length === 0) {
-      return [];
-    }
-    return comments.map((comment) => this.toCommentWithAuthor(comment));
   }
 
   // ===== DELETE =====
@@ -181,9 +140,6 @@ export class CommentService {
         deletedAt,
       });
 
-      if (commentWithReplies.replies && commentWithReplies.replies.length > 0) {
-        const replyId = commentWithReplies.replies.map((reply) => reply.id);
-
       // Soft delete all replies if they exist
       if (commentWithReplies.replies && commentWithReplies.replies.length > 0) {
         const replyIds = commentWithReplies.replies.map((reply) => reply.id);
@@ -202,7 +158,6 @@ export class CommentService {
     } finally {
       await queryRunner.release();
     }
-
   }
 
   // ===== SUB FUNCTIONS =====
@@ -215,7 +170,6 @@ export class CommentService {
     // Count the comment itself + all its replies
     return 1 + (comment.replies?.length || 0);
   }
-
 
   private toCommentWithAuthor(comment: Comment): CommentWithAuthor {
     const defaultAvatarUrl = this.configService.get('USER_DEFAULT_AVATAR_URL');

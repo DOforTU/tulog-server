@@ -13,11 +13,6 @@ import { CommentService } from './comment.service';
 import { JwtAuthGuard } from 'src/auth/jwt';
 import { User } from 'src/user/user.entity';
 import { Comment } from './comment.entity';
-import {
-  CommentWithAuthor,
-  CreateCommentDto,
-  UpdateCommentDto,
-} from './comment.dto';
 import { CommentWithAuthor, CreateCommentDto } from './comment.dto';
 
 @Controller('comment')

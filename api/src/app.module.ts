@@ -44,6 +44,7 @@ import { TeamFollow } from './team-follow/team-follow.entity';
 import { CommentLikeController } from './comment-like/comment-like.controller';
 import { CommentLikeService } from './comment-like/comment-like.service';
 import { CommentLikeModule } from './comment-like/comment-like.module';
+import { CommentLike } from './comment-like/comment-like.entity';
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { CommentLikeModule } from './comment-like/comment-like.module';
           Editor,
           PostLike,
           Comment,
+          CommentLike,
           PostHide,
           Bookmark,
           Tag,

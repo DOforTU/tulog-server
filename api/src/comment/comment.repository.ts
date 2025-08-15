@@ -12,17 +12,6 @@ export class CommentRepository {
 
   // ===== READ =====
 
-  async findByPostId(postId: number): Promise<Comment[]> {
-    return await this.commentRepository
-      .createQueryBuilder('comment')
-      .leftJoinAndSelect('comment.author', 'author')
-      .leftJoinAndSelect('comment.replies', 'replies')
-      .leftJoinAndSelect('replies.author', 'replyAuthor')
-      .where('comment.postId = :postId', { postId })
-      .andWhere('comment.parentCommentId IS NULL')
-      .getMany();
-    
-    
   async findById(commentId: number): Promise<Comment | null> {
     return await this.commentRepository
       .createQueryBuilder('comment')
