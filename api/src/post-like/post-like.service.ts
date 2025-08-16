@@ -85,6 +85,7 @@ export class PostLikeService {
 
   /** Unlike a post */
   async unlikePost(userId: number, postId: number): Promise<boolean> {
+    // 게시글 자체가 존재하는지는 몰라도 되는건가? 애초에 좋아요 취소여서 없으면 없는건가 뭐 그런거같네
     const existingLike = await this.postLikeRepository.findLike(userId, postId);
     if (!existingLike) {
       throw new NotFoundException('Post not liked');
@@ -97,7 +98,7 @@ export class PostLikeService {
     try {
       await queryRunner.manager
         .getRepository(Post)
-        .decrement({ id: postId }, 'likeCount', 1);
+        .decrement({ id: postId }, 'likeCount', 1); // 좋아요 취소시 좋아요 개수 감소
 
       await this.postLikeRepository.deleteLike(userId, postId);
       await queryRunner.commitTransaction();

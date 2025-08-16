@@ -38,6 +38,8 @@ export class CommentLikeController {
 
   // ===== DELETE =====
 
+  // 댓글 좋아요 취소 어떤 댓글인지 아이디로 받아서 user가 해당 댓글을 좋아요 한지 확인후 comment like 테이블에서 삭제
+
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   async deleteLike(

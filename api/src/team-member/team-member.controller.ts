@@ -99,6 +99,7 @@ export class TeamMemberController {
    * @param teamId Team ID
    * @returns Success status
    */
+  // 초대 거절 즉 팀 멤머로 초대를 받을때
   @Delete('invitation/reject')
   @UseGuards(SmartAuthGuard)
   async rejectTeamInvitation(

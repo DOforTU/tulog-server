@@ -43,6 +43,12 @@ export class CommentLikeRepository {
   // ===== DELETE =====
 
   /** Delete a like */
+
+  // 유저와 댓글아이를 받아서 유저가 좋아요한 댓글 좋아요 취소
+  // comment like 테이블에서 userId와 commentId가 존재하면 그거는 댓글에 좋아요 한거임
+  // 그래서 commentId와 userId로 조회하면 나옴
+  // 연쇄 작업 없음
+
   async deleteLike(userId: number, commentId: number): Promise<void> {
     const result = await this.commentLikeRepository
       .createQueryBuilder()
@@ -52,6 +58,8 @@ export class CommentLikeRepository {
       .andWhere('commentId = :commentId', { commentId })
       .execute();
   }
+
+  // =====
 
   async findLikedComment(
     userId: number,

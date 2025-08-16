@@ -100,6 +100,8 @@ export class FollowService {
 
   /** Unfollow a user
    * followerId unfollows followId
+   *
+   * 언팔하고 테이블에서 삭제후 숫자감소
    */
   async unfollowUser(followerId: number, followId: number): Promise<boolean> {
     // you cannot unfollow yourself

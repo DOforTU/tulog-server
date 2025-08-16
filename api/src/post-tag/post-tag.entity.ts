@@ -27,3 +27,6 @@ export class PostTag {
   @JoinColumn({ name: 'tagId' })
   tag: Tag;
 }
+
+// 태그 엔터티를 통해서 관련 게시글 참조하기 위함
+// 이는 post와 tag의 중간테이블???????와우

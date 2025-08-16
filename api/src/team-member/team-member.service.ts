@@ -353,6 +353,10 @@ export class TeamMemberService {
    * @param memberId Member ID: the ID of the user who wants to leave the team
    * @returns A boolean indicating whether the leave operation was successful
    */
+  // 팀 조회
+  // 나가려는 팀원이 존재하는지
+  // 팀 삭제시 관련된 팀, 게시글, 좋아요,댓글, 북마크, 숨긴처리된 게시글, 팔로우, 팔로워
+  // 관련된 모든것 연쇄적으로 삭제
   async leaveTeam(teamId: number, memberId: number): Promise<boolean> {
     const teamMembers =
       await this.teamMemberRepository.findWithTeamsByTeamId(teamId);
@@ -434,6 +438,10 @@ export class TeamMemberService {
       }
     }
 
+    // 리더가 나갈경우
+    // 권한 위임
+    // 그리고 leaveteam으로 팀에서 삭제
+    //
     // If multiple team members exist and the leader is leaving: leadership transfer is required
     if (leavingMember.isLeader) {
       throw new ConflictException(
@@ -479,12 +487,14 @@ export class TeamMemberService {
     teamId: number,
     userId: number,
   ): Promise<boolean> {
+    // 팀 리더인지 확인 리더는 강퇴 못시킴
     // Check if the requester is a leader of the team
     const leader = await this.getTeamMemberByPrimaryKey(leaderId, teamId);
     if (!leader.isLeader) {
       throw new ConflictException('You are not authorized to kick members.');
     }
 
+    // 팀멤버인지 조회
     // Check if the user to be kicked is part of the team
     await this.getTeamMemberByPrimaryKey(userId, teamId);
 
@@ -497,6 +507,10 @@ export class TeamMemberService {
    * @param teamId Team ID
    * @param memberId Member ID (who was invited)
    * @returns Success boolean
+   * // 초대 거절 --> 팀 1이 멤버 1을 초대함
+   * 팀멤버 상태를 확인해야함 invited인지 joined인지 pending인지
+   * 이제 그 상태가 초대인데 그게 팀에서 다른 사용자를 초대한건가? 아니면 사용자가 해당 팀에 초대를 한건가 (즉 요청을 한건가)
+   * 내 생각엔 팀에서 초대한거네 초대하고 그 사용자가 memberId이고 그 사람이 거절하면 leaveTeam으로 그 팀에서 나오는거야
    */
   async rejectTeamInvitation(
     teamId: number,

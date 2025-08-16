@@ -42,8 +42,9 @@ export class CommentLikeService {
   // ===== DELETE =====
   /**
    * 댓글 좋아요 취소
+   * 댓글이 존재하는지 확인
    * 내가 좋아요한 댓글인지
-   * 댓글이 살아있는지
+   * 댓글 좋아요 취소만 하는거라 연쇄 작업 없음
    */
   async deleteLike(userId: number, commentId: number) {
     await this.commentService.getCommentById(commentId);

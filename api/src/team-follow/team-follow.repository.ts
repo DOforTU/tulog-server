@@ -35,6 +35,8 @@ export class TeamFollowRepository {
 
   // ===== DELETE =====
   /** Unfollow a team */
+  // 유저와 팀아이디를 조회하고 엔터티에서 삭제하면 끝
+  // 팔로우 수도 추가해야함
   async unfollowTeam(userId: number, teamId: number): Promise<boolean> {
     await this.teamFollowRepository.delete({ userId, teamId });
     return true;

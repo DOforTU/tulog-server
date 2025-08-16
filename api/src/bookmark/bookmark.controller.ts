@@ -40,6 +40,11 @@ export class BookmarkController {
 
   // ===== DELETE =====
 
+  /**
+   * bookmark해제
+   * bookmark테이블에서 유저랑 게시글 아이디 받아서 삭제
+   * 그럼 북마크 안한 상태
+   */
   @Delete(':postId')
   @UseGuards(JwtAuthGuard)
   async deleteBookMark(

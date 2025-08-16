@@ -28,6 +28,8 @@ export class BookmarkRepository {
 
   // ===== DELETE =====
 
+  // 북마크 삭제는 현 테이블에서 저장된 유저와 포스트를 삭제하면 끝
+
   /** Delete a bookmark */
   async deleteBookMark(userId: number, postId: number): Promise<boolean> {
     const result = await this.bookmarkRepository

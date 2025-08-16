@@ -82,7 +82,7 @@ export class PostLikeRepository {
       .andWhere('postId = :postId', { postId })
       .execute();
 
-    return result.affected ? result.affected > 0 : false;
+    return result.affected ? result.affected > 0 : false; //이 로직은 return (result.affected || 0) > 0; 랑 같은 말인건가
   }
 
   // ===== SUB FUNCTION =====

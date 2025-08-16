@@ -29,7 +29,9 @@ export class AuthRepository {
 
   // ===== READ =====
 
-  /** Find auth by UserId(NOT Auth Id) */
+  /** Find auth by UserId(NOT Auth Id)
+   * // auth를 기준으로 조인후 where절 조건에서 userid인 것을 가져옴
+   */
   async findByUserId(userId: number): Promise<Auth | null> {
     return this.authRepository
       .createQueryBuilder('auth')

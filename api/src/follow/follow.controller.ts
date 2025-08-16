@@ -61,6 +61,9 @@ export class FollowController {
 
   // ===== DELETE =====
 
+  // 팔로우 취소 같은 경우는 팔로우 테이블에서 팔로우하는 사용자 아이디랑 팔로우 당한 사용자 아이디가 존재하는지 조회
+  // 존재하면 이 테일블에서 삭제하면 팔로우는 삭제
+  // 팔로우 수도 생각해야해서 숫자도 감소 (연쇄조건)
   @Delete(':id/unfollow')
   @UseGuards(SmartAuthGuard)
   async unfollowUser(

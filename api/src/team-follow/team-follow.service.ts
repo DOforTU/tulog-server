@@ -104,6 +104,9 @@ export class TeamFollowService {
 
   /** Unfollow a user
    * followerId unfollows followId
+   * 유저가 팀을 팔로우하는거 즉 team follow엔터티에 유저랑 팀아이디를 조회하고
+   * 존재하면 팔로우하는 중인거임
+   * 이 테이블에서 삭제하면 언팔로우 연쇄작업 없음
    */
   async unfollowTeam(userId: number, teamId: number): Promise<boolean> {
     // check if the follow exists

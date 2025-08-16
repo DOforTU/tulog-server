@@ -19,11 +19,12 @@ export enum EditorRole {
 export class Editor {
   @PrimaryColumn()
   postId: number;
-
+  // 위 아래 게시글과 조인
   @ManyToOne(() => Post, (post) => post.editors)
   @JoinColumn({ name: 'postId' })
   post: Post;
 
+  // 유저아이디로 유저와 조인
   @PrimaryColumn()
   userId: number;
 

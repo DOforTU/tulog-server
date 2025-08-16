@@ -114,6 +114,9 @@ export class NoticeController {
   /**
    * Delete notice
    * DELETE /notices/:id
+   *
+   * 알림 삭제 기능 - 알림 테이블에서 존재하는 알림이 있는지 조회후
+   * 알림 딜리트
    */
   @Delete(':id')
   async deleteNotice(

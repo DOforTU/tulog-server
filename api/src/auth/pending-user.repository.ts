@@ -45,6 +45,8 @@ export class PendingUserRepository {
 
   // ===== DELETE =====
 
+  // 임시 정보 테이블에서 유저 정보를 가져와서 remove 함 (delete는 데이터만 삭제여서 그런가)
+
   /**
    * 임시 회원가입 정보 삭제
    */
@@ -54,6 +56,9 @@ export class PendingUserRepository {
 
   /**
    * 만료된 임시 회원가입 정보들 삭제
+   *
+   * 일단 만료된 정보를 삭제하기 위해 20250815까지 유효기간이면 now보다 전을 조회하고 삭제
+   * 여기서는 쿼리빌더인데 이거는 where절만 해주면 되는건가?
    */
   async removeExpired(): Promise<void> {
     await this.pendingUserRepository

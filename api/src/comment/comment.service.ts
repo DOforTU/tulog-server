@@ -104,6 +104,11 @@ export class CommentService {
 
   // ===== DELETE =====
 
+  // 댓글 삭제 (본인 댓글인지)
+  // 부모 댓글이면 자식 댓글 다 삭제
+  // 답글을 삭제하는 거면 부모 댓글아이디로 조회후 존재하면 그 답글만 조회해서 소프트 딜리트
+  // 댓글 삭제할때 전체 댓글의 수 -n을 한다 / 답글도 마찬가지
+
   async softDeleteComment(
     commentId: number,
     postId: number,

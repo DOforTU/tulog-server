@@ -100,12 +100,21 @@ export class UserBlockService {
 
   // ===== DELETE =====
 
+  /**
+   *
+   * @param blockerId 차단하려는 사용자
+   * @param blockedId 차단 당하는 사용자
+   * @returns 차단이 된 상태인지 체크해야함 엉뚱한 사람 차단 취소를 하면 안되니까
+   * block테이블에 사용자랑 차단 당한 사용자를 삭제하면 차단 취소
+   *
+   */
   async unblockUser(blockerId: number, blockedId: number): Promise<boolean> {
     if (blockerId === blockedId) {
       throw new BadRequestException('You cannot block yourself');
     }
 
     // check if blocked user exists
+    //차단 취소 하려는 사용자를 아이디를 통해서 찾고
     await this.userService.getUserById(blockedId);
 
     // check if blocked user exists

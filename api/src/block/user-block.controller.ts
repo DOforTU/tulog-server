@@ -42,6 +42,12 @@ export class UserBlockController {
 
   // ===== DELETE =====
 
+  /**
+   *
+   * @param req 유저를 불러오고
+   * @param id 차단할 사용자 아이디를 param으로 주소안에 인자를 통해 가져옴
+   * @returns 로그인한 유저가 차단할 사용자의 아이디를 가지고 차단
+   */
   @Delete('users/:id/block')
   @UseGuards(JwtAuthGuard)
   async unblockUser(

@@ -37,7 +37,7 @@ export class BookmarkService {
    * @returns 없다면 찾을수없다고 예외처리
    * 있다면 그 포스트를 postService에 있는 postcardDto형태로 변환해줘야해
    * findbookmarkedpostsbyuser 유저 아이디로 마크된 포스트를 찾는 함수를 따로 빼줬어
-   * 이때 게시글 반환은 변환이 없이 원본 그대로 찾아오는거야
+   * 이때 게시글 반환은 변환이 없이 원본 그대로 찾아오는거
    */
   async getMarkedPost(userId: number): Promise<PostCardDto[] | null> {
     const post = await this.findBookmarkedPostsByUser(userId);
@@ -55,7 +55,10 @@ export class BookmarkService {
 
   // ===== DELETE =====
 
-  /** Delete a bookmark */
+  /** Delete a bookmark
+   * 북마크가 있는 데이블 조회 user아이디와 postid로 조회
+   * 단지 조회가 되면 이 테이블에서 삭제 연쇄 조건 없음
+   */
   async deleteBookMark(userId: number, postId: number) {
     // Check if already bookmark
     const bookmarkingPost = await this.bookmarkRepository.findBookmark(

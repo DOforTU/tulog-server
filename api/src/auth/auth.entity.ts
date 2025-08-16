@@ -36,6 +36,6 @@ export class Auth extends Common {
   @OneToOne(() => User, (user) => user.auth, {
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'userId' }) // 이거 유저 아이디로 조인 하는건데 엔터티에 유저아이디가 없어도되는건가
   user: User;
 }

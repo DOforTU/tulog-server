@@ -20,6 +20,7 @@ export class FollowRepository {
 
   // ===== DELETE =====
 
+  // 현재 숫자는 안하고 삭제만 되어있긴하네
   /** Unfollow a user */
   async unfollowUser(
     followerId: number,

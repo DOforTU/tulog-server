@@ -54,6 +54,7 @@ export class CommentController {
    * @param postId
    * @param req
    * @returns
+   * 소프트 딜리트로 기록은 남게하게 기능 구현
    */
   @Delete(':id/posts/:postId')
   @UseGuards(JwtAuthGuard)

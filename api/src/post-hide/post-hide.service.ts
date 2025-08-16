@@ -16,6 +16,8 @@ export class PostHideService {
   /**
    * 게시글 주인인지
    * 이미 숨김처리인지
+   * 댓글은 신경안써도 되는건가?
+   *
    */
   async hidePost(postId: number, userId: number): Promise<PostHide> {
     await this.postService.getPostById(postId);

@@ -287,6 +287,9 @@ export class NoticeService {
 
   // ===== DELETE =====
 
+  // 알림이 존재한지 체크
+  // 있으면 유저아이디랑 알림아이디를 받아서 알림테이블에서 지워주면 삭제완료
+
   /** Delete notice */
   async deleteNotice(userId: number, noticeId: number): Promise<void> {
     const notice = await this.noticeRepository.findByIdAndUserId(
@@ -308,7 +311,9 @@ export class NoticeService {
     }
   }
 
-  /** Delete team-related notices when invitation/join request is accepted or rejected */
+  /** Delete team-related notices when invitation/join request is accepted or rejected
+   * 아 팀과 관련된 알림을 제거하는거
+   */
   async deleteTeamNoticesByTeamAndUser(
     userId: number,
     teamId: number,
@@ -330,7 +335,9 @@ export class NoticeService {
     }
   }
 
-  /** Cleanup old notices (for scheduled job) */
+  /** Cleanup old notices (for scheduled job)
+   *  알림 전체 삭제 이는 30일을 기준으로 30일이 지나
+   */
   async cleanupOldNotices(
     daysOld: number = 30,
   ): Promise<{ deletedCount: number }> {

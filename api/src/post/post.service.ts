@@ -275,6 +275,16 @@ export class PostService {
   }
 
   // ===== DELETE =====
+
+  // 포스트 삭제
+  // 좋아요 삭제
+  // 댓글 삭제
+  // 북마크한 사용자에게서도 삭제
+  // 숨기기 게시글에서도 삭제
+  // ---- 연쇄 삭제 -----
+  // 먼저 게시글이 존재하는지 확인
+  // 게시글 주인인지 확인과 동시에 수정가능한 사용자인지도 확인 but 이 둘 차이는 왜있지? 작성자가 즉 주인이고 수정가능자 아닌가?
+
   async softDeletePost(id: number, userId: number): Promise<boolean> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -287,6 +297,7 @@ export class PostService {
         (editor) => editor.userId === userId,
       );
       if (
+        // usereditor가 아니거나 그치 접근 권한이 없으면 삭제 못하지
         !userEditor ||
         (userEditor.role !== EditorRole.OWNER &&
           userEditor.role !== EditorRole.EDITOR)
@@ -298,7 +309,10 @@ export class PostService {
 
       // TODO: Delete post
       // transaction with to delete editor, bookmark, like, hide etc...
+
+      // 소프트 딜리트 하기 위해 update로 하고
       await queryRunner.manager.update(Post, id, { deletedAt: new Date() });
+      // 여기서 작성자 즉 사용자가 작성한 게시글은 그냥 삭제 게시글 자체는 소프트 딜리트?
       await queryRunner.manager.delete(Editor, { postId: id });
 
       await queryRunner.commitTransaction();
