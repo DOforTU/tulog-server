@@ -36,7 +36,7 @@ export class PostHideRepository {
       postId,
       userId,
     });
-    return result.affected ? result.affected > 0 : false;
+    return result.affected ? result.affected > 0 : false; // 이거는
   }
 
   // ===== SUB FUNCTION =====

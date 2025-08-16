@@ -312,7 +312,9 @@ export class NoticeService {
   }
 
   /** Delete team-related notices when invitation/join request is accepted or rejected
-   * 아 팀과 관련된 알림을 제거하는거
+   *  팀에 속해있는 유저는 팀관련 소식을 제거할 수 있다
+   *  팀 소속 유저여야함 --> 그 유저는 자신의 페이지에서 소식 삭제 가능
+   *  다른 유저는 삭제가 안됨 물론 그 유저는 삭제 안했으니까
    */
   async deleteTeamNoticesByTeamAndUser(
     userId: number,
@@ -325,9 +327,9 @@ export class NoticeService {
         .createQueryBuilder()
         .delete()
         .from(Notice)
-        .where('userId = :userId', { userId })
-        .andWhere('relatedEntityId = :teamId', { teamId })
-        .andWhere('type = :type', { type })
+        .where('userId = :userId', { userId }) // 내가 id =1 이고
+        .andWhere('relatedEntityId = :teamId', { teamId }) // 팀 1에 소속됨
+        .andWhere('type = :type', { type }) // 소식인 것을 삭제함
         .execute();
     } catch (error) {
       console.error('Failed to delete team notices:', error);
@@ -336,7 +338,8 @@ export class NoticeService {
   }
 
   /** Cleanup old notices (for scheduled job)
-   *  알림 전체 삭제 이는 30일을 기준으로 30일이 지나
+   *  오래된 알림 삭제
+   *
    */
   async cleanupOldNotices(
     daysOld: number = 30,

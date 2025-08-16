@@ -192,7 +192,7 @@ export class TeamService {
     return !!existingTeam;
   }
 
-
+  // 팀원이 나갈때 마지막 한명이 나가면 팀은 삭제 (소프트 딜리트)
   async leaveTeam(teamId: number, memberId: number): Promise<boolean> {
     return await this.teamMemberService.leaveTeam(teamId, memberId);
   }
@@ -204,5 +204,4 @@ export class TeamService {
     const user = await this.teamRepository.findFollowingUserById(teamId);
     return user;
   }
-
 }

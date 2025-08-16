@@ -119,7 +119,7 @@ export class NoticeRepository {
   /** Delete notice by ID and user ID */
   async deleteByIdAndUserId(id: number, userId: number): Promise<boolean> {
     const result = await this.noticeRepository.delete({ id, userId });
-    return (result.affected || 0) > 0;
+    return (result.affected || 0) > 0; // 이거는 affected 즉 삭제가 되면 1로 혹은 2이상으로 반환되며 0보다 크기에 true 아무것도 삭제가 안되면 0 비교할 수 없어서 false인거지?
   }
 
   /** Delete old notices (cleanup job) */

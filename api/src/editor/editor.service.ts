@@ -31,6 +31,7 @@ export class EditorService {
     const posts =
       await this.editorRepository.findTeamPublicPostsByUserId(userId);
     if (!posts || posts.length === 0) {
+      // 이거 왜 둘다 사용하는지 post는 null을 반환안하는데 하나만 사용하면 안되는건가?
       return [];
     }
     return posts.map((post) => this.transformToPostCardDto(post));
