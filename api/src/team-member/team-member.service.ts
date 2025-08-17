@@ -323,23 +323,13 @@ export class TeamMemberService {
     memberId: number,
   ): Promise<boolean> {
     // TODO: invite처럼 leader 여부
-    const teamLeader = await this.teamMemberRepository.findTeamLeaderById(
-      teamId,
-      leaderId,
-    );
 
-    if (!teamLeader) {
-      throw new NotFoundException('Can not found the leader.');
+    const teamLeader = await this.getTeamMemberByPrimaryKey(teamId, leaderId);
+    if (!teamLeader.isLeader) {
+      throw new ConflictException('Only team leaders can delegate to member.');
     }
 
-    const member = await this.teamMemberRepository.findMemberById(
-      memberId,
-      teamId,
-    );
-    if (!member) {
-      throw new NotFoundException('Can not found the member.');
-    }
-
+    const member = await this.getTeamMemberByPrimaryKey(teamId, memberId);
     if (member.teamId !== teamLeader.teamId) {
       throw new NotFoundException('Member is not in the same team.');
     }
