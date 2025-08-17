@@ -45,6 +45,8 @@ import { CommentLikeController } from './comment-like/comment-like.controller';
 import { CommentLikeService } from './comment-like/comment-like.service';
 import { CommentLikeModule } from './comment-like/comment-like.module';
 import { CommentLike } from './comment-like/comment-like.entity';
+import { SearchModule } from './search/search.module';
+import { Search } from './search/search.entity';
 
 @Module({
   imports: [
@@ -86,6 +88,7 @@ import { CommentLike } from './comment-like/comment-like.entity';
           Tag,
           PostTag,
           TeamFollow,
+          Search,
         ],
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
@@ -110,6 +113,7 @@ import { CommentLike } from './comment-like/comment-like.entity';
     PostTagModule,
     TeamFollowModule,
     CommentLikeModule,
+    SearchModule,
   ],
   controllers: [AppController, CommentLikeController],
   providers: [AppService, CommentLikeService],
