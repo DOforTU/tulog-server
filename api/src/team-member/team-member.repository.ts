@@ -102,11 +102,15 @@ export class TeamMemberRepository {
    * 팀장이 변경되었다고 알림을 (팀 전체에게 공지 혹은 변경된 팀장에게만)
    *
    */
-  async findTeamLeaderById(leaderId: number): Promise<TeamMember | null> {
+  async findTeamLeaderById(
+    teamId: number,
+    leaderId: number,
+  ): Promise<TeamMember | null> {
     const teamLeader = await this.teamMemberRepository
       .createQueryBuilder('teamMember')
       .leftJoinAndSelect('teamMember.team', 'team')
       .where('teamMember.memberId = :leaderId', { leaderId })
+      .andWhere('teamMember.teamId = teamId', { teamId })
       .andWhere('teamMember.isLeader = :isLeader', { isLeader: true })
       .getOne();
     return teamLeader;

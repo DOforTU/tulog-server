@@ -317,21 +317,29 @@ export class TeamMemberService {
    * 팀장이 변경되었다고 알림을 (팀 전체에게 공지 혹은 변경된 팀장에게만)
    * 트랜잭션
    */
-  async delegateLeader(leaderId: number, memberId: number): Promise<boolean> {
-    const teamLeader =
-      await this.teamMemberRepository.findTeamLeaderById(leaderId);
+  async delegateLeader(
+    teamId: number,
+    leaderId: number,
+    memberId: number,
+  ): Promise<boolean> {
+    const teamLeader = await this.teamMemberRepository.findTeamLeaderById(
+      teamId,
+      leaderId,
+    );
 
     if (!teamLeader) {
       throw new NotFoundException('Can not found the leader.');
     }
 
-    const teamId = teamLeader.teamId;
     const member = await this.teamMemberRepository.findMemberById(
       memberId,
       teamId,
     );
     if (!member) {
       throw new NotFoundException('Can not found the member.');
+    }
+    if (member.teamId !== teamLeader.teamId) {
+      throw new NotFoundException('Member is not in the same team.');
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
