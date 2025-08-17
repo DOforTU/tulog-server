@@ -4,6 +4,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -100,10 +101,10 @@ export class TeamMemberController {
    * 팀장이 변경되었다고 알림을 (팀 전체에게 공지 혹은 변경된 팀장에게만)
    *
    */
-  @Patch(':teamId/:leaderId/:memberId/delegation')
+  @Patch(':leaderId/:memberId/delegation')
   @UseGuards(JwtAuthGuard)
   async delegateLeader(
-    @Param('teamId') temaId: number,
+    @Query('teamId') temaId: number,
     @Param('leaderId') laederid: number,
     @Param('memberId') memberId: number,
   ): Promise<boolean> {
