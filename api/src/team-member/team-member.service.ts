@@ -471,25 +471,25 @@ export class TeamMemberService {
    * Kick a team member
    * @param requesterId Requester ID: the ID of the user for checking leader status
    * @param teamId Team ID: the ID of the team from which the member will be kicked
-   * @param userId User ID: the ID of the user to be kicked from the team
+   * @param memberId User ID: the ID of the user to be kicked from the team
    * @return A boolean indicating whether the kick operation was successful
    */
   async kickTeamMember(
     leaderId: number,
     teamId: number,
-    userId: number,
+    memberId: number,
   ): Promise<boolean> {
     // Check if the requester is a leader of the team
-    const leader = await this.getTeamMemberByPrimaryKey(leaderId, teamId);
+    const leader = await this.getTeamMemberByPrimaryKey(teamId, leaderId);
     if (!leader.isLeader) {
       throw new ConflictException('You are not authorized to kick members.');
     }
 
     // Check if the user to be kicked is part of the team
-    await this.getTeamMemberByPrimaryKey(userId, teamId);
+    await this.getTeamMemberByPrimaryKey(teamId, memberId);
 
     // Proceed to kick the user from the team
-    return await this.teamMemberRepository.leaveTeam(teamId, userId);
+    return await this.teamMemberRepository.leaveTeam(teamId, memberId);
   }
 
   /**

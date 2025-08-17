@@ -159,12 +159,12 @@ export class TeamMemberController {
   async kickTeamMember(
     @Request() req: { user: User },
     @Param('teamId') teamId: number,
-    @Param('userId') userId: number,
+    @Param('memberId') memberId: number,
   ): Promise<boolean> {
     return await this.teamMemberService.kickTeamMember(
       req.user.id,
       teamId,
-      userId,
+      memberId,
     );
   }
 }
