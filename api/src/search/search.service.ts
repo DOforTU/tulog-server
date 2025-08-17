@@ -8,4 +8,8 @@ export class SearchService {
   async searchByTag(query: string) {
     return await this.searchRepository.findPostsByTag(query);
   }
+
+  async searchPostsByKeyword(keyword: string) {
+    return await this.searchRepository.findPostsByKeyword(keyword);
+  }
 }
