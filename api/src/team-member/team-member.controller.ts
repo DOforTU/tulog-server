@@ -101,10 +101,11 @@ export class TeamMemberController {
    * 팀장이 변경되었다고 알림을 (팀 전체에게 공지 혹은 변경된 팀장에게만)
    *
    */
-  @Patch(':leaderId/:memberId/delegation')
+  @Patch(':leaderId/:memberId/delegation') // TODO: members/:memberId/delegation?teamId=1
   @UseGuards(JwtAuthGuard)
   async delegateLeader(
     @Query('teamId') temaId: number,
+    // TODO: req로 받기
     @Param('leaderId') laederid: number,
     @Param('memberId') memberId: number,
   ): Promise<boolean> {

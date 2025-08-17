@@ -47,8 +47,6 @@ export class TeamMemberRepository {
 
   // ===== UPDATE =====
 
-  async delegateLeader(leaderId: number, memberId: number) {}
-
   // ===== DLELETE =====
 
   async leaveTeam(teamId: number, memberId: number): Promise<boolean> {

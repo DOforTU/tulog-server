@@ -322,6 +322,7 @@ export class TeamMemberService {
     leaderId: number,
     memberId: number,
   ): Promise<boolean> {
+    // TODO: invite처럼 leader 여부
     const teamLeader = await this.teamMemberRepository.findTeamLeaderById(
       teamId,
       leaderId,
@@ -338,6 +339,7 @@ export class TeamMemberService {
     if (!member) {
       throw new NotFoundException('Can not found the member.');
     }
+
     if (member.teamId !== teamLeader.teamId) {
       throw new NotFoundException('Member is not in the same team.');
     }
