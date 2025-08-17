@@ -183,4 +183,27 @@ export class PostRepository {
       .andWhere('editor.role = :role', { role: 'OWNER' })
       .getOne();
   }
+
+  // query로 연관된 게시글 가지고 오기
+  // 태그 검색으로 게시글 가져오기
+  async findPostsByTag(query: string): Promise<Post[]> {
+    return this.postRepository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.tags', 'tag')
+      .where('tag.name LIKE :query', { query: `%${query}%` })
+      .orWhere('post.title LIKE :query', { query: `%${query}%` })
+      .orWhere('post.content LIKE :query', { query: `%${query}%` })
+      .getMany();
+  }
+
+  //// 해당 키워드로 연관된 게시글 가지고 오기
+  //async findPostsByKeyword(query: string): Promise<Post[]> {
+  //  return this.postRepository
+  //    .createQueryBuilder('post')
+  //    .leftJoinAndSelect('post.tags', 'tag')
+  //    .where('tag.name LIKE :query', { query: `%${query}%` })
+  //    .orWhere('post.title LIKE :query', { query: `%${query}%` })
+  //    .orWhere('post.content LIKE :query', { query: `%${query}%` })
+  //    .getMany();
+  //}
 }

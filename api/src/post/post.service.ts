@@ -19,6 +19,7 @@ import { Tag } from 'src/tag/tag.entity';
 import { PostTag } from 'src/post-tag/post-tag.entity';
 import { ConfigService } from '@nestjs/config';
 import { toPublicUser } from 'src/common/helper/to-public-user';
+import { SearchPostDto } from 'src/search/search.dto';
 
 @Injectable()
 export class PostService {
@@ -202,6 +203,15 @@ export class PostService {
     const posts = await this.postRepository.findDraftPostsByTeamId(teamId);
     return posts.map((post) => this.transformToPublicPostDto(post));
   }
+
+  async findPostsByTag(query: string): Promise<PostCardDto[]> {
+    const posts = await this.postRepository.findPostsByTag(query);
+    return posts.map((post) => this.transformToPublicPostDto(post));
+  }
+
+  //async findPostByKeyword(){
+  //  return this.postRepository.findPostsByKeyword(query);
+  //}
 
   // ===== UPDATE =====
 
