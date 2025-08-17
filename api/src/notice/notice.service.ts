@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { NoticeRepository } from './notice.repository';
 import { CreateNoticeDto, QueryNoticeDto } from './notice.dto';
 import { Notice, NoticeType } from './notice.entity';
@@ -153,6 +153,29 @@ export class NoticeService {
     return await this.noticeRepository.createNotice(createNoticeDto);
   }
 
+  /** Create notice for team leave */
+  async createDelegationNotice(
+    teamOwnerId: number,
+    teamId: number,
+    teamName: string,
+    newLeaderNickname: string,
+  ): Promise<Notice> {
+    const createNoticeDto: CreateNoticeDto = {
+      userId: teamOwnerId,
+      type: NoticeType.TEAM_DELEGATION,
+      title: '팀장 권한 위임',
+      content: `${newLeaderNickname}님이 '${teamName}' 팀의 팀장으로 위임되었습니다.`,
+      relatedEntityId: teamId,
+      metadata: {
+        teamId,
+        teamName,
+        newLeaderNickname,
+      },
+    };
+
+    return await this.noticeRepository.createNotice(createNoticeDto);
+  }
+
   /** Create notice for team kick */
   async createTeamKickNotice(
     kickedUserId: number,
@@ -174,6 +197,104 @@ export class NoticeService {
     };
 
     return await this.noticeRepository.createNotice(createNoticeDto);
+  }
+
+  // ===== TRANSACTION-AWARE METHODS =====
+
+  /** Create notice for team invite with transaction */
+  async createTeamInviteNoticeWithTransaction(
+    userId: number,
+    teamId: number,
+    teamName: string,
+    inviterNickname: string,
+    manager: EntityManager,
+  ): Promise<Notice> {
+    const createNoticeDto: CreateNoticeDto = {
+      userId,
+      type: NoticeType.TEAM_INVITE,
+      title: '팀 초대',
+      content: `${inviterNickname}님이 '${teamName}' 팀에 초대했습니다.`,
+      relatedEntityId: teamId,
+      metadata: {
+        teamId,
+        teamName,
+        inviterNickname,
+      },
+    };
+
+    return await manager.getRepository(Notice).save(createNoticeDto);
+  }
+
+  /** Create notice for team join with transaction */
+  async createTeamJoinNoticeWithTransaction(
+    teamOwnerId: number,
+    teamId: number,
+    teamName: string,
+    newMemberNickname: string,
+    manager: EntityManager,
+  ): Promise<Notice> {
+    const createNoticeDto: CreateNoticeDto = {
+      userId: teamOwnerId,
+      type: NoticeType.TEAM_REQUEST,
+      title: '새로운 팀원',
+      content: `${newMemberNickname}님이 '${teamName}' 팀에 참여 요청을 보냈습니다.`,
+      relatedEntityId: teamId,
+      metadata: {
+        teamId,
+        teamName,
+        newMemberNickname,
+      },
+    };
+
+    return await manager.getRepository(Notice).save(createNoticeDto);
+  }
+
+  /** Create notice for team delegation with transaction */
+  async createDelegationNoticeWithTransaction(
+    newLeaderId: number,
+    teamId: number,
+    teamName: string,
+    newLeaderNickname: string,
+    manager: EntityManager,
+  ): Promise<Notice> {
+    const createNoticeDto: CreateNoticeDto = {
+      userId: newLeaderId,
+      type: NoticeType.TEAM_DELEGATION,
+      title: '팀장 권한 위임',
+      content: `'${teamName}' 팀의 팀장으로 위임되었습니다.`,
+      relatedEntityId: teamId,
+      metadata: {
+        teamId,
+        teamName,
+        newLeaderNickname,
+      },
+    };
+
+    return await manager.getRepository(Notice).save(createNoticeDto);
+  }
+
+  /** Create notice for team kick with transaction */
+  async createTeamKickNoticeWithTransaction(
+    kickedUserId: number,
+    teamId: number,
+    teamName: string,
+    kickerNickname: string,
+    manager: EntityManager,
+  ): Promise<Notice> {
+    const createNoticeDto: CreateNoticeDto = {
+      userId: kickedUserId,
+      type: NoticeType.TEAM_KICK,
+      title: '팀에서 강퇴',
+      content: `'${teamName}' 팀에서 강퇴되었습니다.`,
+      relatedEntityId: teamId,
+      metadata: {
+        teamId,
+        teamName,
+        kickerNickname,
+      },
+    };
+
+    return await manager.getRepository(Notice).save(createNoticeDto);
   }
 
   /** Create system notice */

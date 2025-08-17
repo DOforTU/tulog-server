@@ -16,6 +16,7 @@ export enum NoticeType {
   TEAM_REQUEST = 'team_request',
   TEAM_LEAVE = 'team_leave',
   TEAM_KICK = 'team_kick',
+  TEAM_DELEGATION = 'team_delegation',
   SYSTEM = 'system',
 }
 
