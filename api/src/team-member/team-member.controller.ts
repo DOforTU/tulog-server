@@ -99,18 +99,17 @@ export class TeamMemberController {
    * 해당 팀에 있는 팀원에게 팀장 권한을 넘겨줌
    * 그리고 그 팀장은 일반 팀원으로 변경
    * 팀장이 변경되었다고 알림을 (팀 전체에게 공지 혹은 변경된 팀장에게만)
-   *
    */
-  @Patch(':leaderId/:memberId/delegation') // TODO: members/:memberId/delegation?teamId=1
+  @Patch('members/:memberId/delegation') // TODO: members/:memberId/delegation?teamId=1 --> 물음표는 쿼리방식 입력을 저렇게 참조함
   @UseGuards(JwtAuthGuard)
   async delegateLeader(
-    @Query('teamId') temaId: number,
+    @Request() req: { user: User },
     // TODO: req로 받기
     @Param('leaderId') laederid: number,
     @Param('memberId') memberId: number,
   ): Promise<boolean> {
     return await this.teamMemberService.delegateLeader(
-      temaId,
+      req.user.id,
       laederid,
       memberId,
     );
