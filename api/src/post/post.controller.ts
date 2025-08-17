@@ -46,12 +46,23 @@ export class PostController {
 
   // ===== READ =====
 
-  @Get()
+  @Get('recent')
   async getRecentPosts(
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ): Promise<PostCardDto[]> {
     return await this.postService.getRecentPosts(
+      limit ? Number(limit) : 20,
+      offset ? Number(offset) : 0,
+    );
+  }
+
+  @Get('featured')
+  async getFeaturedPosts(
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ): Promise<PostCardDto[]> {
+    return await this.postService.getFeaturedPosts(
       limit ? Number(limit) : 20,
       offset ? Number(offset) : 0,
     );

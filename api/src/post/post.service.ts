@@ -179,6 +179,15 @@ export class PostService {
     return posts.map((post) => this.transformToPublicPostDto(post));
   }
 
+  async getFeaturedPosts(
+    limit: number = 20,
+    offset: number = 0,
+  ): Promise<PostCardDto[]> {
+    const posts = await this.postRepository.findFeaturedPosts(limit, offset);
+
+    return posts.map((post) => this.transformToPublicPostDto(post));
+  }
+
   async getPublicPostsByTeamId(teamId: number): Promise<PostCardDto[]> {
     const posts = await this.postRepository.findPublicPostsByTeamId(teamId);
     return posts.map((post) => this.transformToPublicPostDto(post));

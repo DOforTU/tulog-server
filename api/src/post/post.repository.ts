@@ -33,18 +33,6 @@ export class PostRepository {
       .getOne();
   }
 
-  // async findByIdWithEditors(id: number): Promise<Post | null> {
-  //   return await this.postRepository
-  //     .createQueryBuilder('post')
-  //     .leftJoinAndSelect('post.team', 'team')
-  //     .leftJoinAndSelect('post.editors', 'editors')
-  //     .leftJoinAndSelect('editors.user', 'user')
-  //     .leftJoinAndSelect('post.postTags', 'postTags')
-  //     .leftJoinAndSelect('postTags.tag', 'tag')
-  //     .where('post.id = :id', { id })
-  //     .getOne();
-  // }
-
   async findPublicPostsOrderByLatest(
     limit: number = 20,
     offset: number = 0,
@@ -74,6 +62,55 @@ export class PostRepository {
       .leftJoinAndSelect('postTags.tag', 'tag')
       .where('post.id IN (:...ids)', { ids: postIds.map((p) => p.id) })
       .orderBy('post.createdAt', 'DESC')
+      .getMany();
+  }
+
+  async findFeaturedPosts(
+    limit: number = 20,
+    offset: number = 0,
+  ): Promise<Post[]> {
+    // 시간 가중치를 적용한 인기순으로 정렬 후 포스트 ID만 가져오기
+    /**
+     *   시간 가중치:
+     * - 오늘 작성: 1 + 1.0 / (1 + 0) = 2.0 (2배 부스트)
+     * - 1일 전: 1 + 1.0 / (1 + 1) = 1.5 (1.5배 부스트)
+     * - 7일 전: 1 + 1.0 / (1 + 7) = 1.125 (1.125배 부스트)
+     * - 30일 전: 1 + 1.0 / (1 + 30) ≈ 1.03 (거의 원점수)
+     */
+    const postIds = await this.postRepository
+      .createQueryBuilder('post')
+      .select('post.id')
+      .addSelect(
+        `(post.likeCount * 0.7 + post.viewCount * 0.2 + post.commentCount * 0.1) * 
+         (1 + 1.0 / (1 + EXTRACT(EPOCH FROM (NOW() - post.createdAt)) / 86400))`,
+        'popularity_score',
+      )
+      .where('post.status = :status', { status: 'PUBLIC' })
+      .andWhere('post.deletedAt IS NULL')
+      .orderBy('popularity_score', 'DESC')
+      .limit(limit)
+      .offset(offset)
+      .getMany();
+
+    if (postIds.length === 0) {
+      return [];
+    }
+
+    // 해당 ID의 포스트들을 관계와 함께 조회
+    return await this.postRepository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.team', 'team')
+      .leftJoinAndSelect('post.editors', 'editors')
+      .leftJoinAndSelect('editors.user', 'user')
+      .leftJoinAndSelect('post.postTags', 'postTags')
+      .leftJoinAndSelect('postTags.tag', 'tag')
+      .addSelect(
+        `(post.likeCount * 0.7 + post.viewCount * 0.2 + post.commentCount * 0.1) * 
+         (1 + 1.0 / (1 + EXTRACT(EPOCH FROM (NOW() - post.createdAt)) / 86400))`,
+        'popularity_score',
+      )
+      .where('post.id IN (:...ids)', { ids: postIds.map((p) => p.id) })
+      .orderBy('popularity_score', 'DESC')
       .getMany();
   }
 
