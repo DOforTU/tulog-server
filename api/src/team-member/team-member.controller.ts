@@ -4,11 +4,12 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
 import { TeamMemberService } from './team-member.service';
-import { SmartAuthGuard } from 'src/auth/jwt';
+import { JwtAuthGuard, SmartAuthGuard } from 'src/auth/jwt';
 import { User } from 'src/user/user.entity';
 import { TeamMember } from './team-member.entity';
 
@@ -89,6 +90,28 @@ export class TeamMemberController {
       teamId,
       memberId,
       req.user.id, // Leader ID
+    );
+  }
+
+  /**
+   * 팀장 권한 위임
+   * 팀장인지 확인하고
+   * 해당 팀에 있는 팀원에게 팀장 권한을 넘겨줌
+   * 그리고 그 팀장은 일반 팀원으로 변경
+   * 팀장이 변경되었다고 알림을 (팀 전체에게 공지 혹은 변경된 팀장에게만)
+   *
+   */
+  @Patch(':leaderId/:memberId/delegation')
+  @UseGuards(JwtAuthGuard)
+  async delegateLeader(
+    @Query('teamId') temaId: number,
+    @Param('leaderId') laederid: number,
+    @Param('memberId') memberId: number,
+  ): Promise<boolean> {
+    return await this.teamMemberService.delegateLeader(
+      temaId,
+      laederid,
+      memberId,
     );
   }
 

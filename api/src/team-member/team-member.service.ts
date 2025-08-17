@@ -309,6 +309,70 @@ export class TeamMemberService {
     });
   }
 
+  /**
+   * 팀장 권한 위임
+   * 팀장인지 확인하고
+   * 해당 팀에 있는 팀원에게 팀장 권한을 넘겨줌
+   * 그리고 그 팀장은 일반 팀원으로 변경
+   * 팀장이 변경되었다고 알림을 (팀 전체에게 공지 혹은 변경된 팀장에게만)
+   * 트랜잭션
+   */
+  async delegateLeader(
+    teamId: number,
+    leaderId: number,
+    memberId: number,
+  ): Promise<boolean> {
+    const teamLeader = await this.teamMemberRepository.findTeamLeaderById(
+      teamId,
+      leaderId,
+    );
+
+    if (!teamLeader) {
+      throw new NotFoundException('Can not found the leader.');
+    }
+
+    const member = await this.teamMemberRepository.findMemberById(
+      memberId,
+      teamId,
+    );
+    if (!member) {
+      throw new NotFoundException('Can not found the member.');
+    }
+    if (member.teamId !== teamLeader.teamId) {
+      throw new NotFoundException('Member is not in the same team.');
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    // delegate leader authority
+    try {
+      // 1. 팀장 권한 넘겨주기 해당 멤버에게
+      await queryRunner.manager.update(
+        'team_member',
+        { memberId: member.memberId, teamId: member.teamId },
+        { isLeader: true },
+      );
+
+      // 2. 팀장 권한 박탈 팀원으로 변경
+      await queryRunner.manager.update(
+        'team_member',
+        { memberId: leaderId, teamId: member.teamId },
+        { isLeader: false },
+      );
+
+      await queryRunner.commitTransaction(); // 트랜잭션 커밋 추가!
+      console.log(`Leader delegate to ${memberId}`);
+      return true;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw new Error(`Failed to delegate member: ${error.message}`);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
   // ===== DELETE =====
 
   /**
