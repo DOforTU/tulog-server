@@ -4,12 +4,11 @@ import {
   Param,
   Patch,
   Post,
-  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
 import { TeamMemberService } from './team-member.service';
-import { JwtAuthGuard, SmartAuthGuard } from 'src/auth/jwt';
+import { SmartAuthGuard } from 'src/auth/jwt';
 import { User } from 'src/user/user.entity';
 import { TeamMember } from './team-member.entity';
 
@@ -100,17 +99,16 @@ export class TeamMemberController {
    * 그리고 그 팀장은 일반 팀원으로 변경
    * 팀장이 변경되었다고 알림을 (팀 전체에게 공지 혹은 변경된 팀장에게만)
    */
-  @Patch('members/:memberId/delegation') // TODO: members/:memberId/delegation?teamId=1 --> 물음표는 쿼리방식 입력을 저렇게 참조함
-  @UseGuards(JwtAuthGuard)
+  @Patch('members/:memberId/delegation')
+  @UseGuards(SmartAuthGuard)
   async delegateLeader(
     @Request() req: { user: User },
-    // TODO: req로 받기
-    @Param('leaderId') laederid: number,
+    @Param('teamId') teamId: number,
     @Param('memberId') memberId: number,
   ): Promise<boolean> {
     return await this.teamMemberService.delegateLeader(
+      teamId,
       req.user.id,
-      laederid,
       memberId,
     );
   }
