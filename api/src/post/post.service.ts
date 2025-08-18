@@ -209,7 +209,7 @@ export class PostService {
   // post는 사용자에서 postcardDto형태로 보여줌
   async findPostsByTag(query: string): Promise<PostCardDto[]> {
     const posts = await this.postRepository.findPostsByTag(query);
-    console.log(posts);
+    //console.log(posts);
     return posts.map((post) => this.transformToPublicPostDto(post));
   }
 
