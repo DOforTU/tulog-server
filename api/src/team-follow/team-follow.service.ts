@@ -83,10 +83,6 @@ export class TeamFollowService {
     return followingTeams.teamFollows.map((f) => f.team);
   }
 
-  async teamFollowCount(teamId: number): Promise<number> {
-    return await this.teamFollowRepository.teamFollowCount(teamId);
-  }
-
   /** Get users of following team
    *  팀을 팔로우한 유저 조회 (팀 기준)
    */

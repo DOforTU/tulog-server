@@ -33,14 +33,6 @@ export class TeamFollowRepository {
       .getMany();
   }
 
-  //
-  async teamFollowCount(teamId: number): Promise<number> {
-    const count = await this.teamFollowRepository.count({
-      where: { team: { id: teamId } },
-    });
-    return count;
-  }
-
   // ===== DELETE =====
   /** Unfollow a team */
   async unfollowTeam(userId: number, teamId: number): Promise<boolean> {

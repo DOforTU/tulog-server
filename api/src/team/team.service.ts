@@ -19,6 +19,7 @@ import { toPublicUsers } from 'src/common/helper/to-public-user';
 import { User } from 'src/user/user.entity';
 import { PublicUser } from 'src/user/user.dto';
 import { TeamFollowService } from 'src/team-follow/team-follow.service';
+import { TeamFollow } from 'src/team-follow/team-follow.entity';
 
 @Injectable()
 export class TeamService {
@@ -27,7 +28,6 @@ export class TeamService {
     private readonly teamRepository: TeamRepository,
     private readonly dataSource: DataSource,
     private readonly configService: ConfigService,
-    private readonly teamFollowService: TeamFollowService,
   ) {}
 
   // ===== CREATE =====
@@ -154,7 +154,10 @@ export class TeamService {
   async teamFollowCount(teamId: number): Promise<number> {
     await this.getTeamById(teamId);
 
-    return await this.teamFollowService.teamFollowCount(teamId);
+    const count = await this.dataSource.getRepository(TeamFollow).count({
+      where: { team: { id: teamId } },
+    });
+    return count;
   }
 
   // ===== UPDATE =====
