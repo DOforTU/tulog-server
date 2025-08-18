@@ -189,7 +189,10 @@ export class PostRepository {
   async findPostsByTag(query: string): Promise<Post[]> {
     return this.postRepository
       .createQueryBuilder('post')
-      .leftJoinAndSelect('post.tags', 'tag')
+      .leftJoinAndSelect('post.postTags', 'postTag')
+      .leftJoinAndSelect('postTag.tag', 'tag')
+      .leftJoinAndSelect('post.editors', 'editor')
+      .leftJoinAndSelect('editor.user', 'user')
       .where('tag.name LIKE :query', { query: `%${query}%` })
       .orWhere('post.title LIKE :query', { query: `%${query}%` })
       .orWhere('post.content LIKE :query', { query: `%${query}%` })
