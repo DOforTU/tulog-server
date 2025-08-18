@@ -10,6 +10,7 @@ import { Common } from 'src/common/entity/common.entity';
 import { TeamMember } from 'src/team-member/team-member.entity';
 import { Max, Min } from 'class-validator';
 import { TeamFollow } from 'src/team-follow/team-follow.entity';
+import { User } from 'src/user/user.entity';
 
 export enum TeamVisibility {
   ONLY_INVITE = 'ONLY_INVITE',
@@ -48,4 +49,7 @@ export class Team extends Common {
 
   @OneToMany(() => TeamFollow, (teamFollow) => teamFollow.team)
   followers: TeamFollow[];
+
+  @OneToMany(() => TeamFollow, (teamFollow) => teamFollow.team)
+  followCount: number;
 }

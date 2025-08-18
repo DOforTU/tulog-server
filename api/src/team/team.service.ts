@@ -18,6 +18,7 @@ import { ConfigService } from '@nestjs/config';
 import { toPublicUsers } from 'src/common/helper/to-public-user';
 import { User } from 'src/user/user.entity';
 import { PublicUser } from 'src/user/user.dto';
+import { TeamFollowService } from 'src/team-follow/team-follow.service';
 
 @Injectable()
 export class TeamService {
@@ -26,6 +27,7 @@ export class TeamService {
     private readonly teamRepository: TeamRepository,
     private readonly dataSource: DataSource,
     private readonly configService: ConfigService,
+    private readonly teamFollowService: TeamFollowService,
   ) {}
 
   // ===== CREATE =====
@@ -147,6 +149,12 @@ export class TeamService {
     return team;
   }
 
+  // 팀 팔로우 수 가져오기
+  // 팀 아이디로 팀 팔로우 엔터티에서 개수로 가져오기
+  async teamFollowCount(teamId: number): Promise<number> {
+    return await this.teamFollowService.teamFollowCount(teamId);
+  }
+
   // ===== UPDATE =====
   /**
    * 팀이 존재하는지
@@ -192,7 +200,6 @@ export class TeamService {
     return !!existingTeam;
   }
 
-
   async leaveTeam(teamId: number, memberId: number): Promise<boolean> {
     return await this.teamMemberService.leaveTeam(teamId, memberId);
   }
@@ -204,5 +211,4 @@ export class TeamService {
     const user = await this.teamRepository.findFollowingUserById(teamId);
     return user;
   }
-
 }
