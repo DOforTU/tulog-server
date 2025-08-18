@@ -152,6 +152,8 @@ export class TeamService {
   // 팀 팔로우 수 가져오기
   // 팀 아이디로 팀 팔로우 엔터티에서 개수로 가져오기
   async teamFollowCount(teamId: number): Promise<number> {
+    await this.getTeamById(teamId);
+
     return await this.teamFollowService.teamFollowCount(teamId);
   }
 
