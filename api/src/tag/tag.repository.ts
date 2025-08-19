@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tag } from './tag.entity';
-import { PostTag } from 'src/post-tag/post-tag.entity';
 
 interface RawTagData {
   id: string | number;
@@ -15,8 +14,6 @@ export class TagRepository {
   constructor(
     @InjectRepository(Tag)
     private readonly tagRepository: Repository<Tag>,
-    @InjectRepository(PostTag)
-    private readonly postTagRepository: Repository<PostTag>,
   ) {}
 
   async findPopularTagsByPeriod(
