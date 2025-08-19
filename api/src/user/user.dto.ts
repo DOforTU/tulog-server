@@ -202,7 +202,7 @@ export class UserDetails {
   profilePicture: string;
   isActive: boolean;
   teams: TeamWithStatus[];
-  followerCount: number;
+  followersCount: number;
   followingCount: number;
 }
 

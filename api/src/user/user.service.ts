@@ -151,7 +151,7 @@ export class UserService {
       profilePicture: user.profilePicture,
       isActive: user.isActive,
       teams,
-      followerCount: followers.length,
+      followersCount: followers.length,
       followingCount: following.length,
     };
   }
