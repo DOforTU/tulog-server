@@ -1,5 +1,6 @@
 import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
-import { SearchResponseDto, SearchService } from './search.service';
+import { PostCardDto } from 'src/post/post.dto';
+import { SearchService } from './search.service';
 
 @Controller('search')
 export class SearchController {
@@ -7,7 +8,7 @@ export class SearchController {
 
   // tag를 입력받으면 태그와 관련된 게시글, 유저 등 정보를 조회
   @Get('tag')
-  async searchByTag(@Query('q') query: string): Promise<SearchResponseDto> {
+  async searchByTag(@Query('q') query: string): Promise<PostCardDto[]> {
     if (!query) {
       throw new BadRequestException('You have to write the message');
     }

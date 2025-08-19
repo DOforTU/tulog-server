@@ -18,10 +18,10 @@ export class SearchService {
 
   // tag를 쿼리로 검색받으면 관련된 게시글과 유저정보가 나와야함
   // 쿼리와 연결
-  async searchByTag(query: string): Promise<SearchResponseDto> {
+  async searchByTag(query: string): Promise<PostCardDto[]> {
     const posts = await this.postService.findPostsByTag(query);
     // TODO: User도 가져옴
-    return { posts, users };
+    return posts;
   }
 
   //  async searchPostsByKeyword(keyword: string): Promise<PostCardDto[]> {
