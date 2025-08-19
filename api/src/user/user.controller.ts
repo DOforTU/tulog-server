@@ -113,4 +113,13 @@ export class UserController {
   async deleteUser(@Request() req: { user: User }): Promise<boolean> {
     return this.userService.deleteUser(req.user.id);
   }
+
+  /** Get popular authors */
+  @Get('popular/author')
+  async getPopularAuthors(
+    @Query('limit') limit?: string,
+  ): Promise<PublicUser[]> {
+    const limitNumber = limit ? parseInt(limit, 10) : 3;
+    return this.userService.getPopularAuthors(limitNumber);
+  }
 }

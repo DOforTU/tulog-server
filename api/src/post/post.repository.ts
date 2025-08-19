@@ -186,7 +186,7 @@ export class PostRepository {
 
   // query로 연관된 게시글 가지고 오기
   // 태그 검색으로 게시글 가져오기
-  async findPostsByTag(query: string): Promise<Post[]> {
+  async findPostsByTag(query: string): Promise<Post[] | null> {
     return this.postRepository
       .createQueryBuilder('post')
       .leftJoinAndSelect('post.postTags', 'postTag')

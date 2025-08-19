@@ -19,7 +19,6 @@ import { Tag } from 'src/tag/tag.entity';
 import { PostTag } from 'src/post-tag/post-tag.entity';
 import { ConfigService } from '@nestjs/config';
 import { toPublicUser } from 'src/common/helper/to-public-user';
-import { SearchPostDto } from 'src/search/search.dto';
 
 @Injectable()
 export class PostService {
@@ -209,7 +208,10 @@ export class PostService {
   // post는 사용자에서 postcardDto형태로 보여줌
   async findPostsByTag(query: string): Promise<PostCardDto[]> {
     const posts = await this.postRepository.findPostsByTag(query);
-    //console.log(posts);
+    if (!posts || posts.length === 0) {
+      return [];
+    }
+
     return posts.map((post) => this.transformToPublicPostDto(post));
   }
 

@@ -4,6 +4,11 @@ import { IsNull, Not, Repository } from 'typeorm';
 import { User } from './user.entity';
 import { UpdateUserDto } from './user.dto';
 
+interface RawPopularAuthorData {
+  id: string;
+  popularityScore: string;
+}
+
 /**
  * User Data Access Layer (Repository Pattern)
  * - Database CRUD operations using TypeORM
@@ -403,5 +408,46 @@ export class UserRepository {
     return await this.userRepository.count({
       where: { deletedAt: IsNull() },
     });
+  }
+
+  /**
+   * Find popular authors based on recent activity (last 30 days)
+   * Score: (post_count * 10) + (total_likes * 2) + (total_views * 0.1)
+   */
+  async findPopularAuthorsByPeriod(
+    startDate: Date,
+    limit: number,
+  ): Promise<User[]> {
+    const userIds: RawPopularAuthorData[] = await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoin('user.editors', 'editor')
+      .leftJoin(
+        'editor.post',
+        'post',
+        'post.createdAt >= :startDate AND post.deletedAt IS NULL',
+      )
+      .select([
+        'user.id as id',
+        '(COUNT(DISTINCT post.id) * 10) + (COALESCE(SUM(post.likeCount), 0) * 2) + (COALESCE(SUM(post.viewCount), 0) * 0.1) as popularityScore',
+      ]) // id, popularityScore만 가져와서 연산을 함. User 전체를 연산하면 성능이 저하됨.
+      .where('user.deletedAt IS NULL AND user.isActive = true')
+      .andWhere('post.createdAt >= :startDate', { startDate })
+      .groupBy('user.id')
+      .having('COUNT(DISTINCT post.id) > 0')
+      .orderBy('popularityScore', 'DESC')
+      .limit(limit)
+      .getRawMany();
+
+    if (userIds.length === 0) return [];
+
+    const ids = userIds.map((result) => parseInt(result.id, 10));
+
+    return await this.userRepository
+      .createQueryBuilder('user')
+      .where('user.id IN (:...ids)', { ids })
+      .orderBy(
+        `CASE user.id ${ids.map((id, index) => `WHEN ${id} THEN ${index}`).join(' ')} END`,
+      )
+      .getMany();
   }
 }
