@@ -8,7 +8,8 @@ import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { UserRepository } from './user.repository';
 import { User } from './user.entity';
-import { UpdateUserDto, UserDetails } from './user.dto';
+import { UpdateUserDto, UserDetails, PublicUser } from './user.dto';
+import { toPublicUsers } from 'src/common/helper/to-public-user';
 
 /**
  * User Business Logic Service
@@ -148,6 +149,23 @@ export class UserService {
       followers,
       following,
     };
+  }
+
+  /**
+   * Get popular authors based on recent activity (last 30 days)
+   * @param limit Number of authors to return (default: 3)
+   * @returns Array of popular authors
+   */
+  async getPopularAuthors(limit: number = 3): Promise<PublicUser[]> {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const users = await this.userRepository.findPopularAuthorsByPeriod(
+      thirtyDaysAgo,
+      limit,
+    );
+
+    return toPublicUsers(users);
   }
 
   // ===== Admin Logic =====
@@ -520,7 +538,7 @@ export class UserService {
 
     // 2. Update editor roles to VIEWER for all posts
     if (userInfo.editors && userInfo.editors.length > 0) {
-      const editorPostIds = userInfo.editors.map(editor => editor.postId);
+      const editorPostIds = userInfo.editors.map((editor) => editor.postId);
       await queryRunner.query(
         'UPDATE "server_api"."editor" SET "role" = $1 WHERE "postId" = ANY($2) AND "userId" = $3',
         ['VIEWER', editorPostIds, userId],
@@ -529,7 +547,7 @@ export class UserService {
 
     // 3. Set authorId to NULL for comments (break FK relationship)
     if (userInfo.comments && userInfo.comments.length > 0) {
-      const commentIds = userInfo.comments.map(comment => comment.id);
+      const commentIds = userInfo.comments.map((comment) => comment.id);
       await queryRunner.query(
         'UPDATE "server_api"."comment" SET "authorId" = NULL WHERE "id" = ANY($1)',
         [commentIds],
