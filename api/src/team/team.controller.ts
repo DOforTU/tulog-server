@@ -49,6 +49,11 @@ export class TeamController {
     return await this.teamService.getTeamWithMembersByName(name);
   }
 
+  @Get(':teamId/count')
+  async teamFollowCount(@Param('teamId') teamId: number): Promise<number> {
+    return await this.teamService.teamFollowCount(teamId);
+  }
+
   // ===== UPDATE =====
 
   // 팀 정보 업데이트

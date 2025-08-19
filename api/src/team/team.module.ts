@@ -5,6 +5,7 @@ import { TeamService } from './team.service';
 import { TeamController } from './team.controller';
 import { TeamMemberModule } from 'src/team-member/team-member.module';
 import { TeamRepository } from './team.repository';
+import { TeamFollowModule } from 'src/team-follow/team-follow.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Team]), TeamMemberModule],

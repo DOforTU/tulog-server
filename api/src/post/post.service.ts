@@ -19,6 +19,7 @@ import { Tag } from 'src/tag/tag.entity';
 import { PostTag } from 'src/post-tag/post-tag.entity';
 import { ConfigService } from '@nestjs/config';
 import { toPublicUser } from 'src/common/helper/to-public-user';
+import { SearchPostDto } from 'src/search/search.dto';
 
 @Injectable()
 export class PostService {
@@ -202,6 +203,19 @@ export class PostService {
     const posts = await this.postRepository.findDraftPostsByTeamId(teamId);
     return posts.map((post) => this.transformToPublicPostDto(post));
   }
+
+  // tag를 통해서 관련 게시글 정보를 가져온다.
+  // 게시글 유무는 확인하지 않아도 됨 왜냐면 있는 게시글한에서 가져오기 때문
+  // post는 사용자에서 postcardDto형태로 보여줌
+  async findPostsByTag(query: string): Promise<PostCardDto[]> {
+    const posts = await this.postRepository.findPostsByTag(query);
+    //console.log(posts);
+    return posts.map((post) => this.transformToPublicPostDto(post));
+  }
+
+  //async findPostByKeyword(){
+  //  return this.postRepository.findPostsByKeyword(query);
+  //}
 
   // ===== UPDATE =====
 
@@ -454,7 +468,6 @@ export class PostService {
       ...owners.map((editor) => toPublicUser(editor.user)),
       ...editors.map((editor) => toPublicUser(editor.user)),
     ];
-
     return {
       id: post.id,
       title: post.title,

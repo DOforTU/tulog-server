@@ -3,6 +3,7 @@ import { IsNull, Repository } from 'typeorm';
 import { Team } from './team.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UpdateTeamInfoDto } from './team.dto';
+import { TeamFollow } from 'src/team-follow/team-follow.entity';
 
 @Injectable()
 export class TeamRepository {
