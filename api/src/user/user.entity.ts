@@ -15,6 +15,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { CommentLike } from 'src/comment-like/comment-like.entity';
+import { Report } from 'src/report/report.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -105,4 +106,9 @@ export class User extends Common {
   @OneToMany(() => Comment, (comment) => comment.author)
   comments: Comment[];
 
+  @OneToMany(() => Report, (report) => report.reporter)
+  reportsMade: Report[];
+
+  @OneToMany(() => Report, (report) => report.reportedUser)
+  reportsReceived: Report[];
 }

@@ -47,6 +47,7 @@ import { CommentLikeModule } from './comment-like/comment-like.module';
 import { CommentLike } from './comment-like/comment-like.entity';
 import { SearchModule } from './search/search.module';
 import { Search } from './search/search.entity';
+import { ReportModule } from './report/report.module';
 
 @Module({
   imports: [
@@ -114,6 +115,7 @@ import { Search } from './search/search.entity';
     TeamFollowModule,
     CommentLikeModule,
     SearchModule,
+    ReportModule,
   ],
   controllers: [AppController, CommentLikeController],
   providers: [AppService, CommentLikeService],
