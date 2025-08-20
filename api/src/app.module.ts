@@ -48,6 +48,7 @@ import { CommentLike } from './comment-like/comment-like.entity';
 import { SearchModule } from './search/search.module';
 import { Search } from './search/search.entity';
 import { ReportModule } from './report/report.module';
+import { Report } from './report/report.entity';
 
 @Module({
   imports: [
@@ -90,6 +91,7 @@ import { ReportModule } from './report/report.module';
           PostTag,
           TeamFollow,
           Search,
+          Report,
         ],
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
