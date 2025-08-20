@@ -19,6 +19,8 @@ import { Tag } from 'src/tag/tag.entity';
 import { PostTag } from 'src/post-tag/post-tag.entity';
 import { ConfigService } from '@nestjs/config';
 import { toPublicUser } from 'src/common/helper/to-public-user';
+import { PublicUser } from 'src/user/user.dto';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class PostService {
@@ -206,18 +208,34 @@ export class PostService {
   // tag를 통해서 관련 게시글 정보를 가져온다.
   // 게시글 유무는 확인하지 않아도 됨 왜냐면 있는 게시글한에서 가져오기 때문
   // post는 사용자에서 postcardDto형태로 보여줌
-  async findPostsByTag(query: string): Promise<PostCardDto[]> {
-    const posts = await this.postRepository.findPostsByTag(query);
-    if (!posts || posts.length === 0) {
-      return [];
-    }
-
+  async findPostsByQuery(query: string): Promise<PostCardDto[]> {
+    const posts = (await this.postRepository.findPostsByQuery(query)) || [];
     return posts.map((post) => this.transformToPublicPostDto(post));
   }
 
-  //async findPostByKeyword(){
-  //  return this.postRepository.findPostsByKeyword(query);
-  //}
+  // 태그로 관련 유저정보만 가져옴
+  //
+  async findEditorsByQuery(query: string): Promise<PublicUser[]> {
+    const posts: Post[] =
+      (await this.postRepository.findPostsByQuery(query)) || [];
+    const users: User[] = [];
+    for (const post of posts) {
+      if (post.editors) {
+        post.editors
+          .filter((editor) => editor.role === EditorRole.OWNER && editor.user)
+          .forEach((editor) => users.push(editor.user));
+        // .filter에서 편집자 배열중 역할이 owner이고 user정보가 있는 편집자만 필터
+        // .forEach에서 그 편집자들의 user 객체만 꺼내서 users 배열의 push해서 게시글 작성한 유저정보를 필터링
+      }
+    }
+
+    // 유저 배열에서 Map을 통해 users 안에 객체를 u.id,u로 변경하고 .value로 고유 값을 반환
+    // map으로 user가 topublic으로 리턴
+    const uniqueUsers: User[] = Array.from(
+      new Map(users.map((u) => [u.id, u])).values(),
+    );
+    return uniqueUsers.map((user) => toPublicUser(user));
+  }
 
   // ===== UPDATE =====
 
