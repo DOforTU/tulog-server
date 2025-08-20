@@ -18,7 +18,23 @@ pip install -r requirements.txt
 ```
 
 2. 환경 변수 설정:
-   `.env` 파일에서 데이터베이스 및 기타 설정을 확인하세요.
+
+```bash
+# .env.example 파일을 .env로 복사
+cp .env.example .env
+
+# .env 파일에서 실제 데이터베이스 정보로 수정
+# 예시:
+# DB_USERNAME=your_actual_username
+# DB_PASSWORD=your_actual_password
+# DB_DATABASE=your_actual_database
+```
+
+**⚠️ 보안 주의사항:**
+
+-   `.env` 파일은 절대 버전 관리(Git)에 포함하지 마세요
+-   실제 프로덕션 환경에서는 환경변수를 서버에서 직접 설정하세요
+-   더미 값으로 서버를 시작하려고 하면 검증 에러가 발생합니다
 
 3. 서버 실행:
 
@@ -328,6 +344,15 @@ results = response.json()
 
 ## 개발 참고사항
 
--   모든 검색은 공개 게시물(`is_public = true`)만 대상으로 합니다
--   삭제된 게시물(`deleted_at IS NOT NULL`)은 검색에서 제외됩니다
+### 검색 동작
+
+-   모든 검색은 공개 게시물(`status = 'PUBLIC'`)만 대상으로 합니다
+-   삭제된 게시물(`deletedAt IS NOT NULL`)은 검색에서 제외됩니다
 -   벡터 인덱스는 자동으로 디스크에 저장되며 서버 재시작 시 복원됩니다
+
+### 보안 및 환경설정
+
+-   **환경변수 필수**: 데이터베이스 credentials는 반드시 환경변수로 설정
+-   **더미값 검증**: config.py에서 더미값 사용 시 서버 시작 실패
+-   **프로덕션 배포**: `.env` 파일 대신 서버 환경변수 사용 권장
+-   **비밀번호**: 특수문자 포함된 비밀번호는 자동으로 URL 인코딩됨
