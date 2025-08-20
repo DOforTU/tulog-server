@@ -19,7 +19,6 @@ import { Tag } from 'src/tag/tag.entity';
 import { PostTag } from 'src/post-tag/post-tag.entity';
 import { ConfigService } from '@nestjs/config';
 import { toPublicUser } from 'src/common/helper/to-public-user';
-import { SearchResponseDto } from 'src/search/search.service';
 import { PublicUser } from 'src/user/user.dto';
 import { User } from 'src/user/user.entity';
 
@@ -209,16 +208,16 @@ export class PostService {
   // tag를 통해서 관련 게시글 정보를 가져온다.
   // 게시글 유무는 확인하지 않아도 됨 왜냐면 있는 게시글한에서 가져오기 때문
   // post는 사용자에서 postcardDto형태로 보여줌
-  async findPostsByTag(query: string): Promise<PostCardDto[]> {
-    const posts = (await this.postRepository.findPostsByTag(query)) || [];
+  async findPostsByQuery(query: string): Promise<PostCardDto[]> {
+    const posts = (await this.postRepository.findPostsByQuery(query)) || [];
     return posts.map((post) => this.transformToPublicPostDto(post));
   }
 
   // 태그로 관련 유저정보만 가져옴
   //
-  async findUserByTag(query: string): Promise<PublicUser[]> {
+  async findEditorsByQuery(query: string): Promise<PublicUser[]> {
     const posts: Post[] =
-      (await this.postRepository.findPostsByTag(query)) || [];
+      (await this.postRepository.findPostsByQuery(query)) || [];
     const users: User[] = [];
     for (const post of posts) {
       if (post.editors) {

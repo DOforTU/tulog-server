@@ -186,16 +186,18 @@ export class PostRepository {
 
   // query로 연관된 게시글 가지고 오기
   // 태그 검색으로 게시글 가져오기
-  async findPostsByTag(query: string): Promise<Post[] | null> {
+  async findPostsByQuery(query: string): Promise<Post[] | null> {
     return this.postRepository
       .createQueryBuilder('post')
       .leftJoinAndSelect('post.postTags', 'postTag')
       .leftJoinAndSelect('postTag.tag', 'tag')
       .leftJoinAndSelect('post.editors', 'editor')
       .leftJoinAndSelect('editor.user', 'user')
-      .where('tag.name LIKE :query', { query: `%${query}%` })
-      .orWhere('post.title LIKE :query', { query: `%${query}%` })
-      .orWhere('post.content LIKE :query', { query: `%${query}%` })
+      .where('LOWER(tag.name) LIKE LOWER(:query)', { query: `%${query}%` })
+      .orWhere('LOWER(post.title) LIKE LOWER(:query)', { query: `%${query}%` })
+      .orWhere('LOWER(post.content) LIKE LOWER(:query)', {
+        query: `%${query}%`,
+      })
       .getMany();
   }
 
