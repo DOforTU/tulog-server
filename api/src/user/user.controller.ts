@@ -11,7 +11,12 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './user.entity';
-import { PublicUser, UserDetails, UpdateUserDto } from './user.dto';
+import {
+  PublicUser,
+  UserDetails,
+  UpdateUserDto,
+  UserDetailsById,
+} from './user.dto';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
 import { SmartAuthGuard } from 'src/auth/jwt';
 import { toPublicUser } from 'src/common/helper/to-public-user';
@@ -66,7 +71,7 @@ export class UserController {
   @Get(':id/details')
   async getUserDetailsById(
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<UserDetails> {
+  ): Promise<UserDetailsById> {
     return await this.userService.getUserDetailsById(id);
   }
 
