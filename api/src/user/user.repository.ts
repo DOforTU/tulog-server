@@ -450,4 +450,19 @@ export class UserRepository {
       )
       .getMany();
   }
+
+  /**
+   * Find users by query (nickname search with case insensitive)
+   * @param query Search query
+   * @returns Array of user entities
+   */
+  async findByQuery(query: string): Promise<User[]> {
+    return await this.userRepository
+      .createQueryBuilder('user')
+      .where('LOWER(user.nickname) LIKE LOWER(:query)', { query: `%${query}%` })
+      .andWhere('user.deletedAt IS NULL')
+      .andWhere('user.isActive = true')
+      .orderBy('user.nickname', 'ASC')
+      .getMany();
+  }
 }

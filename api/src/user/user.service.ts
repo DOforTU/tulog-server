@@ -173,6 +173,16 @@ export class UserService {
     return toPublicUsers(users);
   }
 
+  /**
+   * Find users by query (nickname search)
+   * @param query Search query
+   * @returns Array of public users
+   */
+  async findUserByQuery(query: string): Promise<PublicUser[]> {
+    const users = await this.userRepository.findByQuery(query);
+    return toPublicUsers(users);
+  }
+
   // ===== Admin Logic =====
 
   /**
