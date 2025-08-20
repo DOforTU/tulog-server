@@ -1,7 +1,7 @@
 import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
 import { SearchResponseDto, SearchService } from './search.service';
-import { Post } from 'src/post/post.entity';
 import { SearchPostDto } from './search.dto';
+import { SearchService } from './search.service';
 
 @Controller('search')
 export class SearchController {

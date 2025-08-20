@@ -8,7 +8,12 @@ import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { UserRepository } from './user.repository';
 import { User } from './user.entity';
-import { UpdateUserDto, UserDetails, PublicUser } from './user.dto';
+import {
+  UpdateUserDto,
+  UserDetails,
+  PublicUser,
+  UserDetailsById,
+} from './user.dto';
 import { toPublicUsers } from 'src/common/helper/to-public-user';
 
 /**
@@ -59,8 +64,8 @@ export class UserService {
     return user;
   }
 
-  /** Get user details including teams, followers, and following */
-  async getUserDetailsById(id: number): Promise<UserDetails> {
+  /** Id로 가져올 때는 팀 리스트와 팔로우/팔로잉 사용자 정보도 같이 가져옴 */
+  async getUserDetailsById(id: number): Promise<UserDetailsById> {
     const user = await this.findUserDetailsById(id);
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
@@ -105,7 +110,7 @@ export class UserService {
     };
   }
 
-  /** Get user details including teams, followers, and following */
+  /** Nickname으로 가져올 때는 팀 리스트와 팔로우/팔로잉 카운트만 가져옴 */
   async getUserDetailsByNickname(nickname: string): Promise<UserDetails> {
     const user = await this.findUserDetailsByNickname(nickname);
     if (!user) {
@@ -146,8 +151,8 @@ export class UserService {
       profilePicture: user.profilePicture,
       isActive: user.isActive,
       teams,
-      followers,
-      following,
+      followersCount: followers.length,
+      followingCount: following.length,
     };
   }
 
