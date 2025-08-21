@@ -19,7 +19,7 @@ class User(Base):
     deletedAt = Column("deletedAt", DateTime, nullable=True)
     
     # Relationships
-    editor_posts = relationship("Editor", back_populates="user")
+    editors = relationship("Editor", back_populates="user")
 
 class Post(Base):
     __tablename__ = "post"
@@ -70,7 +70,7 @@ class Editor(Base):
     
     # Relationships
     post = relationship("Post", back_populates="editors")
-    user = relationship("User", back_populates="editor_posts")
+    user = relationship("User", back_populates="editors")
 
 class Team(Base):
     __tablename__ = "team"

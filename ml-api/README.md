@@ -56,7 +56,7 @@ uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 
 **응답 예시:**
 
-````json
+```json
 {
     "status": "healthy",
     "timestamp": "2025-08-20T21:30:00Z",
@@ -66,19 +66,21 @@ uvicorn main:app --host 0.0.0.0 --port 8001 --reload
     "vector_index_ready": true,
     "total_indexed_posts": 40
 }
+```
 
 ### 검색
 
 #### `POST /search/semantic` - 의미 기반 검색
 
 **요청 Body:**
+
 ```json
 {
     "query": "NestJS 마이크로서비스 아키텍처",
     "limit": 10,
     "similarity_threshold": 0.7
 }
-````
+```
 
 **응답 예시:**
 

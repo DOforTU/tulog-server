@@ -1,0 +1,2 @@
+pip install fastapi uvicorn[standard] psycopg2-binary sqlalchemy pydantic pydantic-settings python-dotenv transformers sentence-transformers
+pip install redis pandas faiss-cpu

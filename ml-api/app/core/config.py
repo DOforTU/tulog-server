@@ -43,16 +43,6 @@ class Settings(BaseSettings):
             raise ValueError(f"환경변수 {info.field_name}이 설정되지 않았습니다. .env 파일을 확인하세요.")
         return v
     
-    # ML Model Configuration
-    MODEL_NAME: str = os.getenv("MODEL_NAME", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-    EMBEDDING_DIMENSION: int = int(os.getenv("EMBEDDING_DIMENSION", "384"))
-    SIMILARITY_THRESHOLD: float = float(os.getenv("SIMILARITY_THRESHOLD", "0.7"))
-    SEARCH_RESULTS_LIMIT: int = int(os.getenv("SEARCH_RESULTS_LIMIT", "20"))
-    
-    # Vector Database Configuration
-    VECTOR_DB_PATH: str = os.getenv("VECTOR_DB_PATH", "./data/vector_db")
-    INDEX_NAME: str = os.getenv("INDEX_NAME", "posts_index")
-    
     @property
     def DATABASE_URL(self) -> str:
         # URL encode the password to handle special characters like @
