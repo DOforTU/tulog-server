@@ -1,0 +1,54 @@
+version: "3.8"
+
+services:
+    # PostgreSQL 데이터베이스
+    postgres:
+        image: postgres:16-alpine
+        container_name: tulog-postgres
+        env_file:
+            - .env.docker
+        ports:
+            - "${POSTGRES_PORT:-5433}:5432"
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+            - ./api/dump:/docker-entrypoint-initdb.d
+        networks:
+            - tulog-network
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U dotu_user_1 -d tulog"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    # TULOG API 서버
+    api:
+        build:
+            context: ./api
+            dockerfile: Dockerfile
+            target: production
+        container_name: tulog-api
+        env_file:
+            - api/.env.docker
+        environment:
+            # 데이터베이스 설정
+            DB_HOST: postgres
+            DB_PORT: 5432
+            # 애플리케이션 설정
+            NODE_ENV: development
+        ports:
+            - "8000:8000"
+        volumes:
+            - ./api/uploads:/app/uploads
+        networks:
+            - tulog-network
+        depends_on:
+            postgres:
+                condition: service_healthy
+        restart: unless-stopped
+
+networks:
+    tulog-network:
+        driver: bridge
+
+volumes:
+    postgres_data:

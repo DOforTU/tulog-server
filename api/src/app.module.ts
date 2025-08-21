@@ -93,7 +93,7 @@ import { Report } from './report/report.entity';
           Search,
           Report,
         ],
-        synchronize: configService.get('NODE_ENV') === 'development',
+        synchronize: configService.get('NODE_ENV') === 'development', // 배포환경에서는 false, 일단 table 자동 생성을 위해 true
         logging: configService.get('NODE_ENV') === 'development',
       }),
       inject: [ConfigService],
