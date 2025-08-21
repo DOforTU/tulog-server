@@ -21,8 +21,14 @@ RUN npm ci --legacy-peer-deps
 COPY . .
 RUN npm run build
 
-# Production stage
+# Production stage (RDS 최적화)
 FROM node:20-alpine AS production
+
+# 시스템 업데이트 및 필수 패키지 설치
+RUN apk update && apk add --no-cache \
+    dumb-init \
+    curl \
+    && rm -rf /var/cache/apk/*
 
 # 보안을 위한 non-root 유저 생성
 RUN addgroup -g 1001 -S nodejs
@@ -30,21 +36,26 @@ RUN adduser -S nestjs -u 1001
 
 WORKDIR /app
 
-# 필요한 파일들만 복사
-COPY --from=build --chown=nestjs:nodejs /app/dist ./dist
-COPY --from=build --chown=nestjs:nodejs /app/node_modules ./node_modules
+# 필요한 파일들만 복사 (최적화된 순서)
 COPY --from=build --chown=nestjs:nodejs /app/package*.json ./
+COPY --from=build --chown=nestjs:nodejs /app/node_modules ./node_modules
+COPY --from=build --chown=nestjs:nodejs /app/dist ./dist
 
-# uploads 디렉토리 생성 및 권한 설정
+# uploads 디렉토리 생성 및 권한 설정 (S3 마이그레이션 전까지 임시)
 RUN mkdir -p uploads/post-image uploads/team-image uploads/user-profile
 RUN chown -R nestjs:nodejs uploads
+
+# 로그 디렉토리 생성
+RUN mkdir -p logs && chown -R nestjs:nodejs logs
 
 USER nestjs
 
 EXPOSE 8000
 
-# 헬스체크 추가
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+# 개선된 헬스체크 (RDS 연결 고려)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
   CMD node -e "require('http').get('http://localhost:8000/api', (res) => { process.exit(res.statusCode === 404 ? 0 : 1) })"
 
+# 신호 처리를 위한 dumb-init 사용
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/src/main.js"]

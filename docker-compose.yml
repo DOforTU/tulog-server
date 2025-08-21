@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+    # TULOG API 서버 (RDS 사용으로 PostgreSQL 서비스 제거)
+    api:
+        build:
+            context: ./api
+            dockerfile: Dockerfile
+            target: production
+        container_name: tulog-api
+        env_file:
+            - api/.env.ec2
+        ports:
+            - "8000:8000"
+        volumes:
+            - ./api/uploads:/app/uploads
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "node", "-e", "require('http').get('http://localhost:8000/api', (res) => { process.exit(res.statusCode === 404 ? 0 : 1) })"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 60s
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "10m"
+                max-file: "3"
+
+networks:
+    tulog-network:
+        driver: bridge

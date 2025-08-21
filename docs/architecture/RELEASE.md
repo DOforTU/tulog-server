@@ -59,19 +59,19 @@ docker exec -it tulog-postgres psql -U dotu_user_1 -d tulog
 
 ### EC2 테스트 서버 배포
 
-**Docker Compose 사용** (PostgreSQL + API):
+**방법 1: Docker Compose 사용** (로컬 PostgreSQL):
 ```bash
-# EC2용 env 파일로 실행
-docker-compose --env-file .env.ec2 up --build -d
+# EC2용 env 파일로 실행 (PostgreSQL 컨테이너 포함)
+docker-compose -f _docker-compose.yml --env-file .env.ec2 up --build -d
 ```
 
-**단일 컨테이너 실행** (RDS 사용시):
+**방법 2: RDS 사용** (권장):
 ```bash
-# 이미지 빌드
-cd api
-docker build -t tulog-api .
+# RDS 전용 compose 파일 사용 (API 서버만)
+docker-compose -f docker-compose.rds.yml up --build -d
 
-# 컨테이너 실행
+# 또는 단일 컨테이너 실행
+cd api && docker build -t tulog-api .
 docker run -d \
   --name tulog-api \
   -p 8000:8000 \
@@ -80,6 +80,12 @@ docker run -d \
   --restart unless-stopped \
   tulog-api
 ```
+
+**RDS 설정 체크리스트**:
+1. RDS PostgreSQL 인스턴스 생성 완료
+2. `api/.env.ec2`에서 `DB_HOST`를 RDS 엔드포인트로 변경
+3. RDS 보안 그룹에서 EC2 IP 허용 (포트 5432)
+4. 첫 실행시 `NODE_ENV=development`로 스키마 자동 생성
 
 ## 환경별 주요 차이점
 
