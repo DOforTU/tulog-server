@@ -191,6 +191,9 @@ export class UserService {
     return user;
   }
 
+  async getAdmins(userId: number): Promise<User[] | null> {
+    return this.userRepository.getAdmins(userId);
+  }
   // ===== UPDATE =====
 
   /**

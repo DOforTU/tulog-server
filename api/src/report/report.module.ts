@@ -5,6 +5,7 @@ import { ReportRepository } from './report.repository';
 import { UserModule } from 'src/user/user.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Report } from './report.entity';
+import { User } from 'src/user/user.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Report]), UserModule],

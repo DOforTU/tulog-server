@@ -334,6 +334,17 @@ export class NoticeService {
     });
   }
 
+  async notifyUser(adminId: number, message: string): Promise<Notice> {
+    const createNoticeDto: CreateNoticeDto = {
+      userId: adminId,
+      type: NoticeType.SYSTEM,
+      title: '신고 알림',
+      content: message,
+    };
+
+    return await this.noticeRepository.createNotice(createNoticeDto);
+  }
+
   // ===== READ =====
 
   /** Get user notices with pagination and filters */

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
-import { User } from './user.entity';
+import { User, UserRole } from './user.entity';
 import { UpdateUserDto } from './user.dto';
 
 interface RawPopularAuthorData {
@@ -346,6 +346,16 @@ export class UserRepository {
       .leftJoinAndSelect('teamFollow.team', 'team')
       .where('user.id = :userId', { userId })
       .getOne();
+  }
+
+  async getAdmins(userId: number): Promise<User[] | null> {
+    return await this.userRepository.find({
+      where: {
+        role: UserRole.ADMIN, // 관리자 역할만 필터링
+        deletedAt: IsNull(),
+        isActive: true,
+      },
+    });
   }
 
   // ===== Update =====
