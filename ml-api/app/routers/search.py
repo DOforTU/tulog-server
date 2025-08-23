@@ -82,13 +82,13 @@ async def semantic_search(
             
             result = SearchResult(
                 post_id=post.id,
-                title=post.title,
-                content=post.content[:500] + "..." if len(post.content) > 500 else post.content,
-                author_nickname=author.nickname if author else "Unknown",
-                team_name=team.name if team else None,
-                tags=tags,
+                #title=post.title,
+                #content=post.content[:500] + "..." if len(post.content) > 500 else post.content,
+                #author_nickname=author.nickname if author else "Unknown",
+                #team_name=team.name if team else None,
+                #tags=tags,
                 similarity_score=post_similarity_map.get(post.id, 0.0),
-                created_at=post.createdAt
+                #created_at=post.createdAt
             )
             results.append(result)
         

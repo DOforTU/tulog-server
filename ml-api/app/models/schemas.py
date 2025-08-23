@@ -11,13 +11,13 @@ class SearchRequest(BaseModel):
 
 class SearchResult(BaseModel):
     post_id: int
-    title: str
-    content: str
-    author_nickname: str
-    team_name: Optional[str]
-    tags: List[str]
+    #title: str
+    #content: str
+    #author_nickname: str
+    #team_name: Optional[str]
+    #tags: List[str]
     similarity_score: float
-    created_at: datetime
+    #created_at: datetime
 
 class SearchResponse(BaseModel):
     query: str
