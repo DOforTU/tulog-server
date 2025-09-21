@@ -21,13 +21,13 @@
         </mxCell>
         <mxCell id="eHhmGxeNJXdWQKwea6OK-12" value="" style="endArrow=none;html=1;rounded=0;fontSize=12;startSize=8;endSize=8;curved=1;" edge="1" parent="1">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="86" y="368" as="sourcePoint" />
+            <mxPoint x="84" y="450" as="sourcePoint" />
             <mxPoint x="79.83000000000001" y="-23" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="eHhmGxeNJXdWQKwea6OK-13" value="" style="endArrow=none;html=1;rounded=0;fontSize=12;startSize=8;endSize=8;curved=1;" edge="1" parent="1">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="237" y="370" as="sourcePoint" />
+            <mxPoint x="236" y="447" as="sourcePoint" />
             <mxPoint x="229.83" y="-22" as="targetPoint" />
           </mxGeometry>
         </mxCell>
@@ -37,9 +37,9 @@
             <mxPoint x="78" y="18" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="eHhmGxeNJXdWQKwea6OK-26" value="로컬 로그인" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=12;" vertex="1" connectable="0" parent="eHhmGxeNJXdWQKwea6OK-14">
-          <mxGeometry x="0.1195" y="-3" relative="1" as="geometry">
-            <mxPoint x="-7" y="10" as="offset" />
+        <mxCell id="eHhmGxeNJXdWQKwea6OK-50" value="로컬 회원가입" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=12;" vertex="1" connectable="0" parent="eHhmGxeNJXdWQKwea6OK-14">
+          <mxGeometry x="-0.2557" relative="1" as="geometry">
+            <mxPoint x="15" y="11" as="offset" />
           </mxGeometry>
         </mxCell>
         <mxCell id="eHhmGxeNJXdWQKwea6OK-16" value="" style="endArrow=classic;html=1;rounded=0;fontSize=12;startSize=8;endSize=8;curved=1;" edge="1" parent="1">
@@ -69,7 +69,7 @@
         </mxCell>
         <mxCell id="eHhmGxeNJXdWQKwea6OK-22" value="" style="endArrow=none;html=1;rounded=0;fontSize=12;startSize=8;endSize=8;curved=1;" edge="1" parent="1">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="377" y="373" as="sourcePoint" />
+            <mxPoint x="377" y="458" as="sourcePoint" />
             <mxPoint x="371.00000000000006" y="-22" as="targetPoint" />
           </mxGeometry>
         </mxCell>
@@ -159,6 +159,53 @@
         <mxCell id="eHhmGxeNJXdWQKwea6OK-47" value="Remove Pending User" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=12;" vertex="1" connectable="0" parent="eHhmGxeNJXdWQKwea6OK-46">
           <mxGeometry x="-0.4522" y="-3" relative="1" as="geometry">
             <mxPoint x="30" y="9" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="eHhmGxeNJXdWQKwea6OK-51" value="" style="endArrow=classic;html=1;rounded=0;fontSize=12;startSize=8;endSize=8;curved=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-65" y="349" as="sourcePoint" />
+            <mxPoint x="83" y="349" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="eHhmGxeNJXdWQKwea6OK-52" value="Log-in" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=12;" vertex="1" connectable="0" parent="eHhmGxeNJXdWQKwea6OK-51">
+          <mxGeometry x="-0.4522" y="-3" relative="1" as="geometry">
+            <mxPoint x="25" y="10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="eHhmGxeNJXdWQKwea6OK-53" value="" style="endArrow=classic;html=1;rounded=0;fontSize=12;startSize=8;endSize=8;curved=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="83" y="367" as="sourcePoint" />
+            <mxPoint x="231" y="367" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="eHhmGxeNJXdWQKwea6OK-54" value="Post auth/log-in" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=12;" vertex="1" connectable="0" parent="eHhmGxeNJXdWQKwea6OK-53">
+          <mxGeometry x="-0.4522" y="-3" relative="1" as="geometry">
+            <mxPoint x="25" y="10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="eHhmGxeNJXdWQKwea6OK-55" value="Refresth Token&lt;div&gt;access token&lt;/div&gt;&lt;div&gt;쿠키에 전달&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="110" y="435" width="107" height="53" as="geometry" />
+        </mxCell>
+        <mxCell id="eHhmGxeNJXdWQKwea6OK-56" value="" style="endArrow=classic;html=1;rounded=0;fontSize=12;startSize=8;endSize=8;curved=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="231" y="403" as="sourcePoint" />
+            <mxPoint x="84" y="403" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="eHhmGxeNJXdWQKwea6OK-57" value="Log-In" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=12;" vertex="1" connectable="0" parent="eHhmGxeNJXdWQKwea6OK-56">
+          <mxGeometry x="-0.4522" y="-3" relative="1" as="geometry">
+            <mxPoint x="-33" y="18" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="eHhmGxeNJXdWQKwea6OK-58" value="" style="endArrow=classic;html=1;rounded=0;fontSize=12;startSize=8;endSize=8;curved=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="235" y="382" as="sourcePoint" />
+            <mxPoint x="375" y="382" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="eHhmGxeNJXdWQKwea6OK-59" value="사용자 여부 조회&amp;nbsp;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=12;" vertex="1" connectable="0" parent="eHhmGxeNJXdWQKwea6OK-58">
+          <mxGeometry x="-0.4522" y="-3" relative="1" as="geometry">
+            <mxPoint x="25" y="10" as="offset" />
           </mxGeometry>
         </mxCell>
       </root>
